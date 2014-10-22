@@ -1,0 +1,4 @@
+-r base.txt
+ipython
+pytest
+vcrpy>=1.0.0
