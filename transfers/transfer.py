@@ -10,61 +10,22 @@ import sys
 import time
 
 
-def list_transfers(url, api_key, user_name):
-    get_url = url + "/api/transfer/unapproved"
-    g = requests.get(get_url, params={'username': user_name, 'api_key': api_key})
-    return g.json()
+def get_status(unit_uuid, unit_type):
+    """ Get status of the SIP or Transfer with unit_uuid.
+
+    :param str unit_uuid: UUID of the unit to query for.
+    :param str unit_type: SIP or Transfer.
+    :returns: Status of the unit from Archivematica.
+    """
+    # If transfer & completed, used SIP UUID to get status
+    # Update last_unit
+    pass
+
+def send_email():
+    pass
 
 
-def approve_transfer(directory_name, url, api_key, user_name):
-    print("Approving " + directory_name)
-    time.sleep(6)
-    # List available transfers
-    post_url = url + "/api/transfer/approve"
-    waiting_transfers = list_transfers(url, api_key, user_name)
-    for a in waiting_transfers['results']:
-        print("Found waiting transfer: " + a['directory'])
-        if a['directory'] == directory_name:
-            # Post to approve transfer
-            params = {'username': user_name, 'api_key': api_key, 'type': a['type'], 'directory': directory_name}
-            r = requests.post(post_url, data=params)
-            if r.status_code != 200:
-                return False
-            return a['uuid']
-        else:
-            print(a['directory'] + " is not what we are looking for")
-    else:
-        return False
-
-
-def main():
-    # Params/config file info
-    count_file = "count"
-    # Transfer type, dir only vs files
-    # AM URL
-    am_url = 'http://127.0.0.1'
-    # SS URL
-    ss_url = 'http://127.0.0.1:8000'
-    # Source transfer dir and Location UUID
-    ts_location_uuid = 'e01cc0fb-65f3-4c88-9d26-9753a23dce43'
-    ts_path = "TestTransfers"
-    pipeline_uuid = 'cc5db27c-93ef-4af5-9f0b-ae5107a5c208'
-    # username & api key
-    user_name = 'demo'
-    api_key = '5f0c1be584337c9fa93860b59f34a9c45a318cd7'
-
-    now = datetime.datetime.now()
-    print("Waking up at ", now)
-    # FIXME Set the cwd to the same as this file so count_file works
-    this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-    os.chdir(this_dir)
-
-    # Check if units waiting
-    # If so, send email, exit
-    # Find last unit started
-    # Check if in SS
-    # If not, exit
-
+def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, user_name, api_key):
     # Start new transfer
     # Get sorted list from source dir
     url = ss_url + '/api/v2/location/' + ts_location_uuid + '/browse/'
@@ -79,8 +40,12 @@ def main():
     dirs = map(base64.b64decode, dirs)
 
     # Find first one not already started (store in DB?)
-    with open(count_file, 'r') as f:
-        last_transfer = int(f.readline())
+    count_file = "count"
+    try:
+        with open(count_file, 'r') as f:
+            last_transfer = int(f.readline())
+    except Exception:
+        last_transfer = 0
     start_at = last_transfer
     target = dirs[start_at]
     print("Starting with", target)
@@ -115,11 +80,84 @@ def main():
         print('Approved', result)
         with open(count_file, 'w') as f:
             print(start_at, file=f)
+        with open(last_unit_file, 'w') as f:
+            print(result, 'file', file=f)
     else:
         print('Not approved')
 
     print("Finished " + target + " at " + str(datetime.datetime.now()))
     print(" ")
+
+
+def list_transfers(url, api_key, user_name):
+    get_url = url + "/api/transfer/unapproved"
+    g = requests.get(get_url, params={'username': user_name, 'api_key': api_key})
+    return g.json()
+
+
+def approve_transfer(directory_name, url, api_key, user_name):
+    print("Approving " + directory_name)
+    time.sleep(6)
+    # List available transfers
+    post_url = url + "/api/transfer/approve"
+    waiting_transfers = list_transfers(url, api_key, user_name)
+    for a in waiting_transfers['results']:
+        print("Found waiting transfer: " + a['directory'])
+        if a['directory'] == directory_name:
+            # Post to approve transfer
+            params = {'username': user_name, 'api_key': api_key, 'type': a['type'], 'directory': directory_name}
+            r = requests.post(post_url, data=params)
+            if r.status_code != 200:
+                return False
+            return a['uuid']
+        else:
+            print(a['directory'] + " is not what we are looking for")
+    else:
+        return False
+
+def main():
+    # Params/config file info
+    # Transfer type, dir only vs files
+    # AM URL
+    am_url = 'http://127.0.0.1'
+    # SS URL
+    ss_url = 'http://127.0.0.1:8000'
+    # Source transfer dir and Location UUID
+    ts_location_uuid = 'b8b2e0ef-f599-4d70-a91c-a4b13da0b355'
+    ts_path = "TestTransfers"
+    pipeline_uuid = 'd46cfa6a-9a5e-4f1f-8f16-9ff6f84d925a'
+    # username & api key
+    user_name = 'demo'
+    api_key = 'f17657bd1349a4a8b682853c27fcf4cffa27a466'
+
+    now = datetime.datetime.now()
+    print("Waking up at ", now)
+    # FIXME Set the cwd to the same as this file so count_file works
+    this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+    os.chdir(this_dir)
+
+    # Check status of last unit
+    # Find last unit started
+    last_unit_file = 'last_unit'
+    try:
+        with open(last_unit_file, 'r') as f:
+            last_unit = f.readline()
+    except Exception:
+        last_unit = ''
+    print('last_unit', last_unit)
+    unit_uuid, unit_type = last_unit.split()
+    # Get status
+    status = get_status(unit_uuid, unit_type)
+    # If processing, exit
+    if status == 'PROCESSING':
+        sys.exit(0)
+    # If waiting on input, send email, exit
+    elif status == 'USER_INPUT':
+        send_email()
+        sys.exit(0)
+    # If failed, rejected, start new transfer
+    elif status in ('FAIELD', 'REJECTED'):
+        start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, user_name, api_key)
 
 if __name__ == '__main__':
     sys.exit(main())
