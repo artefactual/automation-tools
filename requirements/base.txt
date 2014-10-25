@@ -1,1 +1,2 @@
+docopt
 requests<3.0

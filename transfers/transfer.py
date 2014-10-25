@@ -1,8 +1,28 @@
 #!/usr/bin/env python2
+"""
+Automate Transfers
+
+Helper script to automate running transfers through Archivematica.
+
+Usage:
+    transfer.py --pipeline=UUID --user=USERNAME --api-key=KEY --transfer-source=UUID [--transfer-path=PATH] [--am-url=URL] [--ss-url=URL]
+    transfer.py -h | --help
+
+-p UUID --pipeline UUID         Pipeline UUID to start the transfers on
+-u USERNAME --user USERNAME     Username of the dashboard user to authenticate as
+-k KEY --api-key KEY            API key of the dashboard user
+-t UUID --transfer-source UUID  Transfer Source Location UUID to fetch transfers from
+--transfer-path PATH            Relative path within the Transfer Source (optional)
+-a URL --am-url URL             Archivematica URL [default: http://127.0.0.1]
+-s URL --ss-url URL             Storage Service URL [default: http://127.0.0.1:8000]
+--transfer-type TYPE            Type of transfer to start. Unimplemented.
+--files                         Start transfers from files as well as folders. Unimplemeted. [default: False]
+"""
 
 from __future__ import print_function
 import base64
 import datetime
+from docopt import docopt
 import json
 import os
 import requests
@@ -25,7 +45,7 @@ def send_email():
     pass
 
 
-def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, user_name, api_key):
+def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, user_name, api_key, last_unit_file):
     # Start new transfer
     # Get sorted list from source dir
     url = ss_url + '/api/v2/location/' + ts_location_uuid + '/browse/'
@@ -115,21 +135,7 @@ def approve_transfer(directory_name, url, api_key, user_name):
     else:
         return False
 
-def main():
-    # Params/config file info
-    # Transfer type, dir only vs files
-    # AM URL
-    am_url = 'http://127.0.0.1'
-    # SS URL
-    ss_url = 'http://127.0.0.1:8000'
-    # Source transfer dir and Location UUID
-    ts_location_uuid = 'b8b2e0ef-f599-4d70-a91c-a4b13da0b355'
-    ts_path = "TestTransfers"
-    pipeline_uuid = 'd46cfa6a-9a5e-4f1f-8f16-9ff6f84d925a'
-    # username & api key
-    user_name = 'demo'
-    api_key = 'f17657bd1349a4a8b682853c27fcf4cffa27a466'
-
+def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
     now = datetime.datetime.now()
     print("Waking up at ", now)
     # FIXME Set the cwd to the same as this file so count_file works
@@ -156,8 +162,18 @@ def main():
         send_email()
         sys.exit(0)
     # If failed, rejected, start new transfer
-    elif status in ('FAIELD', 'REJECTED'):
-        start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, user_name, api_key)
+    elif status in ('FAILED', 'REJECTED'):
+        pass
+    start_transfer(ss_url, ts_uuid, ts_path, pipeline, am_url, user, api_key, last_unit_file)
 
 if __name__ == '__main__':
-    sys.exit(main())
+    args = docopt(__doc__)
+    sys.exit(main(
+        pipeline=args['--pipeline'],
+        user=args['--user'],
+        api_key=args['--api-key'],
+        ts_uuid=args['--transfer-source'],
+        ts_path=args['--transfer-path'],
+        am_url=args['--am-url'],
+        ss_url=args['--ss-url'],
+    ))
