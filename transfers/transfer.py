@@ -30,16 +30,37 @@ import sys
 import time
 
 
-def get_status(unit_uuid, unit_type):
+def get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file):
     """ Get status of the SIP or Transfer with unit_uuid.
 
     :param str unit_uuid: UUID of the unit to query for.
-    :param str unit_type: SIP or Transfer.
-    :returns: Status of the unit from Archivematica.
+    :param str unit_type: 'ingest' or 'transfer'
+    :returns: Status of the unit from Archivematica or None.
     """
-    # If transfer & completed, used SIP UUID to get status
-    # Update last_unit
-    pass
+    # Get status
+    url = am_url + '/api/' + unit_type + '/status/' + unit_uuid + '/'
+    params = {'user': user, 'api_key': api_key}
+    print('url', url, 'params', params)
+    response = requests.get(url, params=params)
+    print('response', response)
+    if not response.ok:
+        return None
+    unit_info = response.json()
+
+    # If Transfer is complete, get the SIP's status
+    if unit_type == 'transfer' and unit_info['status'] == 'COMPLETE' and unit_info['sip_uuid'] != 'BACKLOG':
+        # Update last_unit to refer to this one
+        with open(last_unit_file, 'w') as f:
+            print(unit_info['sip_uuid'], 'ingest', file=f)
+        # Get SIP status
+        url = am_url + '/api/ingest/status/' + unit_info['sip_uuid'] + '/'
+        response = requests.get(url, params=params)
+        print('response', response)
+        if not response.ok:
+            return None
+        unit_info = response.json()
+
+    return unit_info.get('status')
 
 def send_email():
     pass
@@ -60,6 +81,7 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
     dirs = map(base64.b64decode, dirs)
 
     # Find first one not already started (store in DB?)
+    # TODO keep a list of what's be processed and compare the fetched list against that
     count_file = "count"
     try:
         with open(count_file, 'r') as f:
@@ -101,7 +123,7 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
         with open(count_file, 'w') as f:
             print(start_at, file=f)
         with open(last_unit_file, 'w') as f:
-            print(result, 'file', file=f)
+            print(result, 'transfer', file=f)
     else:
         print('Not approved')
 
@@ -148,22 +170,25 @@ def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
     try:
         with open(last_unit_file, 'r') as f:
             last_unit = f.readline()
+        unit_uuid, unit_type = last_unit.split()
     except Exception:
-        last_unit = ''
-    print('last_unit', last_unit)
-    unit_uuid, unit_type = last_unit.split()
+        unit_uuid = unit_type = ''
+    print('Unit UUID', unit_uuid, 'Unit Type', unit_type)
     # Get status
-    status = get_status(unit_uuid, unit_type)
+    status = get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file)
+    print('Status', status)
+    if not status:
+        sys.exit(1)
     # If processing, exit
     if status == 'PROCESSING':
+        print('Last transfer still processing, nothing to do.')
         sys.exit(0)
     # If waiting on input, send email, exit
     elif status == 'USER_INPUT':
+        print('Waiting on user input, sending email.')
         send_email()
         sys.exit(0)
-    # If failed, rejected, start new transfer
-    elif status in ('FAILED', 'REJECTED'):
-        pass
+    # If failed, rejected, completed etc, start new transfer
     start_transfer(ss_url, ts_uuid, ts_path, pipeline, am_url, user, api_key, last_unit_file)
 
 if __name__ == '__main__':
