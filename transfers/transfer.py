@@ -21,13 +21,47 @@ Usage:
 
 from __future__ import print_function
 import base64
-import datetime
 from docopt import docopt
 import json
+import logging
+import logging.config  # Has to be imported separately
 import os
 import requests
 import sys
 import time
+
+LOGGER = logging.getLogger('transfer')
+# Configure logging
+CONFIG = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'default': {
+            'format': '%(levelname)-8s  %(asctime)s  %(filename)s:%(lineno)-4s %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'default',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'default',
+            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'automate-transfer.log'),
+            'backupCount': 2,
+            'maxBytes': 10 * 1024,
+        },
+    },
+    'loggers': {
+        'transfer': {
+            'level': 'INFO',  # One of INFO, DEBUG, WARNING, ERROR, CRITICAL
+            'handlers': ['console'],
+        },
+    },
+}
+logging.config.dictConfig(CONFIG)
 
 
 def get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file):
@@ -40,23 +74,27 @@ def get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file):
     # Get status
     url = am_url + '/api/' + unit_type + '/status/' + unit_uuid + '/'
     params = {'user': user, 'api_key': api_key}
-    print('url', url, 'params', params)
+    LOGGER.debug('URL: %s; params: %s;', url, params)
     response = requests.get(url, params=params)
-    print('response', response)
+    LOGGER.debug('Response: %s', response)
     if not response.ok:
+        LOGGER.warning('Request to %s returned %s %s', url, response.status_code, response.reason)
         return None
     unit_info = response.json()
 
     # If Transfer is complete, get the SIP's status
     if unit_type == 'transfer' and unit_info['status'] == 'COMPLETE' and unit_info['sip_uuid'] != 'BACKLOG':
+        LOGGER.info('%s is a complete transfer, fetching SIP %s status.', unit_uuid, unit_info['sip_uuid'])
         # Update last_unit to refer to this one
         with open(last_unit_file, 'w') as f:
             print(unit_info['sip_uuid'], 'ingest', file=f)
         # Get SIP status
         url = am_url + '/api/ingest/status/' + unit_info['sip_uuid'] + '/'
+        LOGGER.debug('URL: %s; params: %s;', url, params)
         response = requests.get(url, params=params)
-        print('response', response)
+        LOGGER.debug('Response: %s', response)
         if not response.ok:
+            LOGGER.warning('Request to %s returned %s %s', url, response.status_code, response.reason)
             return None
         unit_info = response.json()
 
@@ -75,7 +113,7 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
         params = {'path': base64.b64encode(ts_path)}
     response = requests.get(url, params=params)
     if response.status_code != 200:
-        print('Unable to browse transfer source location', ts_location_uuid, file=sys.stderr)
+        LOGGER.error('Unable to browse transfer source location %s', ts_location_uuid)
         sys.exit(1)
     dirs = response.json()['directories']
     dirs = map(base64.b64decode, dirs)
@@ -90,7 +128,7 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
         last_transfer = 0
     start_at = last_transfer
     target = dirs[start_at]
-    print("Starting with", target)
+    LOGGER.info("Starting with %s", target)
     # Get CP Loc UUID
     url = ss_url + '/api/v2/location/'
     params = {'pipeline__uuid': pipeline_uuid, 'purpose': 'CP'}
@@ -114,21 +152,20 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
     # shutil.copyfile(processing_available + "defaultProcessingMCP.xml", destination + "/processingMCP.xml")
 
     # Approve transfer
-    print("Ready to start")
+    LOGGER.info("Ready to start")
     result = approve_transfer(target, am_url, api_key, user_name)
     # TODO Mark as started
     if result:
         start_at = start_at + 1
-        print('Approved', result)
+        LOGGER.info('Approved %s', result)
         with open(count_file, 'w') as f:
             print(start_at, file=f)
         with open(last_unit_file, 'w') as f:
             print(result, 'transfer', file=f)
     else:
-        print('Not approved')
+        LOGGER.warning('Not approved')
 
-    print("Finished " + target + " at " + str(datetime.datetime.now()))
-    print(" ")
+    LOGGER.info('Finished %s', target)
 
 
 def list_transfers(url, api_key, user_name):
@@ -138,13 +175,13 @@ def list_transfers(url, api_key, user_name):
 
 
 def approve_transfer(directory_name, url, api_key, user_name):
-    print("Approving " + directory_name)
+    LOGGER.info("Approving %s", directory_name)
     time.sleep(6)
     # List available transfers
     post_url = url + "/api/transfer/approve"
     waiting_transfers = list_transfers(url, api_key, user_name)
     for a in waiting_transfers['results']:
-        print("Found waiting transfer: " + a['directory'])
+        LOGGER.info("Found waiting transfer: %s", a['directory'])
         if a['directory'] == directory_name:
             # Post to approve transfer
             params = {'username': user_name, 'api_key': api_key, 'type': a['type'], 'directory': directory_name}
@@ -153,13 +190,12 @@ def approve_transfer(directory_name, url, api_key, user_name):
                 return False
             return a['uuid']
         else:
-            print(a['directory'] + " is not what we are looking for")
+            LOGGER.debug("%s is not what we are looking for", a['directory'])
     else:
         return False
 
 def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
-    now = datetime.datetime.now()
-    print("Waking up at ", now)
+    LOGGER.info("Waking up")
     # FIXME Set the cwd to the same as this file so count_file works
     this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     os.chdir(this_dir)
@@ -173,19 +209,22 @@ def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
         unit_uuid, unit_type = last_unit.split()
     except Exception:
         unit_uuid = unit_type = ''
-    print('Unit UUID', unit_uuid, 'Unit Type', unit_type)
+    LOGGER.info('Last unit: %s %s', unit_type, unit_uuid)
     # Get status
     status = get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file)
-    print('Status', status)
+    LOGGER.info('Status: %s', status)
     if not status:
+        LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
         sys.exit(1)
     # If processing, exit
     if status == 'PROCESSING':
-        print('Last transfer still processing, nothing to do.')
+        LOGGER.info('Last transfer still processing, nothing to do.')
         sys.exit(0)
     # If waiting on input, send email, exit
     elif status == 'USER_INPUT':
-        print('Waiting on user input, sending email.')
+        LOGGER.info('Waiting on user input, sending email.')
+        # TODO only do this one per USER_INPUT per unit
+        # TODO change this to run scripts in a dir?
         send_email()
         sys.exit(0)
     # If failed, rejected, completed etc, start new transfer
