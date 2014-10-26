@@ -15,7 +15,7 @@ Usage:
 --transfer-path PATH            Relative path within the Transfer Source (optional)
 -a URL --am-url URL             Archivematica URL [default: http://127.0.0.1]
 -s URL --ss-url URL             Storage Service URL [default: http://127.0.0.1:8000]
---transfer-type TYPE            Type of transfer to start. Unimplemented.
+--transfer-type TYPE            Type of transfer to start. Unimplemented. [default: standard]
 --files                         Start transfers from files as well as folders. Unimplemeted. [default: False]
 """
 
@@ -27,6 +27,7 @@ import logging
 import logging.config  # Has to be imported separately
 import os
 import requests
+import subprocess
 import sys
 import time
 
@@ -133,9 +134,9 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
     url = ss_url + '/api/v2/location/'
     params = {'pipeline__uuid': pipeline_uuid, 'purpose': 'CP'}
     response = requests.get(url, params=params)
-    resource_uri = response.json()['objects'][0]['resource_uri']
+    cp_loc = response.json()['objects'][0]
     # Copy to pipeline
-    url = ss_url + resource_uri
+    url = ss_url + cp_loc['resource_uri']
     source = os.path.join(ts_path, target)
     destination = os.path.join("watchedDirectories", "activeTransfers", "standardTransfer", target)
     data = {
@@ -145,11 +146,21 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
     }
     response = requests.post(url, data=json.dumps(data), headers={'Content-Type': 'application/json'})
 
-    # Run munging scripts (What params to scripts?)
-    # Update default config
-    # TODO pick correct processingMCP based on existence of access dir
-    # processing_available = '/home/users/hbecker/archivematica/src/MCPServer/share/sharedDirectoryStructure/sharedMicroServiceTasksConfigs/processingMCPConfigs/'
-    # shutil.copyfile(processing_available + "defaultProcessingMCP.xml", destination + "/processingMCP.xml")
+    # Run all scripts in pre-transfer directory
+    abs_destination = os.path.join(cp_loc['path'], destination)
+    # Pass param of transfer path
+    for script in sorted(os.listdir('pre-transfer')):
+        LOGGER.debug('Script: %s', script)
+        script_path = os.path.join('pre-transfer', script)
+        if not os.access(script_path, os.X_OK):
+            LOGGER.info('%s is not executable, skipping', script)
+            continue
+        p = subprocess.Popen([script_path, abs_destination], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        LOGGER.info('Return code: %s', p.returncode)
+        LOGGER.info('stdout: %s', stdout)
+        if stderr:
+            LOGGER.warning('stderr: %s', stderr)
 
     # Approve transfer
     LOGGER.info("Ready to start")
