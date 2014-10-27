@@ -66,11 +66,12 @@ logging.config.dictConfig(CONFIG)
 
 
 def get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file):
-    """ Get status of the SIP or Transfer with unit_uuid.
+    """
+    Get status of the SIP or Transfer with unit_uuid.
 
     :param str unit_uuid: UUID of the unit to query for.
     :param str unit_type: 'ingest' or 'transfer'
-    :returns: Status of the unit from Archivematica or None.
+    :returns: Dict with status of the unit from Archivematica or None.
     """
     # Get status
     url = am_url + '/api/' + unit_type + '/status/' + unit_uuid + '/'
@@ -98,11 +99,35 @@ def get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file):
             LOGGER.warning('Request to %s returned %s %s', url, response.status_code, response.reason)
             return None
         unit_info = response.json()
+    return unit_info
 
-    return unit_info.get('status')
 
-def send_email():
-    pass
+def run_scripts(directory, *args):
+    """
+    Run all executable scripts in directory relative to this file.
+
+    :param str directory: Directory in the same folder as this file to run scripts from.
+    :param args: All other parameters will be passed to called scripts.
+    :return: None
+    """
+    if not os.path.isdir(directory):
+        LOGGER.warning('%s is not a directory. No scripts to run.', directory)
+        return
+    script_args = list(args)
+    LOGGER.debug('script_args: %s', script_args)
+    for script in sorted(os.listdir(directory)):
+        LOGGER.debug('Script: %s', script)
+        script_path = os.path.join(directory, script)
+        if not os.access(script_path, os.X_OK):
+            LOGGER.info('%s is not executable, skipping', script)
+            continue
+        LOGGER.info('Running %s "%s"', script_path, '" "'.join(args))
+        p = subprocess.Popen([script_path] + script_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        LOGGER.info('Return code: %s', p.returncode)
+        LOGGER.info('stdout: %s', stdout)
+        if stderr:
+            LOGGER.warning('stderr: %s', stderr)
 
 
 def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, user_name, api_key, last_unit_file):
@@ -148,19 +173,11 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
 
     # Run all scripts in pre-transfer directory
     abs_destination = os.path.join(cp_loc['path'], destination)
-    # Pass param of transfer path
-    for script in sorted(os.listdir('pre-transfer')):
-        LOGGER.debug('Script: %s', script)
-        script_path = os.path.join('pre-transfer', script)
-        if not os.access(script_path, os.X_OK):
-            LOGGER.info('%s is not executable, skipping', script)
-            continue
-        p = subprocess.Popen([script_path, abs_destination], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = p.communicate()
-        LOGGER.info('Return code: %s', p.returncode)
-        LOGGER.info('stdout: %s', stdout)
-        if stderr:
-            LOGGER.warning('stderr: %s', stderr)
+    # TODO what inputs do we want?
+    run_scripts('pre-transfer',
+        abs_destination,  # Absolute path
+        'standard',  # Transfer type
+    )
 
     # Approve transfer
     LOGGER.info("Ready to start")
@@ -208,7 +225,7 @@ def approve_transfer(directory_name, url, api_key, user_name):
 def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
     LOGGER.info("Waking up")
     # FIXME Set the cwd to the same as this file so count_file works
-    this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+    this_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(this_dir)
 
     # Check status of last unit
@@ -222,8 +239,9 @@ def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
         unit_uuid = unit_type = ''
     LOGGER.info('Last unit: %s %s', unit_type, unit_uuid)
     # Get status
-    status = get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file)
-    LOGGER.info('Status: %s', status)
+    status_info = get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file)
+    LOGGER.info('Status info: %s', status_info)
+    status = status_info.get('status')
     if not status:
         LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
         sys.exit(1)
@@ -233,10 +251,15 @@ def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
         sys.exit(0)
     # If waiting on input, send email, exit
     elif status == 'USER_INPUT':
-        LOGGER.info('Waiting on user input, sending email.')
-        # TODO only do this one per USER_INPUT per unit
-        # TODO change this to run scripts in a dir?
-        send_email()
+        LOGGER.info('Waiting on user input, running scripts in user-input directory.')
+        # TODO What inputs do we want?
+        run_scripts('user-input',
+            status_info.get('microservice'),  # Microservice name
+            status_info['path'],  # Absolute path
+            status_info['uuid'],  # SIP/Transfer UUID
+            status_info['name'],  # SIP/Transfer name
+            status_info['type'],  # SIP or transfer
+        )
         sys.exit(0)
     # If failed, rejected, completed etc, start new transfer
     start_transfer(ss_url, ts_uuid, ts_path, pipeline, am_url, user, api_key, last_unit_file)
