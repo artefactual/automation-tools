@@ -237,11 +237,14 @@ def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
         unit_uuid, unit_type = last_unit.split()
     except Exception:
         unit_uuid = unit_type = ''
-    LOGGER.info('Last unit: %s %s', unit_type, unit_uuid)
-    # Get status
-    status_info = get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file)
-    LOGGER.info('Status info: %s', status_info)
-    status = status_info.get('status')
+        LOGGER.info('Last unit: unknown.  Assuming new run.')
+        status = 'UNKNOWN'
+    else:
+        LOGGER.info('Last unit: %s %s', unit_type, unit_uuid)
+        # Get status
+        status_info = get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file)
+        LOGGER.info('Status info: %s', status_info)
+        status = status_info.get('status')
     if not status:
         LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
         sys.exit(1)
