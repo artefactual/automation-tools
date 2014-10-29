@@ -140,7 +140,7 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
     response = requests.get(url, params=params)
     if response.status_code != 200:
         LOGGER.error('Unable to browse transfer source location %s', ts_location_uuid)
-        sys.exit(1)
+        return 1
     dirs = response.json()['directories']
     dirs = map(base64.b64decode, dirs)
 
@@ -247,11 +247,11 @@ def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
         status = status_info.get('status')
     if not status:
         LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
-        sys.exit(1)
+        return 1
     # If processing, exit
     if status == 'PROCESSING':
         LOGGER.info('Last transfer still processing, nothing to do.')
-        sys.exit(0)
+        return 0
     # If waiting on input, send email, exit
     elif status == 'USER_INPUT':
         LOGGER.info('Waiting on user input, running scripts in user-input directory.')
@@ -263,9 +263,9 @@ def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
             status_info['name'],  # SIP/Transfer name
             status_info['type'],  # SIP or transfer
         )
-        sys.exit(0)
+        return 0
     # If failed, rejected, completed etc, start new transfer
-    start_transfer(ss_url, ts_uuid, ts_path, pipeline, am_url, user, api_key, last_unit_file)
+    return start_transfer(ss_url, ts_uuid, ts_path, pipeline, am_url, user, api_key, last_unit_file)
 
 if __name__ == '__main__':
     args = docopt(__doc__)
