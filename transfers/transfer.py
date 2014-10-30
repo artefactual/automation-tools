@@ -22,7 +22,6 @@ Usage:
 from __future__ import print_function
 import base64
 from docopt import docopt
-import json
 import logging
 import logging.config  # Has to be imported separately
 import os
@@ -164,27 +163,33 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
     start_at = last_transfer
     target = dirs[start_at]
     LOGGER.info("Starting with %s", target)
-    # Get CP Loc UUID
-    url = ss_url + '/api/v2/location/'
-    params = {'pipeline__uuid': pipeline_uuid, 'purpose': 'CP'}
-    response = requests.get(url, params=params)
-    cp_loc = response.json()['objects'][0]
-    # Copy to pipeline
-    url = ss_url + cp_loc['resource_uri']
-    source = os.path.join(ts_path, target)
-    destination = os.path.join("watchedDirectories", "activeTransfers", "standardTransfer", target)
+    # Start transfer
+    url = am_url + '/api/transfer/start_transfer/'
+    params = {'user': user_name, 'api_key': api_key}
     data = {
-        'origin_location': '/api/v2/location/' + ts_location_uuid + '/',
-        'pipeline': pipeline_uuid,
-        'files': [{'source': source, 'destination': destination}]
+        'name': target,
+        'type': 'standard',
+        'accession': None,  # TODO set accession number
+        'paths[]': [base64.b64encode(ts_location_uuid + ':' + os.path.join(ts_path, target))],
+        'row_ids[]': [''],
     }
-    response = requests.post(url, data=json.dumps(data), headers={'Content-Type': 'application/json'})
+    LOGGER.debug('URL: %s; Params: %s; Data: %s', url, params, data)
+    response = requests.post(url, params=params, data=data)
+    LOGGER.debug('Response: %s', response)
+    try:
+        resp_json = response.json()
+    except ValueError:
+        LOGGER.warning('Could not parse JSON from response: %s', response.text)
+        return 1
+    if not response.ok or resp_json.get('error'):
+        LOGGER.error('Unable to start transfer.')
+        LOGGER.debug('Response: %s', resp_json)
+        return 1
 
     # Run all scripts in pre-transfer directory
-    abs_destination = os.path.join(cp_loc['path'], destination)
     # TODO what inputs do we want?
     run_scripts('pre-transfer',
-        abs_destination,  # Absolute path
+        resp_json['path'],  # Absolute path
         'standard',  # Transfer type
     )
 
