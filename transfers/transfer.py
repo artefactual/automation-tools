@@ -5,10 +5,9 @@ Automate Transfers
 Helper script to automate running transfers through Archivematica.
 
 Usage:
-    transfer.py --pipeline=UUID --user=USERNAME --api-key=KEY --transfer-source=UUID [--transfer-path=PATH] [--am-url=URL] [--ss-url=URL]
+    transfer.py --user=USERNAME --api-key=KEY --transfer-source=UUID [--transfer-path=PATH] [--am-url=URL] [--ss-url=URL]
     transfer.py -h | --help
 
--p UUID --pipeline UUID         Pipeline UUID to start the transfers on
 -u USERNAME --user USERNAME     Username of the dashboard user to authenticate as
 -k KEY --api-key KEY            API key of the dashboard user
 -t UUID --transfer-source UUID  Transfer Source Location UUID to fetch transfers from
@@ -139,7 +138,7 @@ def run_scripts(directory, *args):
             LOGGER.warning('stderr: %s', stderr)
 
 
-def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, user_name, api_key, last_unit_file):
+def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key, last_unit_file):
     # Start new transfer
     # Get sorted list from source dir
     url = ss_url + '/api/v2/location/' + ts_location_uuid + '/browse/'
@@ -243,7 +242,7 @@ def approve_transfer(directory_name, url, api_key, user_name):
     else:
         return None
 
-def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
+def main(user, api_key, ts_uuid, ts_path, am_url, ss_url):
     LOGGER.info("Waking up")
     # FIXME Set the cwd to the same as this file so count_file works
     this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -286,12 +285,11 @@ def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
         )
         return 0
     # If failed, rejected, completed etc, start new transfer
-    return start_transfer(ss_url, ts_uuid, ts_path, pipeline, am_url, user, api_key, last_unit_file)
+    return start_transfer(ss_url, ts_uuid, ts_path, am_url, user, api_key, last_unit_file)
 
 if __name__ == '__main__':
     args = docopt(__doc__)
     sys.exit(main(
-        pipeline=args['--pipeline'],
         user=args['--user'],
         api_key=args['--api-key'],
         ts_uuid=args['--transfer-source'],
