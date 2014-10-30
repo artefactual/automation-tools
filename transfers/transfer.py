@@ -223,14 +223,18 @@ def approve_transfer(directory_name, url, api_key, user_name):
     params = {'username': user_name, 'api_key': api_key}
     waiting_transfers = _call_url_json(get_url, params)
     if waiting_transfers is None:
+        LOGGER.warning('No waiting transfer ')
         return None
-    post_url = url + "/api/transfer/approve"
     for a in waiting_transfers['results']:
-        LOGGER.info("Found waiting transfer: %s", a['directory'])
+        LOGGER.debug("Found waiting transfer: %s", a['directory'])
         if a['directory'] == directory_name:
             # Post to approve transfer
+            post_url = url + "/api/transfer/approve/"
             params = {'username': user_name, 'api_key': api_key, 'type': a['type'], 'directory': directory_name}
+            LOGGER.debug('URL: %s; Params: %s;', post_url, params)
             r = requests.post(post_url, data=params)
+            LOGGER.debug('Response: %s', r)
+            LOGGER.debug('Response text: %s', r.text)
             if r.status_code != 200:
                 return None
             return a['uuid']
