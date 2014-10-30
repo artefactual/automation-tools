@@ -65,6 +65,28 @@ CONFIG = {
 logging.config.dictConfig(CONFIG)
 
 
+def _call_url_json(url, params):
+    """
+    Helper to GET a URL where the expected response is 200 with JSON.
+
+    :param str url: URL to call
+    :param dict params: Params to pass to requests.get
+    :returns: Dict of the returned JSON or None
+    """
+    LOGGER.debug('URL: %s; params: %s;', url, params)
+    response = requests.get(url, params=params)
+    LOGGER.debug('Response: %s', response)
+    if not response.ok:
+        LOGGER.warning('Request to %s returned %s %s', url, response.status_code, response.reason)
+        LOGGER.debug('Response: %s', response.text)
+        return None
+    try:
+        return response.json()
+    except ValueError:  # JSON could not be decoded
+        LOGGER.warning('Could not parse JSON from response: %s', response.text)
+        return None
+
+
 def get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file):
     """
     Get status of the SIP or Transfer with unit_uuid.
@@ -76,29 +98,17 @@ def get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file):
     # Get status
     url = am_url + '/api/' + unit_type + '/status/' + unit_uuid + '/'
     params = {'user': user, 'api_key': api_key}
-    LOGGER.debug('URL: %s; params: %s;', url, params)
-    response = requests.get(url, params=params)
-    LOGGER.debug('Response: %s', response)
-    if not response.ok:
-        LOGGER.warning('Request to %s returned %s %s', url, response.status_code, response.reason)
-        return None
-    unit_info = response.json()
+    unit_info = _call_url_json(url, params)
 
     # If Transfer is complete, get the SIP's status
-    if unit_type == 'transfer' and unit_info['status'] == 'COMPLETE' and unit_info['sip_uuid'] != 'BACKLOG':
+    if unit_info and unit_type == 'transfer' and unit_info['status'] == 'COMPLETE' and unit_info['sip_uuid'] != 'BACKLOG':
         LOGGER.info('%s is a complete transfer, fetching SIP %s status.', unit_uuid, unit_info['sip_uuid'])
         # Update last_unit to refer to this one
         with open(last_unit_file, 'w') as f:
             print(unit_info['sip_uuid'], 'ingest', file=f)
         # Get SIP status
         url = am_url + '/api/ingest/status/' + unit_info['sip_uuid'] + '/'
-        LOGGER.debug('URL: %s; params: %s;', url, params)
-        response = requests.get(url, params=params)
-        LOGGER.debug('Response: %s', response)
-        if not response.ok:
-            LOGGER.warning('Request to %s returned %s %s', url, response.status_code, response.reason)
-            return None
-        unit_info = response.json()
+        unit_info = _call_url_json(url, params)
     return unit_info
 
 
@@ -137,11 +147,10 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
     params = {}
     if ts_path:
         params = {'path': base64.b64encode(ts_path)}
-    response = requests.get(url, params=params)
-    if response.status_code != 200:
-        LOGGER.error('Unable to browse transfer source location %s', ts_location_uuid)
+    browse_info = _call_url_json(url, params)
+    if browse_info is None:
         return 1
-    dirs = response.json()['directories']
+    dirs = browse_info['directories']
     dirs = map(base64.b64decode, dirs)
 
     # Find first one not already started (store in DB?)
@@ -196,18 +205,21 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, pipeline_uuid, am_url, use
     LOGGER.info('Finished %s', target)
 
 
-def list_transfers(url, api_key, user_name):
-    get_url = url + "/api/transfer/unapproved"
-    g = requests.get(get_url, params={'username': user_name, 'api_key': api_key})
-    return g.json()
-
-
 def approve_transfer(directory_name, url, api_key, user_name):
+    """
+    Approve transfer with directory_name.
+
+    :returns: UUID of the approved transfer or None.
+    """
     LOGGER.info("Approving %s", directory_name)
     time.sleep(6)
     # List available transfers
+    get_url = url + "/api/transfer/unapproved"
+    params = {'username': user_name, 'api_key': api_key}
+    waiting_transfers = _call_url_json(get_url, params)
+    if waiting_transfers is None:
+        return None
     post_url = url + "/api/transfer/approve"
-    waiting_transfers = list_transfers(url, api_key, user_name)
     for a in waiting_transfers['results']:
         LOGGER.info("Found waiting transfer: %s", a['directory'])
         if a['directory'] == directory_name:
@@ -215,12 +227,12 @@ def approve_transfer(directory_name, url, api_key, user_name):
             params = {'username': user_name, 'api_key': api_key, 'type': a['type'], 'directory': directory_name}
             r = requests.post(post_url, data=params)
             if r.status_code != 200:
-                return False
+                return None
             return a['uuid']
         else:
             LOGGER.debug("%s is not what we are looking for", a['directory'])
     else:
-        return False
+        return None
 
 def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
     LOGGER.info("Waking up")
@@ -244,10 +256,10 @@ def main(pipeline, user, api_key, ts_uuid, ts_path, am_url, ss_url):
         # Get status
         status_info = get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file)
         LOGGER.info('Status info: %s', status_info)
+        if not status_info:
+            LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
+            return 1
         status = status_info.get('status')
-    if not status:
-        LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
-        return 1
     # If processing, exit
     if status == 'PROCESSING':
         LOGGER.info('Last transfer still processing, nothing to do.')
