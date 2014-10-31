@@ -1,0 +1,39 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.4.3 CPython/2.7.3 Linux/3.5.0-23-generic]
+    method: GET
+    uri: http://127.0.0.1/api/transfer/status/dfc8cf5f-b5b1-408c-88b1-34215964e9d6/?api_key=1c34274c0df0bca7edf9831dd838b4a6345ac2ef&user=demo
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA71WUY/bNgx+969g9e6oQfvQ6xwD212BFujWw5Zh26NiMWflZMmVaOfy70s5Ti7J
+        brgLLtiLQUofP9IURSrLsuLNzbfr+T+3n6CmxsLtn798/XINIpfyr3fXUt7Mb+Dvz/Nfv8J08hbm
+        QbloyHinrJSffhMgaqL2o5Tr9Xqyfjfx4U7Of5cPiWuajEcxpwPLiSYtyqwYHD401sXZEzTTq6ur
+        rbVIoI9WubuZQCdgL5UZQFGj0klgkQxZLH8OVW16bBSZSsGNivXCq6Ahh0JuEVt0g6Qg+c3xe2f6
+        mbj2jtBRPt+0KKDaajNB+EAyxfETVLUKEWnW0TL/IECOTNa4ewhoZyLWPlDVERg2F1AHXM6EbFAb
+        JU2j7jDKperT5oQ/JwxH6B6d9kGuvncYNnlnHqVJFaMY3dHGYqwRSQBx1GOwA+BZalobIgz5wnuK
+        fD6t3EuvdsHbcrA8j2lLF6tgWoIYqqezMVnFI4aV6tXWRpSF3Erly6iOE3s53onRFnMyDYaLsHZO
+        Y4iVD3gRuoWq7hfeXYbs33W0io+llPN2Gy9zZs94an3r+wsl/BlXjdfcx/4HRzr4Vvu1e52vVbqN
+        irr4aprGxOrlJKk/y12DLhZeb8DomWi5EeYal6qzbJJtocOXUdr0UFkVeSiQbxcqiHLcemozN87h
+        IeQYlJq4MozIl7YzeudsD1U74ILnk943bHE8RAqpTgwvrBwH1dldVE71pyEP7Xa3z/lWu5iHCbvE
+        wMHPRzHFXUhrypcxGMfzidj+yyCcaa2GjCmbR/KBD3ifRGVhXDqTcdmmn7kNGDH0Kr0doOXZ7zjO
+        c2OrKuSJxBENwrnWujHOpPuYYkgsRwuPbCd0J8cqO3taRYdVK7lsDyr9UB2Vg3vy1G3Z1/phyZwC
+        +EVzdFmy7EhJ76lp+f7te34t3fKJgfMES8/jh+/xdOA9ZFQWA+UNpzRhF9ZX93ttrUI6qdFb0ZZ/
+        +BA2b2BeI6QGAFQrgo3vQAVWwobBQB56g2swcfBcIw+8QrZD+xiTkJ3m6L+TlBZT0+G35vCAK7Mf
+        sT3CqvEKAAA=
+    headers:
+      connection: [Keep-Alive]
+      content-encoding: [gzip]
+      content-length: ['806']
+      content-type: [text/html; charset=utf-8]
+      date: ['Fri, 31 Oct 2014 18:15:06 GMT']
+      keep-alive: ['timeout=5, max=100']
+      server: [Apache/2.2.22 (Ubuntu)]
+      vary: ['Cookie,Accept-Encoding']
+    status: {code: 404, message: NOT FOUND}
+version: 1
