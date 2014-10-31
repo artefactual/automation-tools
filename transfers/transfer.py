@@ -19,6 +19,7 @@ Usage:
 """
 
 from __future__ import print_function
+import ast
 import base64
 from docopt import docopt
 import logging
@@ -110,6 +111,30 @@ def get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file):
     return unit_info
 
 
+def get_accession_id(dirname):
+    """
+    Call get-accession-number and return literal_eval stdout as accession ID.
+
+    get-accession-number should be in the same directory as transfer.py. Its
+    only output to stdout should be the accession number surrounded by
+    quotes.  Eg. "accession number"
+
+    :param str dirname: Directory name of folder to become transfer
+    :returns: accession number or None.
+    """
+    script_path = './get-accession-number'
+    try:
+        output = subprocess.check_output([script_path, dirname])
+    except subprocess.CalledProcessError:
+        LOGGER.info('Error running %s', script_path)
+        return None
+    try:
+        return ast.literal_eval(output)
+    except Exception:
+        LOGGER.info('Unable to parse output from %s. Output: %s', script_path, output)
+        return None
+
+
 def run_scripts(directory, *args):
     """
     Run all executable scripts in directory relative to this file.
@@ -162,13 +187,16 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key
     start_at = last_transfer
     target = dirs[start_at]
     LOGGER.info("Starting with %s", target)
+    # Get accession ID
+    accession = get_accession_id(target)
+    LOGGER.info("Accession ID: %s", accession)
     # Start transfer
     url = am_url + '/api/transfer/start_transfer/'
     params = {'user': user_name, 'api_key': api_key}
     data = {
         'name': target,
         'type': 'standard',
-        'accession': None,  # TODO set accession number
+        'accession': accession,
         'paths[]': [base64.b64encode(ts_location_uuid + ':' + os.path.join(ts_path, target))],
         'row_ids[]': [''],
     }
