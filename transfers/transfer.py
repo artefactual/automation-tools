@@ -30,6 +30,8 @@ import subprocess
 import sys
 import time
 
+from models import Unit, Session
+
 LOGGER = logging.getLogger('transfer')
 # Configure logging
 CONFIG = {
@@ -86,7 +88,7 @@ def _call_url_json(url, params):
         return None
 
 
-def get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file):
+def get_status(am_url, user, api_key, unit_uuid, unit_type, session):
     """
     Get status of the SIP or Transfer with unit_uuid.
 
@@ -102,9 +104,10 @@ def get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file):
     # If Transfer is complete, get the SIP's status
     if unit_info and unit_type == 'transfer' and unit_info['status'] == 'COMPLETE' and unit_info['sip_uuid'] != 'BACKLOG':
         LOGGER.info('%s is a complete transfer, fetching SIP %s status.', unit_uuid, unit_info['sip_uuid'])
-        # Update last_unit to refer to this one
-        with open(last_unit_file, 'w') as f:
-            print(unit_info['sip_uuid'], 'ingest', file=f)
+        # Update DB to refer to this one
+        db_unit = session.query(Unit).filter_by(unit_type=unit_type, uuid=unit_uuid).one()
+        db_unit.unit_type = 'ingest'
+        db_unit.uuid = unit_info['sip_uuid']
         # Get SIP status
         url = am_url + '/api/ingest/status/' + unit_info['sip_uuid'] + '/'
         unit_info = _call_url_json(url, params)
@@ -163,7 +166,12 @@ def run_scripts(directory, *args):
             LOGGER.warning('stderr: %s', stderr)
 
 
-def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key, last_unit_file):
+def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key, session):
+    """
+    Starts a new transfer.
+
+    :returns: Tuple of Transfer information about the new transfer or None on error.
+    """
     # Start new transfer
     # Get sorted list from source dir
     url = ss_url + '/api/v2/location/' + ts_location_uuid + '/browse/'
@@ -172,20 +180,23 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key
         params = {'path': base64.b64encode(ts_path)}
     browse_info = _call_url_json(url, params)
     if browse_info is None:
-        return 1
+        return None
     dirs = browse_info['directories']
     dirs = map(base64.b64decode, dirs)
 
-    # Find first one not already started (store in DB?)
-    # TODO keep a list of what's be processed and compare the fetched list against that
-    count_file = "count"
-    try:
-        with open(count_file, 'r') as f:
-            last_transfer = int(f.readline())
-    except Exception:
-        last_transfer = 0
-    start_at = last_transfer
-    target = dirs[start_at]
+    # Find the directories that are not already in the DB using sets
+    dirs = {os.path.join(ts_path, d) for d in dirs}  # Path same as DB
+    completed = {x[0] for x in session.query(Unit.path).all()}
+    dirs = dirs - completed
+    LOGGER.debug("New transfer candidates: %s", dirs)
+    # Sort, take the first
+    dirs = sorted(list(dirs))
+    if not dirs:
+        LOGGER.warning("All potential transfers in %s have been created. Exiting", ts_path)
+        return None
+    target = dirs[0]
+    target = os.path.relpath(target, ts_path)  # Strip prefix
+
     LOGGER.info("Starting with %s", target)
     # Get accession ID
     accession = get_accession_id(target)
@@ -193,11 +204,12 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key
     # Start transfer
     url = am_url + '/api/transfer/start_transfer/'
     params = {'user': user_name, 'api_key': api_key}
+    source_path = os.path.join(ts_path, target)
     data = {
         'name': target,
         'type': 'standard',
         'accession': accession,
-        'paths[]': [base64.b64encode(ts_location_uuid + ':' + os.path.join(ts_path, target))],
+        'paths[]': [base64.b64encode(ts_location_uuid + ':' + source_path)],
         'row_ids[]': [''],
     }
     LOGGER.debug('URL: %s; Params: %s; Data: %s', url, params, data)
@@ -207,11 +219,11 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key
         resp_json = response.json()
     except ValueError:
         LOGGER.warning('Could not parse JSON from response: %s', response.text)
-        return 1
+        return None
     if not response.ok or resp_json.get('error'):
         LOGGER.error('Unable to start transfer.')
         LOGGER.debug('Response: %s', resp_json)
-        return 1
+        return None
 
     # Run all scripts in pre-transfer directory
     # TODO what inputs do we want?
@@ -223,18 +235,18 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key
     # Approve transfer
     LOGGER.info("Ready to start")
     result = approve_transfer(target, am_url, api_key, user_name)
-    # TODO Mark as started
+    # Mark as started
     if result:
-        start_at = start_at + 1
         LOGGER.info('Approved %s', result)
-        with open(count_file, 'w') as f:
-            print(start_at, file=f)
-        with open(last_unit_file, 'w') as f:
-            print(result, 'transfer', file=f)
+        new_transfer = Unit(uuid=result, path=source_path, unit_type='transfer', current=True)
+        LOGGER.info('New transfer: %s', new_transfer)
+        session.add(new_transfer)
     else:
         LOGGER.warning('Not approved')
+        return None
 
     LOGGER.info('Finished %s', target)
+    return new_transfer
 
 
 def approve_transfer(directory_name, url, api_key, user_name):
@@ -276,29 +288,33 @@ def main(user, api_key, ts_uuid, ts_path, am_url, ss_url):
     this_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(this_dir)
 
+    session = Session()
+
     # Check status of last unit
-    # Find last unit started
-    last_unit_file = 'last_unit'
+    current_unit = None
     try:
-        with open(last_unit_file, 'r') as f:
-            last_unit = f.readline()
-        unit_uuid, unit_type = last_unit.split()
+        current_unit = session.query(Unit).filter_by(current=True).one()
+        unit_uuid = current_unit.uuid
+        unit_type = current_unit.unit_type
     except Exception:
+        LOGGER.debug('No current unit', exc_info=True)
         unit_uuid = unit_type = ''
-        LOGGER.info('Last unit: unknown.  Assuming new run.')
+        LOGGER.info('Current unit: unknown.  Assuming new run.')
         status = 'UNKNOWN'
     else:
-        LOGGER.info('Last unit: %s %s', unit_type, unit_uuid)
+        LOGGER.info('Current unit: %s', current_unit)
         # Get status
-        status_info = get_status(am_url, user, api_key, unit_uuid, unit_type, last_unit_file)
+        status_info = get_status(am_url, user, api_key, unit_uuid, unit_type, session)
         LOGGER.info('Status info: %s', status_info)
         if not status_info:
             LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
             return 1
         status = status_info.get('status')
+        current_unit.status = status
     # If processing, exit
     if status == 'PROCESSING':
-        LOGGER.info('Last transfer still processing, nothing to do.')
+        LOGGER.info('Current transfer still processing, nothing to do.')
+        session.commit()
         return 0
     # If waiting on input, send email, exit
     elif status == 'USER_INPUT':
@@ -311,9 +327,16 @@ def main(user, api_key, ts_uuid, ts_path, am_url, ss_url):
             status_info['name'],  # SIP/Transfer name
             status_info['type'],  # SIP or transfer
         )
+        session.commit()
         return 0
     # If failed, rejected, completed etc, start new transfer
-    return start_transfer(ss_url, ts_uuid, ts_path, am_url, user, api_key, last_unit_file)
+    if current_unit:
+        current_unit.current = False
+    new_transfer = start_transfer(ss_url, ts_uuid, ts_path, am_url, user, api_key, session)
+
+    session.commit()
+    return 0 if new_transfer else 1
+
 
 if __name__ == '__main__':
     args = docopt(__doc__)
