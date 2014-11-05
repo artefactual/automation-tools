@@ -66,6 +66,8 @@ CONFIG = {
 logging.config.dictConfig(CONFIG)
 
 
+THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+
 def _call_url_json(url, params):
     """
     Helper to GET a URL where the expected response is 200 with JSON.
@@ -125,7 +127,7 @@ def get_accession_id(dirname):
     :param str dirname: Directory name of folder to become transfer
     :returns: accession number or None.
     """
-    script_path = './get-accession-number'
+    script_path = os.path.join(THIS_DIR, 'get-accession-number')
     try:
         output = subprocess.check_output([script_path, dirname])
     except subprocess.CalledProcessError:
@@ -146,6 +148,7 @@ def run_scripts(directory, *args):
     :param args: All other parameters will be passed to called scripts.
     :return: None
     """
+    directory = os.path.join(THIS_DIR, directory)
     if not os.path.isdir(directory):
         LOGGER.warning('%s is not a directory. No scripts to run.', directory)
         return
@@ -284,10 +287,6 @@ def approve_transfer(directory_name, url, api_key, user_name):
 
 def main(user, api_key, ts_uuid, ts_path, am_url, ss_url):
     LOGGER.info("Waking up")
-    # FIXME Set the cwd to the same as this file so count_file works
-    this_dir = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(this_dir)
-
     session = Session()
 
     # Check status of last unit
