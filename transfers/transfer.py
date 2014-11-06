@@ -5,13 +5,14 @@ Automate Transfers
 Helper script to automate running transfers through Archivematica.
 
 Usage:
-    transfer.py --user=USERNAME --api-key=KEY --transfer-source=UUID [--transfer-path=PATH] [--am-url=URL] [--ss-url=URL]
+    transfer.py --user USERNAME --api-key KEY --transfer-source UUID [--transfer-path PATH] [--depth DEPTH] [--am-url URL] [--ss-url URL]
     transfer.py -h | --help
 
 -u USERNAME --user USERNAME     Username of the dashboard user to authenticate as
 -k KEY --api-key KEY            API key of the dashboard user
 -t UUID --transfer-source UUID  Transfer Source Location UUID to fetch transfers from
---transfer-path PATH            Relative path within the Transfer Source (optional)
+--transfer-path PATH            Relative path within the Transfer Source [default: ]
+-d DEPTH --depth DEPTH          Depth to create the transfers from relative to the transfer source location and path. Default creates transfers from the children of transfer-path. [default: 1]
 -a URL --am-url URL             Archivematica URL [default: http://127.0.0.1]
 -s URL --ss-url URL             Storage Service URL [default: http://127.0.0.1:8000]
 --transfer-type TYPE            Type of transfer to start. Unimplemented. [default: standard]
@@ -169,37 +170,71 @@ def run_scripts(directory, *args):
             LOGGER.warning('stderr: %s', stderr)
 
 
-def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key, session):
+def get_next_transfer(ss_url, ts_location_uuid, path_prefix, depth, completed):
     """
-    Starts a new transfer.
+    Helper to find the first directory that doesn't have an associated transfer.
 
-    :returns: Tuple of Transfer information about the new transfer or None on error.
+    :param ss_url: URL of the Storage Sevice to query
+    :param ts_location_uuid: UUID of the transfer source Location
+    :param path_prefix: Relative path inside the Location to work with.
+    :param depth: Depth relative to path_prefix to create a transfer from. Should be 1 or greater.
+    :param set completed: Set of the paths of completed transfers. Ideally, relative to the same transfer source location, including the same path_prefix, and at the same depth.
+    :returns: Path relative to TS Location of the new transfer
     """
-    # Start new transfer
     # Get sorted list from source dir
     url = ss_url + '/api/v2/location/' + ts_location_uuid + '/browse/'
     params = {}
-    if ts_path:
-        params = {'path': base64.b64encode(ts_path)}
+    if path_prefix:
+        params = {'path': base64.b64encode(path_prefix)}
     browse_info = _call_url_json(url, params)
     if browse_info is None:
         return None
     dirs = browse_info['directories']
     dirs = map(base64.b64decode, dirs)
+    LOGGER.debug('Dirs: %s', dirs)
+    dirs = [os.path.join(path_prefix, d) for d in dirs]
+    # If at the correct depth, check if any of these have not been made into transfers yet
+    if depth <= 1:
+        # Find the directories that are not already in the DB using sets
+        dirs = set(dirs) - completed
+        LOGGER.debug("New transfer candidates: %s", dirs)
+        # Sort, take the first
+        dirs = sorted(list(dirs))
+        if not dirs:
+            LOGGER.info("All potential transfers in %s have been created.", path_prefix)
+            return None
+        target = dirs[0]
+        return target
+    else:  # if depth > 1
+        # Recurse on each directory
+        for d in dirs:
+            LOGGER.debug('New path: %s', d)
+            target = get_next_transfer(ss_url, ts_location_uuid, d, depth - 1, completed)
+            if target:
+                return target
+    return None
 
-    # Find the directories that are not already in the DB using sets
-    dirs = {os.path.join(ts_path, d) for d in dirs}  # Path same as DB
+
+def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, api_key, session):
+    """
+    Starts a new transfer.
+
+    :param ss_url: URL of the Storage Sevice to query
+    :param ts_location_uuid: UUID of the transfer source Location
+    :param ts_path: Relative path inside the Location to work with.
+    :param depth: Depth relative to ts_path to create a transfer from. Should be 1 or greater.
+    :param am_url: URL of Archivematica pipeline to start transfer on
+    :param user_name: User on Archivematica for authentication
+    :param api_key: API key for user on Archivematica for authentication
+    :param session: SQLAlchemy session with the DB
+    :returns: Tuple of Transfer information about the new transfer or None on error.
+    """
+    # Start new transfer
     completed = {x[0] for x in session.query(Unit.path).all()}
-    dirs = dirs - completed
-    LOGGER.debug("New transfer candidates: %s", dirs)
-    # Sort, take the first
-    dirs = sorted(list(dirs))
-    if not dirs:
+    target = get_next_transfer(ss_url, ts_location_uuid, ts_path, depth, completed)
+    if not target:
         LOGGER.warning("All potential transfers in %s have been created. Exiting", ts_path)
         return None
-    target = dirs[0]
-    target = os.path.relpath(target, ts_path)  # Strip prefix
-
     LOGGER.info("Starting with %s", target)
     # Get accession ID
     accession = get_accession_id(target)
@@ -207,12 +242,12 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key
     # Start transfer
     url = am_url + '/api/transfer/start_transfer/'
     params = {'user': user_name, 'api_key': api_key}
-    source_path = os.path.join(ts_path, target)
+    target_name = os.path.basename(target)
     data = {
-        'name': target,
+        'name': target_name,
         'type': 'standard',
         'accession': accession,
-        'paths[]': [base64.b64encode(ts_location_uuid + ':' + source_path)],
+        'paths[]': [base64.b64encode(ts_location_uuid + ':' + target)],
         'row_ids[]': [''],
     }
     LOGGER.debug('URL: %s; Params: %s; Data: %s', url, params, data)
@@ -237,11 +272,11 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, am_url, user_name, api_key
 
     # Approve transfer
     LOGGER.info("Ready to start")
-    result = approve_transfer(target, am_url, api_key, user_name)
+    result = approve_transfer(target_name, am_url, api_key, user_name)
     # Mark as started
     if result:
         LOGGER.info('Approved %s', result)
-        new_transfer = Unit(uuid=result, path=source_path, unit_type='transfer', current=True)
+        new_transfer = Unit(uuid=result, path=target, unit_type='transfer', current=True)
         LOGGER.info('New transfer: %s', new_transfer)
         session.add(new_transfer)
     else:
@@ -285,7 +320,7 @@ def approve_transfer(directory_name, url, api_key, user_name):
     else:
         return None
 
-def main(user, api_key, ts_uuid, ts_path, am_url, ss_url):
+def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url):
     LOGGER.info("Waking up")
     session = Session()
 
@@ -331,7 +366,7 @@ def main(user, api_key, ts_uuid, ts_path, am_url, ss_url):
     # If failed, rejected, completed etc, start new transfer
     if current_unit:
         current_unit.current = False
-    new_transfer = start_transfer(ss_url, ts_uuid, ts_path, am_url, user, api_key, session)
+    new_transfer = start_transfer(ss_url, ts_uuid, ts_path, depth, am_url, user, api_key, session)
 
     session.commit()
     return 0 if new_transfer else 1
@@ -344,6 +379,7 @@ if __name__ == '__main__':
         api_key=args['--api-key'],
         ts_uuid=args['--transfer-source'],
         ts_path=args['--transfer-path'],
+        depth=int(args['--depth']),
         am_url=args['--am-url'],
         ss_url=args['--ss-url'],
     ))
