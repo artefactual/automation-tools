@@ -2,7 +2,7 @@ import os
 
 from sqlalchemy import create_engine
 from sqlalchemy import Sequence
-from sqlalchemy import Column, Boolean, Integer, String, Text
+from sqlalchemy import Column, Binary, Boolean, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -16,7 +16,7 @@ class Unit(Base):
     __tablename__ = 'unit'
     id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
     uuid = Column(String(36))
-    path = Column(Text())
+    path = Column(Binary())
     unit_type = Column(String(10))  # ingest or transfer
     status = Column(String(20), nullable=True)
     current = Column(Boolean(create_constraint=False))
