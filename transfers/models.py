@@ -19,6 +19,7 @@ class Unit(Base):
     path = Column(Binary())
     unit_type = Column(String(10))  # ingest or transfer
     status = Column(String(20), nullable=True)
+    microservice = Column(String(50))
     current = Column(Boolean(create_constraint=False))
 
     def __repr__(self):

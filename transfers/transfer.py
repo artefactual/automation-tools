@@ -354,13 +354,16 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url):
     elif status == 'USER_INPUT':
         LOGGER.info('Waiting on user input, running scripts in user-input directory.')
         # TODO What inputs do we want?
+        microservice = status_info.get('microservice', '')
         run_scripts('user-input',
-            status_info.get('microservice'),  # Microservice name
+            microservice,  # Current microservice name
+            str(microservice != current_unit.microservice),  # String True or False if this is the first time at this wait point
             status_info['path'],  # Absolute path
             status_info['uuid'],  # SIP/Transfer UUID
             status_info['name'],  # SIP/Transfer name
             status_info['type'],  # SIP or transfer
         )
+        current_unit.microservice = microservice
         session.commit()
         return 0
     # If failed, rejected, completed etc, start new transfer

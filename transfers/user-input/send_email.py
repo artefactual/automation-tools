@@ -14,7 +14,9 @@ DO NOT REPLY TO THIS MESSAGE.  This email address is not monitored.
 -Archivematica
 """
 
-def main(microservice_name, unit_path, unit_uuid, unit_name, unit_type):
+def main(microservice_name, first_time, unit_path, unit_uuid, unit_name, unit_type):
+    if first_time != 'True':
+        return
     if microservice_name != 'Approve normalization':
         return
     content = CONTENTS.format(name=unit_name, type=unit_type.title(), uuid=unit_uuid)
@@ -28,8 +30,9 @@ def main(microservice_name, unit_path, unit_uuid, unit_name, unit_type):
 
 if __name__ == '__main__':
     microservice_name = sys.argv[1]
-    unit_path = sys.argv[2]
-    unit_uuid = sys.argv[3]
-    unit_name = sys.argv[4]
-    unit_type = sys.argv[5]
-    sys.exit(main(microservice_name, unit_path, unit_uuid, unit_name, unit_type))
+    first_time = sys.argv[2]  # String True or False
+    unit_path = sys.argv[3]
+    unit_uuid = sys.argv[4]
+    unit_name = sys.argv[5]
+    unit_type = sys.argv[6]
+    sys.exit(main(microservice_name, first_time, unit_path, unit_uuid, unit_name, unit_type))
