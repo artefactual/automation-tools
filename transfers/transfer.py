@@ -261,6 +261,8 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, 
     if not response.ok or resp_json.get('error'):
         LOGGER.error('Unable to start transfer.')
         LOGGER.debug('Response: %s', resp_json)
+        new_transfer = Unit(path=target, unit_type='transfer', status='FAILED', current=False)
+        session.add(new_transfer)
         return None
 
     # Run all scripts in pre-transfer directory
