@@ -60,7 +60,7 @@ CONFIG = {
     'loggers': {
         'transfer': {
             'level': 'INFO',  # One of INFO, DEBUG, WARNING, ERROR, CRITICAL
-            'handlers': ['console'],
+            'handlers': ['console', 'file'],
         },
     },
 }
