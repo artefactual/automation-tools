@@ -326,6 +326,19 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url):
     LOGGER.info("Waking up")
     session = Session()
 
+    # Check for evidence that this is already running
+    pid_file = os.path.join(THIS_DIR, 'pid.lck')
+    try:
+        # Open PID file only if it doesn't exist for read/write
+        f = os.fdopen(os.open(pid_file, os.O_CREAT | os.O_EXCL | os.O_RDWR), 'r+')
+    except:
+        LOGGER.info('This script is already running. To override this behaviour and start a new run, remove %s', pid_file)
+        return 0
+    else:
+        pid = os.getpid()
+        f.write(str(pid))
+        f.close()
+
     # Check status of last unit
     current_unit = None
     try:
@@ -344,6 +357,7 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url):
         LOGGER.info('Status info: %s', status_info)
         if not status_info:
             LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
+            os.remove(pid_file)
             return 1
         status = status_info.get('status')
         current_unit.status = status
@@ -351,6 +365,7 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url):
     if status == 'PROCESSING':
         LOGGER.info('Current transfer still processing, nothing to do.')
         session.commit()
+        os.remove(pid_file)
         return 0
     # If waiting on input, send email, exit
     elif status == 'USER_INPUT':
@@ -367,6 +382,7 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url):
         )
         current_unit.microservice = microservice
         session.commit()
+        os.remove(pid_file)
         return 0
     # If failed, rejected, completed etc, start new transfer
     if current_unit:
@@ -374,6 +390,7 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url):
     new_transfer = start_transfer(ss_url, ts_uuid, ts_path, depth, am_url, user, api_key, session)
 
     session.commit()
+    os.remove(pid_file)
     return 0 if new_transfer else 1
 
 
