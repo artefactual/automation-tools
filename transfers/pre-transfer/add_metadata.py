@@ -7,7 +7,7 @@ import sys
 def main(transfer_path):
     basename = os.path.basename(transfer_path)
     try:
-        _, dc_id, _ = basename.split('---')
+        dc_id, _, _ = basename.split('---')
     except ValueError:
         return 1
     metadata = [
