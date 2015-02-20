@@ -1,11 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 Automate Transfers
 
 Helper script to automate running transfers through Archivematica.
 """
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import argparse
 import ast
 import base64
@@ -16,6 +16,28 @@ import requests
 import subprocess
 import sys
 import time
+
+try:
+    from os import fsencode, fsdecode
+except ImportError:
+    # Cribbed & modified from Python3's OS module to support Python2
+    def fsencode(filename):
+        encoding = sys.getfilesystemencoding()
+        if isinstance(filename, str):
+            return filename
+        elif isinstance(filename, unicode):
+            return filename.encode(encoding)
+        else:
+            raise TypeError("expect bytes or str, not %s" % type(filename).__name__)
+
+    def fsdecode(filename):
+        encoding = sys.getfilesystemencoding()
+        if isinstance(filename, unicode):
+            return filename
+        elif isinstance(filename, str):
+            return filename.decode(encoding)
+        else:
+            raise TypeError("expect bytes or str, not %s" % type(filename).__name__)
 
 from models import Unit, Session
 
@@ -115,11 +137,12 @@ def get_accession_id(dirname):
     :returns: accession number or None.
     """
     script_path = os.path.join(THIS_DIR, 'get-accession-number')
-    try:
-        output = subprocess.check_output([script_path, dirname])
-    except subprocess.CalledProcessError:
-        LOGGER.info('Error running %s', script_path)
+    p = subprocess.Popen([script_path, dirname], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, err = p.communicate()
+    if p.returncode != 0:
+        LOGGER.info('Error running %s %s: RC: %s; stdout: %s; stderr: %s', script_path, dirname, p.returncode, output, err)
         return None
+    output = fsdecode(output)
     try:
         return ast.literal_eval(output)
     except Exception:
@@ -176,7 +199,7 @@ def get_next_transfer(ss_url, ts_location_uuid, path_prefix, depth, completed):
     if browse_info is None:
         return None
     dirs = browse_info['directories']
-    dirs = map(base64.b64decode, dirs)
+    dirs = [base64.b64decode(d.encode('utf8')) for d in dirs]
     LOGGER.debug('Dirs: %s', dirs)
     dirs = [os.path.join(path_prefix, d) for d in dirs]
     # If at the correct depth, check if any of these have not been made into transfers yet
@@ -233,7 +256,7 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, 
         'name': target_name,
         'type': 'standard',
         'accession': accession,
-        'paths[]': [base64.b64encode(ts_location_uuid + ':' + target)],
+        'paths[]': [base64.b64encode(fsencode(ts_location_uuid) + b':' + target)],
         'row_ids[]': [''],
     }
     LOGGER.debug('URL: %s; Params: %s; Data: %s', url, params, data)
@@ -298,7 +321,7 @@ def approve_transfer(directory_name, url, api_key, user_name):
         return None
     for a in waiting_transfers['results']:
         LOGGER.debug("Found waiting transfer: %s", a['directory'])
-        if a['directory'] == directory_name:
+        if fsencode(a['directory']) == directory_name:
             # Post to approve transfer
             post_url = url + "/api/transfer/approve/"
             params = {'username': user_name, 'api_key': api_key, 'type': a['type'], 'directory': directory_name}
@@ -391,7 +414,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--user', metavar='USERNAME', required=True, help='Username of the dashboard user to authenticate as.')
     parser.add_argument('-k', '--api-key', metavar='KEY', required=True, help='API key of the dashboard user.')
     parser.add_argument('-t', '--transfer-source', metavar='UUID', required=True, help='Transfer Source Location UUID to fetch transfers from.')
-    parser.add_argument('--transfer-path', metavar='PATH', help='Relative path within the Transfer Source. Default: ""', default='')
+    parser.add_argument('--transfer-path', metavar='PATH', help='Relative path within the Transfer Source. Default: ""', type=fsencode, default=b'')  # Convert to bytes from unicode str provided by command line
     parser.add_argument('--depth', '-d', help='Depth to create the transfers from relative to the transfer source location and path. Default of 1 creates transfers from the children of transfer-path.', type=int, default=1)
     parser.add_argument('--am-url', '-a', metavar='URL', help='Archivematica URL. Default: http://127.0.0.1', default='http://127.0.0.1')
     parser.add_argument('--ss-url', '-s', metavar='URL', help='Storage Service URL. Default: http://127.0.0.1:8000', default='http://127.0.0.1:8000')

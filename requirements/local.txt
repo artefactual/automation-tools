@@ -1,4 +1,4 @@
 -r base.txt
-ipython
+ipython==1.0.0
 pytest
 vcrpy>=1.0.0

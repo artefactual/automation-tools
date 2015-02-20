@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 from email.mime.text import MIMEText
 import smtplib
 import sys

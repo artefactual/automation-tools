@@ -1,4 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
+
+from __future__ import print_function
 
 import json
 import os
@@ -10,6 +12,7 @@ def main(transfer_path):
         dc_id, _, _ = basename.split('---')
     except ValueError:
         return 1
+    print('Identifier: ', dc_id, end='')
     metadata = [
         {
             'parts': 'objects',
