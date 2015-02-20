@@ -3,26 +3,12 @@
 Automate Transfers
 
 Helper script to automate running transfers through Archivematica.
-
-Usage:
-    transfer.py --user USERNAME --api-key KEY --transfer-source UUID [--transfer-path PATH] [--depth DEPTH] [--am-url URL] [--ss-url URL]
-    transfer.py -h | --help
-
--u USERNAME --user USERNAME     Username of the dashboard user to authenticate as
--k KEY --api-key KEY            API key of the dashboard user
--t UUID --transfer-source UUID  Transfer Source Location UUID to fetch transfers from
---transfer-path PATH            Relative path within the Transfer Source [default: ]
--d DEPTH --depth DEPTH          Depth to create the transfers from relative to the transfer source location and path. Default creates transfers from the children of transfer-path. [default: 1]
--a URL --am-url URL             Archivematica URL [default: http://127.0.0.1]
--s URL --ss-url URL             Storage Service URL [default: http://127.0.0.1:8000]
---transfer-type TYPE            Type of transfer to start. Unimplemented. [default: standard]
---files                         Start transfers from files as well as folders. Unimplemeted. [default: False]
 """
 
 from __future__ import print_function
+import argparse
 import ast
 import base64
-from docopt import docopt
 import logging
 import logging.config  # Has to be imported separately
 import os
@@ -401,13 +387,24 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url):
 
 
 if __name__ == '__main__':
-    args = docopt(__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('-u', '--user', metavar='USERNAME', required=True, help='Username of the dashboard user to authenticate as.')
+    parser.add_argument('-k', '--api-key', metavar='KEY', required=True, help='API key of the dashboard user.')
+    parser.add_argument('-t', '--transfer-source', metavar='UUID', required=True, help='Transfer Source Location UUID to fetch transfers from.')
+    parser.add_argument('--transfer-path', metavar='PATH', help='Relative path within the Transfer Source. Default: ""', default='')
+    parser.add_argument('--depth', '-d', help='Depth to create the transfers from relative to the transfer source location and path. Default of 1 creates transfers from the children of transfer-path.', type=int, default=1)
+    parser.add_argument('--am-url', '-a', metavar='URL', help='Archivematica URL. Default: http://127.0.0.1', default='http://127.0.0.1')
+    parser.add_argument('--ss-url', '-s', metavar='URL', help='Storage Service URL. Default: http://127.0.0.1:8000', default='http://127.0.0.1:8000')
+    parser.add_argument('--transfer-type', metavar='TYPE', help="Type of transfer to start. One of: 'standard' (default), 'unzipped bag', 'zipped bag', 'dspace'.  Unimplemented.", default='standard', choices=['standard', 'unzipped bag', 'zipped bag', 'dspace'])
+    parser.add_argument('--files', action='store_true', help='Start transfers from files as well as folders. Unimplemented.')
+    args = parser.parse_args()
+
     sys.exit(main(
-        user=args['--user'],
-        api_key=args['--api-key'],
-        ts_uuid=args['--transfer-source'],
-        ts_path=args['--transfer-path'],
-        depth=int(args['--depth']),
-        am_url=args['--am-url'],
-        ss_url=args['--ss-url'],
+        user=args.user,
+        api_key=args.api_key,
+        ts_uuid=args.transfer_source,
+        ts_path=args.transfer_path,
+        depth=args.depth,
+        am_url=args.am_url,
+        ss_url=args.ss_url,
     ))
