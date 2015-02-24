@@ -39,6 +39,8 @@ except ImportError:
         else:
             raise TypeError("expect bytes or str, not %s" % type(filename).__name__)
 
+THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(THIS_DIR)
 from models import Unit, Session
 
 LOGGER = logging.getLogger('transfer')
@@ -75,7 +77,6 @@ CONFIG = {
 logging.config.dictConfig(CONFIG)
 
 
-THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
 def _call_url_json(url, params):
     """
