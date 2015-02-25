@@ -1,0 +1,21 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.5.3 CPython/3.4.0 Linux/3.13.0-43-generic]
+    method: GET
+    uri: http://127.0.0.1:8000/api/v2/location/badd8d39-9cee-495e-b7ee-5e6292549bad/browse/?path=U2FtcGxlVHJhbnNmZXJz
+  response:
+    body: {string: Resource with UUID badd8d39-9cee-495e-b7ee-5e6292549bad does not
+        exist}
+    headers:
+      Content-Type: [text/html; charset=utf-8]
+      Date: ['Wed, 25 Feb 2015 00:16:48 GMT']
+      Server: [WSGIServer/0.1 Python/2.7.6]
+      Vary: ['Accept, Cookie']
+      X-Frame-Options: [SAMEORIGIN]
+    status: {code: 404, message: NOT FOUND}
+version: 1

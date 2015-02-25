@@ -10,8 +10,14 @@ from transfers import transfer
 from transfers import models
 
 AM_URL = 'http://127.0.0.1'
+SS_URL = 'http://127.0.0.1:8000'
 USER = 'demo'
 API_KEY = '1c34274c0df0bca7edf9831dd838b4a6345ac2ef'
+
+TS_LOCATION_UUID = '2a3d8d39-9cee-495e-b7ee-5e629254934d'
+PATH_PREFIX = b'SampleTransfers'
+DEPTH = 1
+COMPLETED = set()
 
 engine = create_engine('sqlite:///:memory:')
 models.Base.metadata.create_all(engine)
@@ -79,3 +85,56 @@ class TestAutomateTransfers(unittest.TestCase):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
         info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', session)
         assert info is None
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_first_run.yaml')
+    def test_get_next_transfer_first_run(self):
+        # All default values
+        # Test
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, COMPLETED)
+        # Verify
+        assert path == b'SampleTransfers/BagTransfer'
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_existing_set.yaml')
+    def test_get_next_transfer_existing_set(self):
+        # Set completed set
+        completed = {b'SampleTransfers/BagTransfer'}
+        # Test
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed)
+        # Verify
+        assert path == b'SampleTransfers/CSVmetadata'
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_depth.yaml')
+    def test_get_next_transfer_depth(self):
+        # Set depth
+        depth = 2
+        # Test
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, depth, COMPLETED)
+        # Verify
+        assert path == b'SampleTransfers/BagTransfer/data'
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_no_prefix.yaml')
+    def test_get_next_transfer_no_prefix(self):
+        # Set no prefix
+        path_prefix = b''
+        # Test
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, path_prefix, DEPTH, COMPLETED)
+        # Verify
+        assert path == b'OPF format-corpus'
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_all_complete.yaml')
+    def test_get_next_transfer_all_complete(self):
+        # Set completed set to be all elements
+        completed = {b'SampleTransfers/BagTransfer', b'SampleTransfers/CSVmetadata', b'SampleTransfers/DigitizationOutput', b'SampleTransfers/DSpaceExport', b'SampleTransfers/Images', b'SampleTransfers/ISODiskImage', b'SampleTransfers/Multimedia', b'SampleTransfers/OCRImage', b'SampleTransfers/OfficeDocs', b'SampleTransfers/RawCameraImages', b'SampleTransfers/structMapSample'}
+        # Test
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed)
+        # Verify
+        assert path is None
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_bad_source.yaml')
+    def test_get_next_transfer_bad_source(self):
+        # Set bad TS Location UUID
+        ts_location_uuid = 'badd8d39-9cee-495e-b7ee-5e6292549bad'
+        # Test
+        path = transfer.get_next_transfer(SS_URL, ts_location_uuid, PATH_PREFIX, DEPTH, COMPLETED)
+        # Verify
+        assert path is None
