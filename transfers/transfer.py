@@ -225,7 +225,7 @@ def get_next_transfer(ss_url, ts_location_uuid, path_prefix, depth, completed):
     return None
 
 
-def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, api_key, session):
+def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, api_key, transfer_type, session):
     """
     Starts a new transfer.
 
@@ -255,7 +255,7 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, 
     target_name = os.path.basename(target)
     data = {
         'name': target_name,
-        'type': 'standard',
+        'type': transfer_type,
         'accession': accession,
         'paths[]': [base64.b64encode(fsencode(ts_location_uuid) + b':' + target)],
         'row_ids[]': [''],
@@ -338,7 +338,7 @@ def approve_transfer(directory_name, url, api_key, user_name):
     else:
         return None
 
-def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url):
+def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type):
     LOGGER.info("Waking up")
     session = Session()
 
@@ -403,7 +403,7 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url):
     # If failed, rejected, completed etc, start new transfer
     if current_unit:
         current_unit.current = False
-    new_transfer = start_transfer(ss_url, ts_uuid, ts_path, depth, am_url, user, api_key, session)
+    new_transfer = start_transfer(ss_url, ts_uuid, ts_path, depth, am_url, user, api_key, transfer_type, session)
 
     session.commit()
     os.remove(pid_file)
@@ -419,7 +419,7 @@ if __name__ == '__main__':
     parser.add_argument('--depth', '-d', help='Depth to create the transfers from relative to the transfer source location and path. Default of 1 creates transfers from the children of transfer-path.', type=int, default=1)
     parser.add_argument('--am-url', '-a', metavar='URL', help='Archivematica URL. Default: http://127.0.0.1', default='http://127.0.0.1')
     parser.add_argument('--ss-url', '-s', metavar='URL', help='Storage Service URL. Default: http://127.0.0.1:8000', default='http://127.0.0.1:8000')
-    parser.add_argument('--transfer-type', metavar='TYPE', help="Type of transfer to start. One of: 'standard' (default), 'unzipped bag', 'zipped bag', 'dspace'.  Unimplemented.", default='standard', choices=['standard', 'unzipped bag', 'zipped bag', 'dspace'])
+    parser.add_argument('--transfer-type', metavar='TYPE', help="Type of transfer to start. One of: 'standard' (default), 'unzipped bag', 'zipped bag', 'dspace'.", default='standard', choices=['standard', 'unzipped bag', 'zipped bag', 'dspace'])
     parser.add_argument('--files', action='store_true', help='Start transfers from files as well as folders. Unimplemented.')
     args = parser.parse_args()
 
@@ -431,4 +431,5 @@ if __name__ == '__main__':
         depth=args.depth,
         am_url=args.am_url,
         ss_url=args.ss_url,
+        transfer_type=args.transfer_type
     ))
