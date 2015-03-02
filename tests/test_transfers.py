@@ -18,6 +18,7 @@ TS_LOCATION_UUID = '2a3d8d39-9cee-495e-b7ee-5e629254934d'
 PATH_PREFIX = b'SampleTransfers'
 DEPTH = 1
 COMPLETED = set()
+FILES = False
 
 engine = create_engine('sqlite:///:memory:')
 models.Base.metadata.create_all(engine)
@@ -90,7 +91,7 @@ class TestAutomateTransfers(unittest.TestCase):
     def test_get_next_transfer_first_run(self):
         # All default values
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, COMPLETED)
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, COMPLETED, FILES)
         # Verify
         assert path == b'SampleTransfers/BagTransfer'
 
@@ -99,7 +100,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Set completed set
         completed = {b'SampleTransfers/BagTransfer'}
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed)
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, FILES)
         # Verify
         assert path == b'SampleTransfers/CSVmetadata'
 
@@ -108,7 +109,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Set depth
         depth = 2
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, depth, COMPLETED)
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, depth, COMPLETED, FILES)
         # Verify
         assert path == b'SampleTransfers/BagTransfer/data'
 
@@ -117,7 +118,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Set no prefix
         path_prefix = b''
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, path_prefix, DEPTH, COMPLETED)
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, path_prefix, DEPTH, COMPLETED, FILES)
         # Verify
         assert path == b'OPF format-corpus'
 
@@ -126,7 +127,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Set completed set to be all elements
         completed = {b'SampleTransfers/BagTransfer', b'SampleTransfers/CSVmetadata', b'SampleTransfers/DigitizationOutput', b'SampleTransfers/DSpaceExport', b'SampleTransfers/Images', b'SampleTransfers/ISODiskImage', b'SampleTransfers/Multimedia', b'SampleTransfers/OCRImage', b'SampleTransfers/OfficeDocs', b'SampleTransfers/RawCameraImages', b'SampleTransfers/structMapSample'}
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed)
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, FILES)
         # Verify
         assert path is None
 
@@ -135,6 +136,16 @@ class TestAutomateTransfers(unittest.TestCase):
         # Set bad TS Location UUID
         ts_location_uuid = 'badd8d39-9cee-495e-b7ee-5e6292549bad'
         # Test
-        path = transfer.get_next_transfer(SS_URL, ts_location_uuid, PATH_PREFIX, DEPTH, COMPLETED)
+        path = transfer.get_next_transfer(SS_URL, ts_location_uuid, PATH_PREFIX, DEPTH, COMPLETED, FILES)
         # Verify
         assert path is None
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_files.yaml')
+    def test_get_next_transfer_files(self):
+        # See files
+        files = True
+        completed = {b'SampleTransfers/BagTransfer'}
+        # Test
+        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, files)
+        # Verify
+        assert path == b'SampleTransfers/BagTransfer.zip'
