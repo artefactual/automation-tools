@@ -16,6 +16,7 @@ import logging.config  # Has to be imported separately
 import os
 import requests
 from six.moves import configparser
+from sqlalchemy import inspect
 import subprocess
 import sys
 import time
@@ -300,6 +301,28 @@ def get_next_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, path_prefix
     return None
 
 
+def create_or_update_unit(session, path, **kwargs):
+    """
+    Create a new Unit, or update an existing one with the same path.
+
+    :param session: SQLAlchemy session with the DB
+    :param path: Path for the new Unit, or Unit to be updated
+    :parma kwargs: Other attributes for the new Unit. Should be attributes of Unit.
+    :return: New or updated transfer
+    """
+    unit_attrs = [c.key for c in inspect(models.Unit).attrs if c.key not in ('id', 'path',)]
+    params = {k: v for k, v in kwargs.items() if k in unit_attrs}
+    params['path'] = path
+    try:
+        new_unit = session.query(models.Unit).filter_by(path=path)[0]
+        for attr, value in params.items():
+            setattr(new_unit, attr, value)
+    except IndexError:
+        new_unit = models.Unit(**params)
+    new_unit = session.merge(new_unit)
+    return new_unit
+
+
 def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth, am_url, am_user, am_api_key, transfer_type, see_files, session):
     """
     Starts a new transfer.
@@ -350,8 +373,7 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth
     if not response.ok or resp_json.get('error'):
         LOGGER.error('Unable to start transfer.')
         LOGGER.error('Response: %s', resp_json)
-        new_transfer = models.Unit(path=target, unit_type='transfer', status='FAILED', current=False, started_timestamp=datetime.datetime.now())
-        session.add(new_transfer)
+        new_transfer = create_or_update_unit(session, path=target, unit_type='transfer', status='FAILED', current=False, started_timestamp=datetime.datetime.now())
         return None
 
     # Run all scripts in pre-transfer directory
@@ -370,15 +392,13 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth
         # Mark as started
         if result:
             LOGGER.info('Approved %s', result)
-            new_transfer = models.Unit(uuid=result, path=target, unit_type='transfer', current=True, started_timestamp=datetime.datetime.now())
+            new_transfer = create_or_update_unit(session, path=target, uuid=result, unit_type='transfer', current=True, started_timestamp=datetime.datetime.now())
             LOGGER.info('New transfer: %s', new_transfer)
-            session.add(new_transfer)
             break
         LOGGER.info('Failed approve, try %s of %s', i + 1, retry_count)
     else:
         LOGGER.warning('Not approved')
-        new_transfer = models.Unit(uuid=None, path=target, unit_type='transfer', current=False, started_timestamp=datetime.datetime.utcnow())
-        session.add(new_transfer)
+        new_transfer = create_or_update_unit(session, path=target, uuid=None, unit_type='transfer', current=False, started_timestamp=datetime.datetime.now())
         return None
 
     LOGGER.info('Finished %s', target)

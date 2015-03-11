@@ -25,21 +25,27 @@ COMPLETED = set()
 FILES = False
 TimestampsMock = namedtuple('TimestampsMock', ['path', 'started_timestamp'])
 
-engine = create_engine('sqlite:///:memory:')
-models.Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
-session = Session()
-
 my_vcr = vcr.VCR(
     filter_query_parameters=['username', 'api_key']
 )
 
 class TestAutomateTransfers(unittest.TestCase):
+
+    engine = create_engine('sqlite:///:memory:')
+
+    def setUp(self):
+        models.Base.metadata.create_all(self.engine)
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
+
+    def tearDown(self):
+        models.Base.metadata.drop_all(self.engine)
+
     @my_vcr.use_cassette('fixtures/vcr_cassettes/get_status_transfer.yaml')
     def test_get_status_transfer(self):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
         transfer_name = 'test1'
-        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', session)
+        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', self.session)
         assert isinstance(info, dict)
         assert info['status'] == 'USER_INPUT'
         assert info['type'] == 'transfer'
@@ -56,11 +62,10 @@ class TestAutomateTransfers(unittest.TestCase):
         sip_uuid = 'f2248e2a-b593-43db-b60c-fa8513021785'
         # Setup transfer in DB
         new_transfer = models.Unit(uuid=transfer_uuid, path=b'/foo', unit_type='transfer', status='PROCESSING', current=True)
-        session.add(new_transfer)
-        session.commit()
+        self.session.add(new_transfer)
 
         # Run test
-        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', session)
+        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', self.session)
         # Verify
         assert isinstance(info, dict)
         assert info['status'] == 'USER_INPUT'
@@ -74,7 +79,7 @@ class TestAutomateTransfers(unittest.TestCase):
     def test_get_status_ingest(self):
         sip_uuid = 'f2248e2a-b593-43db-b60c-fa8513021785'
         sip_name = 'test1'
-        info = transfer.get_status(AM_URL, USER, API_KEY, sip_uuid, 'ingest', session)
+        info = transfer.get_status(AM_URL, USER, API_KEY, sip_uuid, 'ingest', self.session)
         assert isinstance(info, dict)
         assert info['status'] == 'USER_INPUT'
         assert info['type'] == 'SIP'
@@ -86,13 +91,13 @@ class TestAutomateTransfers(unittest.TestCase):
     @my_vcr.use_cassette('fixtures/vcr_cassettes/get_status_no_unit.yaml')
     def test_get_status_no_unit(self):
         transfer_uuid = 'deadc0de-c0de-c0de-c0de-deadc0dec0de'
-        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', session)
+        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', self.session)
         assert info is None
 
     @my_vcr.use_cassette('fixtures/vcr_cassettes/get_status_not_json.yaml')
     def test_get_status_not_json(self):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
-        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', session)
+        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', self.session)
         assert info is None
 
     def test_get_accession_id_no_script(self):
@@ -229,3 +234,53 @@ class TestAutomateTransfers(unittest.TestCase):
         path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, FILES, started_timestamps)
         # Verify
         assert path is None
+
+    def test_create_or_update_insert_new(self):
+        path = b'SampleTransfers/BagTransfer'
+        uuid = 'bfda3299-3e6c-4a49-bce2-cba1e229b18d'
+        unit_type = 'transfer'
+        current = True
+        timestamp = datetime(2010, 1, 1)
+        assert list(self.session.query(models.Unit).filter_by(path=path)) == []
+        # Test
+        new_unit = transfer.create_or_update_unit(self.session, path, uuid=uuid, unit_type=unit_type, current=current, started_timestamp=timestamp)
+
+        # Verify
+        assert new_unit
+        unit = self.session.query(models.Unit).filter_by(path=path).one()
+        assert unit.id == new_unit.id
+        assert unit.uuid == uuid == new_unit.uuid
+        assert unit.path == path == new_unit.path
+        assert unit.unit_type == unit_type == new_unit.unit_type
+        assert unit.current == current == new_unit.current
+        assert unit.started_timestamp == timestamp == new_unit.started_timestamp
+
+    def test_create_or_updated_update(self):
+        path = b'SampleTransfers/BagTransfer'
+        uuid = 'bfda3299-3e6c-4a49-bce2-cba1e229b18d'
+        unit_type = 'transfer'
+        current = True
+        timestamp = datetime(2010, 1, 1)
+        self.session.add(models.Unit(path=path, uuid=uuid, unit_type=unit_type, current=current, started_timestamp=timestamp))
+        assert len(list(self.session.query(models.Unit).filter_by(path=path))) == 1
+        unit = self.session.query(models.Unit).filter_by(path=path).one()
+        assert unit.id
+        assert unit.uuid == uuid
+        assert unit.path == path
+        assert unit.unit_type == unit_type
+        assert unit.current == current
+        assert unit.started_timestamp == timestamp
+
+        new_timestamp = datetime(2020, 2, 2)
+        # Test
+        new_unit = transfer.create_or_update_unit(self.session, path, started_timestamp=new_timestamp)
+        self.session.commit()
+        # Verify
+        assert len(list(self.session.query(models.Unit).filter_by(path=path))) == 1
+        unit = self.session.query(models.Unit).filter_by(path=path)[0]
+        assert unit.id == new_unit.id
+        assert unit.uuid == uuid == new_unit.uuid
+        assert unit.path == path == new_unit.path
+        assert unit.unit_type == unit_type == new_unit.unit_type
+        assert unit.current == current == new_unit.current
+        assert unit.started_timestamp == new_timestamp == new_unit.started_timestamp
