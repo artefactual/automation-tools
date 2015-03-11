@@ -1,0 +1,37 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.5.3 CPython/3.4.0 Linux/3.13.0-43-generic]
+    method: GET
+    uri: http://127.0.0.1:8000/api/v2/location/2a3d8d39-9cee-495e-b7ee-5e629254934d/browse/?path=U2FtcGxlVHJhbnNmZXJz
+  response:
+    body: {string: '{"directories": ["QmFnVHJhbnNmZXI=", "Q1NWbWV0YWRhdGE=", "RGlnaXRpemF0aW9uT3V0cHV0",
+        "RFNwYWNlRXhwb3J0", "SW1hZ2Vz", "SVNPRGlza0ltYWdl", "TXVsdGltZWRpYQ==", "T0NSSW1hZ2U=",
+        "T2ZmaWNlRG9jcw==", "UmF3Q2FtZXJhSW1hZ2Vz", "c3RydWN0TWFwU2FtcGxl"], "entries":
+        ["QmFnVHJhbnNmZXI=", "QmFnVHJhbnNmZXIuemlw", "Q1NWbWV0YWRhdGE=", "RGlnaXRpemF0aW9uT3V0cHV0",
+        "RFNwYWNlRXhwb3J0", "SW1hZ2Vz", "SVNPRGlza0ltYWdl", "TXVsdGltZWRpYQ==", "T0NSSW1hZ2U=",
+        "T2ZmaWNlRG9jcw==", "UmF3Q2FtZXJhSW1hZ2Vz", "U2FtcGxlVHJhbnNmZXJzU291cmNlcy50eHQ=",
+        "c3RydWN0TWFwU2FtcGxl"], "properties": {"Q1NWbWV0YWRhdGE=": {"timestamp":
+        "2013-05-13T13:26:48"}, "QmFnVHJhbnNmZXI=": {"timestamp": "2013-05-13T13:26:48"},
+        "QmFnVHJhbnNmZXIuemlw": {"size": 13187, "timestamp": "2013-05-13T13:26:48"},
+        "RFNwYWNlRXhwb3J0": {"timestamp": "2013-05-13T13:26:48"}, "RGlnaXRpemF0aW9uT3V0cHV0":
+        {"timestamp": "2013-05-13T13:26:48"}, "SVNPRGlza0ltYWdl": {"timestamp": "2014-06-05T11:06:03"},
+        "SW1hZ2Vz": {"timestamp": "2013-05-13T13:26:48"}, "T0NSSW1hZ2U=": {"timestamp":
+        "2014-10-07T12:09:30"}, "T2ZmaWNlRG9jcw==": {"timestamp": "2013-05-13T13:26:48"},
+        "TXVsdGltZWRpYQ==": {"timestamp": "2013-05-13T13:26:48"}, "U2FtcGxlVHJhbnNmZXJzU291cmNlcy50eHQ=":
+        {"size": 2047, "timestamp": "2013-05-13T13:26:49"}, "UmF3Q2FtZXJhSW1hZ2Vz":
+        {"timestamp": "2013-05-13T13:26:48"}, "c3RydWN0TWFwU2FtcGxl": {"timestamp":
+        "2013-05-13T13:26:49"}}}'}
+    headers:
+      Cache-Control: [no-cache]
+      Content-Type: [application/json]
+      Date: ['Mon, 09 Mar 2015 19:53:45 GMT']
+      Server: [WSGIServer/0.1 Python/2.7.6]
+      Vary: ['Accept, Cookie']
+      X-Frame-Options: [SAMEORIGIN]
+    status: {code: 200, message: OK}
+version: 1

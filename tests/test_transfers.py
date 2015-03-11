@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from collections import namedtuple
+from datetime import datetime
 import os
 import unittest
 
@@ -21,15 +23,19 @@ PATH_PREFIX = b'SampleTransfers'
 DEPTH = 1
 COMPLETED = set()
 FILES = False
+TimestampsMock = namedtuple('TimestampsMock', ['path', 'started_timestamp'])
 
 engine = create_engine('sqlite:///:memory:')
 models.Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
+my_vcr = vcr.VCR(
+    filter_query_parameters=['username', 'api_key']
+)
 
 class TestAutomateTransfers(unittest.TestCase):
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_status_transfer.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_status_transfer.yaml')
     def test_get_status_transfer(self):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
         transfer_name = 'test1'
@@ -42,7 +48,7 @@ class TestAutomateTransfers(unittest.TestCase):
         assert info['directory'] == transfer_name
         assert info['path'] == '/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers/standardTransfer/test1/'
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_status_transfer_to_ingest.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_status_transfer_to_ingest.yaml')
     def test_get_status_transfer_to_ingest(self):
         # Reference values
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
@@ -64,7 +70,7 @@ class TestAutomateTransfers(unittest.TestCase):
         assert info['directory'] == unit_name + '-' + sip_uuid
         assert info['path'] == '/var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/selectFormatIDToolIngest/test1-f2248e2a-b593-43db-b60c-fa8513021785/'
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_status_ingest.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_status_ingest.yaml')
     def test_get_status_ingest(self):
         sip_uuid = 'f2248e2a-b593-43db-b60c-fa8513021785'
         sip_name = 'test1'
@@ -77,13 +83,13 @@ class TestAutomateTransfers(unittest.TestCase):
         assert info['directory'] == sip_name + '-' + sip_uuid
         assert info['path'] == '/var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/selectFormatIDToolIngest/test1-f2248e2a-b593-43db-b60c-fa8513021785/'
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_status_no_unit.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_status_no_unit.yaml')
     def test_get_status_no_unit(self):
         transfer_uuid = 'deadc0de-c0de-c0de-c0de-deadc0dec0de'
         info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', session)
         assert info is None
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_status_not_json.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_status_not_json.yaml')
     def test_get_status_not_json(self):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
         info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', session)
@@ -93,7 +99,7 @@ class TestAutomateTransfers(unittest.TestCase):
         accession_id = transfer.get_accession_id(os.path.curdir)
         assert accession_id is None
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_first_run.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_first_run.yaml')
     def test_get_next_transfer_first_run(self):
         # All default values
         # Test
@@ -101,7 +107,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         assert path == b'SampleTransfers/BagTransfer'
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_existing_set.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_existing_set.yaml')
     def test_get_next_transfer_existing_set(self):
         # Set completed set
         completed = {b'SampleTransfers/BagTransfer'}
@@ -110,7 +116,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         assert path == b'SampleTransfers/CSVmetadata'
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_depth.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_depth.yaml')
     def test_get_next_transfer_depth(self):
         # Set depth
         depth = 2
@@ -119,7 +125,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         assert path == b'SampleTransfers/BagTransfer/data'
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_no_prefix.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_no_prefix.yaml')
     def test_get_next_transfer_no_prefix(self):
         # Set no prefix
         path_prefix = b''
@@ -128,7 +134,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         assert path == b'OPF format-corpus'
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_all_complete.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_all_complete.yaml')
     def test_get_next_transfer_all_complete(self):
         # Set completed set to be all elements
         completed = {b'SampleTransfers/BagTransfer', b'SampleTransfers/CSVmetadata', b'SampleTransfers/DigitizationOutput', b'SampleTransfers/DSpaceExport', b'SampleTransfers/Images', b'SampleTransfers/ISODiskImage', b'SampleTransfers/Multimedia', b'SampleTransfers/OCRImage', b'SampleTransfers/OfficeDocs', b'SampleTransfers/RawCameraImages', b'SampleTransfers/structMapSample'}
@@ -137,7 +143,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         assert path is None
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_bad_source.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_bad_source.yaml')
     def test_get_next_transfer_bad_source(self):
         # Set bad TS Location UUID
         ts_location_uuid = 'badd8d39-9cee-495e-b7ee-5e6292549bad'
@@ -146,7 +152,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         assert path is None
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_files.yaml')
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_files.yaml')
     def test_get_next_transfer_files(self):
         # See files
         files = True
@@ -156,6 +162,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         assert path == b'SampleTransfers/BagTransfer.zip'
 
+    # Not ignoring the auth parameters
     @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_failed_auth.yaml')
     def test_get_next_transfer_failed_auth(self):
         # All default values
@@ -163,5 +170,62 @@ class TestAutomateTransfers(unittest.TestCase):
         ss_key = 'dne'
         # Test
         path = transfer.get_next_transfer(SS_URL, ss_user, ss_key, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, COMPLETED, FILES)
+        # Verify
+        assert path is None
+
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_updated_timestamp.yaml')
+    def test_get_next_transfer_updated_timestamp(self):
+        # Set timestamps
+        completed = {b'SampleTransfers/BagTransfer', b'SampleTransfers/CSVmetadata', b'SampleTransfers/DigitizationOutput', b'SampleTransfers/DSpaceExport', b'SampleTransfers/Images', b'SampleTransfers/ISODiskImage', b'SampleTransfers/Multimedia', b'SampleTransfers/OCRImage', b'SampleTransfers/OfficeDocs', b'SampleTransfers/RawCameraImages', b'SampleTransfers/structMapSample'}
+        started_timestamps = [
+            TimestampsMock(b'SampleTransfers/BagTransfer', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/Images', datetime(2010, 1, 1)),
+        ]
+        # Test
+        path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, FILES, started_timestamps)
+        # Verify
+        assert path == b'SampleTransfers/Images'
+
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_no_new_timestamp.yaml')
+    def test_get_next_transfer_no_new_timestamp(self):
+        # Set timestamps
+        completed = {b'SampleTransfers/BagTransfer', b'SampleTransfers/CSVmetadata', b'SampleTransfers/DigitizationOutput', b'SampleTransfers/DSpaceExport', b'SampleTransfers/Images', b'SampleTransfers/ISODiskImage', b'SampleTransfers/Multimedia', b'SampleTransfers/OCRImage', b'SampleTransfers/OfficeDocs', b'SampleTransfers/RawCameraImages', b'SampleTransfers/structMapSample'}
+        started_timestamps = [
+            TimestampsMock(b'SampleTransfers/BagTransfer', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/CSVmetadata', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/DigitizationOutput', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/DSpaceExport', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/Images', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/ISODiskImage', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/Multimedia', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/OCRImage', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/OfficeDocs', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/RawCameraImages', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/structMapSample', datetime(2020, 1, 1)),
+        ]
+        # Test
+        path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, FILES, started_timestamps)
+        # Verify
+        assert path is None
+
+    @my_vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_missing_timestamps.yaml')
+    def test_get_next_transfer_missing_timestamps(self):
+        # Set timestamps
+        completed = {b'SampleTransfers/BagTransfer', b'SampleTransfers/CSVmetadata', b'SampleTransfers/DigitizationOutput', b'SampleTransfers/DSpaceExport', b'SampleTransfers/Images', b'SampleTransfers/ISODiskImage', b'SampleTransfers/Multimedia', b'SampleTransfers/OCRImage', b'SampleTransfers/OfficeDocs', b'SampleTransfers/RawCameraImages', b'SampleTransfers/structMapSample'}
+        started_timestamps = [
+            TimestampsMock(b'SampleTransfers/BagTransfer', None),
+            TimestampsMock(b'SampleTransfers/CSVmetadata', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/DigitizationOutput', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/DSpaceExport', None),
+            TimestampsMock(b'SampleTransfers/Images', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/ISODiskImage', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/Multimedia', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/OCRImage', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/OfficeDocs', datetime(2020, 1, 1)),
+            TimestampsMock(b'SampleTransfers/RawCameraImages', None),
+            TimestampsMock(b'SampleTransfers/structMapSample', datetime(2020, 1, 1)),
+        ]
+        # Test
+        path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, FILES, started_timestamps)
         # Verify
         assert path is None
