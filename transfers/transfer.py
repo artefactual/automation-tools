@@ -9,6 +9,7 @@ from __future__ import print_function, unicode_literals
 import argparse
 import ast
 import base64
+import datetime
 import logging
 import logging.config  # Has to be imported separately
 import os
@@ -328,7 +329,7 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth
     if not response.ok or resp_json.get('error'):
         LOGGER.error('Unable to start transfer.')
         LOGGER.error('Response: %s', resp_json)
-        new_transfer = models.Unit(path=target, unit_type='transfer', status='FAILED', current=False)
+        new_transfer = models.Unit(path=target, unit_type='transfer', status='FAILED', current=False, started_timestamp=datetime.datetime.utcnow())
         session.add(new_transfer)
         return None
 
@@ -348,14 +349,14 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth
         # Mark as started
         if result:
             LOGGER.info('Approved %s', result)
-            new_transfer = models.Unit(uuid=result, path=target, unit_type='transfer', current=True)
+            new_transfer = models.Unit(uuid=result, path=target, unit_type='transfer', current=True, started_timestamp=datetime.datetime.utcnow())
             LOGGER.info('New transfer: %s', new_transfer)
             session.add(new_transfer)
             break
         LOGGER.info('Failed approve, try %s of %s', i + 1, retry_count)
     else:
         LOGGER.warning('Not approved')
-        new_transfer = models.Unit(uuid=None, path=target, unit_type='transfer', current=False)
+        new_transfer = models.Unit(uuid=None, path=target, unit_type='transfer', current=False, started_timestamp=datetime.datetime.utcnow())
         session.add(new_transfer)
         return None
 
