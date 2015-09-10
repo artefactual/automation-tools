@@ -1,2 +1,4 @@
 requests<3.0
 sqlalchemy
+lxml
+-e git://github.com/artefactual-labs/mets-reader-writer.git@dev/dataverse#egg=metsrw
