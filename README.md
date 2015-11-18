@@ -3,37 +3,54 @@ Automation Tools
 
 The Automation Tools project is a set of python scripts, that are designed to automate the processing of transfers in an Archivematica pipeline.
 
-Currently, the only automation tool is automate transfers.  It is used to prepare transfers, move them into the pipelines processing location, and take actions when user input is required.  Only one transfer is sent to the pipeline at a time, the scripts wait until the current transfer is resolved (failed, rejected or stored as an AIP) before automatically starting the next available transfer. 
+Installation
+------------
 
-The code is available on [Github](http://github.com/artefactual/automation-tools).
+* Checkout or link the code in this repo to `/usr/lib/archivematica/automation-tools`
+* Create virtualenv `/usr/share/python/automation-tools` and pip install requirements there
+* Create directories `/var/log/archivematica/automation-tools` and `/var/archivematica/automation-tools` owned by user `archivematica`, for log/database/PID files.
+* Create directory `/etc/archivematica/automation-tools` and add configuration files there. Files in the `etc/` directory of this repository can be used as an example (also see below for more about configuration)
 
-The code is deployed to `/usr/lib/archivematica/automation-tools`.
+Automated transfers
+-------------------
 
-Deployment
-----------
+`transfers/transfer.py` is used to prepare transfers, move them into the pipelines processing location, and take actions when user input is required.
+Only one transfer is sent to the pipeline at a time, the scripts wait until the current transfer is resolved (failed, rejected or stored as an AIP) before automatically starting the next available transfer.
 
-Suggested deployment is to use cron to run a shell script that runs the automate transfer tool. Example shell script:
+### Configuration - Overview
 
-    #!/bin/bash
-    cd /usr/lib/archivematica/automation-tools/transfers/
-    /usr/share/python/automation-tools/bin/python transfer.py --user <add user>  --api-key <add api key> --transfer-source <add transfer source location uuid> --depth 2
+Suggested deployment is to use cron to run a shell script that runs the automate transfer tool. Example shell script (for example in `/etc/archivematica/automation-tools/transfer-script.sh`):
 
-This script is run through a crontab entry. Example:
+```
+#!/bin/bash
+cd /usr/lib/archivematica/automation-tools/
+/usr/share/python/automation-tools/bin/python -m transfers.transfer --user <user>  --api-key <apikey> --transfer-source <transfer_source_uuid> --config-file <config_file>
+```
 
-    */5 * * * * /etc/archivematica/automation-tools/transfer-script.sh
+(Note that the script calls the transfers script as a module using python's `-m` flag, this is required due to the use of relative imports in the code)
 
-The cron entry executes the `transfer-script.sh` script. This should be run as the same user as Archivematica is run as (likely the `archivematica` user.)
+The script can be run from a shell window like:
 
-When running, automate transfers stores its working state in transfers.db, a sqlite database.  It contains a record of all the transfers that have been processed.  In a testing environment, deleting this file will cause the tools to re-process any and all folders found in the Transfer Source Location. 
+```
+user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./transfer-script.sh
+```
 
-Configuration
--------------
+It is suggested to run the script through a crontab entry for user archivematica (to avoid the need to repeatedly invoke it manually):
 
-This script can be modified to adjust how automated transfers work.  The full set of parameters that can be changed are:
+```
+*/5 * * * * /etc/archivematica/automation-tools/transfer-script.sh
+```
+
+When running, automated transfers stores its working state in a sqlite database.  It contains a record of all the transfers that have been processed.  In a testing environment, deleting this file will cause the tools to re-process any and all folders found in the Transfer Source Location.
+
+### Configuration - Parameters
+
+The `transfers.py` script can be modified to adjust how automated transfers work.  The full set of parameters that can be changed are:
 
 * `-u USERNAME, --user USERNAME` [REQUIRED]: Username of the dashboard user to authenticate as.
 * `-k KEY, --api-key KEY` [REQUIRED]: API key of the dashboard user.
 * `-t UUID, --transfer-source UUID`: [REQUIRED] Transfer Source Location UUID to fetch transfers from. Check the next section for more details on this field.
+* `-c FILE, --config-file FILE`: config file containing file paths for log/database/PID files. Default: log/database/PID files stored in the same directory as the script (not recommended for production)
 * `--transfer-path PATH`: Relative path within the Transfer Source. Default: ""
 * `--depth DEPTH, -d DEPTH`: Depth to create the transfers from relative to the transfer source location and path. Default of 1 creates transfers from the children of transfer-path.
 * `--am-url URL, -a URL`:Archivematica URL. Default: http://127.0.0.1
@@ -48,16 +65,13 @@ The easiest way to configure the tasks that automation-tools will run is by usin
 
 1. Go to Administration|Processing Configuration and choose the options you wish to use.
 
-2. Save the configuation on the form.
+2. Save the configuration on the form.
 
 3. Copy the processing configuration file from '/var/archivematica/sharedDirectory/sharedMicroServiceTasksConfigs/processingMCPConfigs/defaultProcessingMCP.xml' on the Archivematica host machine to the transfers/ directory of your automation-tools installation location.
 
-
 The automation-tools command-line also relies on installation-specific UUIDs. To obtain the transfer source UUID for script invocation, visit the 'Transfer Source' tab in the Archivematica Storage Space web dashboard. If a row is marked as a transfer souce its UUID value will be valid as a transfer source argument.
 
-
-Hooks
------
+### Hooks
 
 During processing, automate transfers will run scripts from several places to customize behaviour. These scripts can be in any language. If they are written in Python, we recommend making them source compatible with python 2 or 3.
 
@@ -73,7 +87,7 @@ There are also several scripts provided for common use cases and examples of pro
 These are found in the `examples` directory sorted by their usecase and can be copied or symlinked to the appropriate directory for automation-tools to run them.
 If you write a script that might be useful for others, please make a pull request!
 
-### get-accession-id
+#### get-accession-id
 
 * _Name:_ `get-accession-id`
 * _Location:_ Same directory as transfers.py
@@ -83,7 +97,7 @@ If you write a script that might be useful for others, please make a pull reques
 
 `get-accession-number` is run to customize the accession number of the created transfer. Its single parameter is the path relative to the transfer source location.  Note that no files are locally available when `get-accession-id` is run. It should print to standard output the quoted value of the accession number (e.g. `"ID42"`), `None`, or no output. If the return code is not 0, all output is ignored. This is POSTed to the Archivematica REST API when the transfer is created.
 
-### pre-transfer hooks
+#### pre-transfer hooks
 
 * _Parameters:_ [`absolute path`, `transfer type`]
 
@@ -101,7 +115,7 @@ There are some sample scripts in the pre-transfers directory that may be useful,
 * `archivesspace_ids.py`: Creates an archivesspaceids.csv by parsing ArchivesSpace reference IDs from filenames.  This will automate the matching GUI if a DIP is uploaded to ArchivesSpace.
 * `default_config.py`: Copies the included `defaultProcessingMCP.xml` into the transfer directory. This file overrides any configuration set in the Archivematica dashboard, so that user choices are guaranteed and avoided as desired.
 
-### user-input
+#### user-input
 
 * _Parameters:_ [`microservice name`, `first time at wait point`, `absolute path` , `unit UUID`, `unit name`, `unit type`]
 
@@ -118,12 +132,11 @@ All scripts are passed the same set of parameters.
 
 There are some sample scripts in the pre-transfers directory that may be useful, or models for your own scripts.
 
-* `send_email.py`: Emails the first time a transfer is waitintg for input at Approve Normalization.  It can be edited to change the email addresses it sends notices to, or to change the notification message.
+* `send_email.py`: Emails the first time a transfer is waiting for input at Approve Normalization.  It can be edited to change the email addresses it sends notices to, or to change the notification message.
 
-Logs
-----
+### Logs
 
-Logs are written to the same directory as the `transfers.py` script. The logging level can be adjusted, by modifying the transfers/transfer.py file. Find the following section and changed `'INFO'` to one of `'INFO'`, `'DEBUG'`, `'WARNING'`, `'ERROR'` or `'CRITICAL'`.
+Logs are written to a directory specified in the config file (or `/var/log/archivematica/automation-tools/` by default). The logging level can be adjusted, by modifying the transfers/transfer.py file. Find the following section and changed `'INFO'` to one of `'INFO'`, `'DEBUG'`, `'WARNING'`, `'ERROR'` or `'CRITICAL'`.
 
     'loggers': {
         'transfer': {
@@ -131,6 +144,22 @@ Logs are written to the same directory as the `transfers.py` script. The logging
             'handlers': ['console', 'file'],
         },
     },
+
+### Multiple automated transfer instances
+
+You may need to set up multiple automated transfer instances, for example if required to ingest both standard transfers and bags. In cases where hooks are the same for both instances, it could be achieved by setting up different scripts, each one invoking the transfers.py script with the required parameters. Example:
+
+```
+# first script invokes like this (standard transfer):
+/usr/share/python/automation-tools/bin/python -m transfers.transfer --user <user>  --api-key <apikey> --transfer-source <transfer_source_uuid_for_std_xfers> --config-file <config_file>
+
+# second script invokes like this (unzipped bags):
+/usr/share/python/automation-tools/bin/python -m transfers.transfer --user <user>  --api-key <apikey> --transfer-source <transfer_source_2_uuid_for_bags> --config-file <config_file_2> --transfer-type 'unzipped bag'
+```
+
+`<config_file_1>` and `<config_file_2>` should specify different file names for db/PID/log files. See transfers.conf and transfers-2.conf in etc/ for an example
+
+In case different hooks are required for each instance, a possible approach is to checkout a new instance of the automation tools, for example in `/usr/lib/archivematica/automation-tools-2`
 
 Related Projects
 ----------------

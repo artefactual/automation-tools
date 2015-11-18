@@ -13,9 +13,12 @@ import logging
 import logging.config  # Has to be imported separately
 import os
 import requests
+from six.moves import configparser
 import subprocess
 import sys
 import time
+
+from . import models
 
 try:
     from os import fsencode, fsdecode
@@ -41,41 +44,58 @@ except ImportError:
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(THIS_DIR)
-from models import Unit, Session
 
 LOGGER = logging.getLogger('transfer')
-# Configure logging
-CONFIG = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'default': {
-            'format': '%(levelname)-8s  %(asctime)s  %(filename)s:%(lineno)-4s %(message)s',
-            'datefmt': '%Y-%m-%d %H:%M:%S',
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'default',
-        },
-        'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'formatter': 'default',
-            'filename': os.path.join(os.path.abspath(os.path.dirname(__file__)), 'automate-transfer.log'),
-            'backupCount': 2,
-            'maxBytes': 10 * 1024,
-        },
-    },
-    'loggers': {
-        'transfer': {
-            'level': 'INFO',  # One of INFO, DEBUG, WARNING, ERROR, CRITICAL
-            'handlers': ['console', 'file'],
-        },
-    },
-}
-logging.config.dictConfig(CONFIG)
 
+CONFIG_FILE = None
+
+
+def get_setting(setting, default=None):
+    config = configparser.SafeConfigParser()
+    try:
+        config.read(CONFIG_FILE)
+        return config.get('transfers', setting)
+    except Exception:
+        return default
+
+
+def setup(config_file):
+    global CONFIG_FILE
+    CONFIG_FILE = config_file
+    models.init(get_setting('databasefile', os.path.join(THIS_DIR, 'transfers.db')))
+
+    # Configure logging
+    default_logfile = os.path.join(THIS_DIR, 'automate-transfer.log')
+    CONFIG = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'default': {
+                'format': '%(levelname)-8s  %(asctime)s  %(filename)s:%(lineno)-4s %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S',
+            },
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'default',
+            },
+            'file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'formatter': 'default',
+                'filename': get_setting('logfile', default_logfile),
+                'backupCount': 2,
+                'maxBytes': 10 * 1024,
+            },
+        },
+        'loggers': {
+            'transfer': {
+                'level': 'INFO',  # One of INFO, DEBUG, WARNING, ERROR, CRITICAL
+                'handlers': ['console', 'file'],
+            },
+        },
+    }
+    logging.config.dictConfig(CONFIG)
 
 
 def _call_url_json(url, params):
@@ -126,7 +146,7 @@ def get_status(am_url, user, api_key, unit_uuid, unit_type, session, hide_on_com
     if unit_info and unit_type == 'transfer' and unit_info['status'] == 'COMPLETE' and unit_info['sip_uuid'] != 'BACKLOG':
         LOGGER.info('%s is a complete transfer, fetching SIP %s status.', unit_uuid, unit_info['sip_uuid'])
         # Update DB to refer to this one
-        db_unit = session.query(Unit).filter_by(unit_type=unit_type, uuid=unit_uuid).one()
+        db_unit = session.query(models.Unit).filter_by(unit_type=unit_type, uuid=unit_uuid).one()
         db_unit.unit_type = 'ingest'
         db_unit.uuid = unit_info['sip_uuid']
         # Get SIP status
@@ -158,8 +178,8 @@ def get_accession_id(dirname):
     script_path = os.path.join(THIS_DIR, 'get-accession-number')
     try:
         p = subprocess.Popen([script_path, dirname], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except FileNotFoundError:
-        LOGGER.info('%s does not exist.', script_path)
+    except Exception:
+        LOGGER.info('Error when trying to run %s', script_path)
         return None
     output, err = p.communicate()
     if p.returncode != 0:
@@ -270,7 +290,7 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, 
     :returns: Tuple of Transfer information about the new transfer or None on error.
     """
     # Start new transfer
-    completed = {x[0] for x in session.query(Unit.path).all()}
+    completed = {x[0] for x in session.query(models.Unit.path).all()}
     target = get_next_transfer(ss_url, ts_location_uuid, ts_path, depth, completed, see_files)
     if not target:
         LOGGER.warning("All potential transfers in %s have been created. Exiting", ts_path)
@@ -301,13 +321,14 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, 
     if not response.ok or resp_json.get('error'):
         LOGGER.error('Unable to start transfer.')
         LOGGER.error('Response: %s', resp_json)
-        new_transfer = Unit(path=target, unit_type='transfer', status='FAILED', current=False)
+        new_transfer = models.Unit(path=target, unit_type='transfer', status='FAILED', current=False)
         session.add(new_transfer)
         return None
 
     # Run all scripts in pre-transfer directory
     # TODO what inputs do we want?
-    run_scripts('pre-transfer',
+    run_scripts(
+        'pre-transfer',
         resp_json['path'],  # Absolute path
         'standard',  # Transfer type
     )
@@ -320,14 +341,14 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, 
         # Mark as started
         if result:
             LOGGER.info('Approved %s', result)
-            new_transfer = Unit(uuid=result, path=target, unit_type='transfer', current=True)
+            new_transfer = models.Unit(uuid=result, path=target, unit_type='transfer', current=True)
             LOGGER.info('New transfer: %s', new_transfer)
             session.add(new_transfer)
             break
         LOGGER.info('Failed approve, try %s of %s', i + 1, retry_count)
     else:
         LOGGER.warning('Not approved')
-        new_transfer = Unit(uuid=None, path=target, unit_type='transfer', current=False)
+        new_transfer = models.Unit(uuid=None, path=target, unit_type='transfer', current=False)
         session.add(new_transfer)
         return None
 
@@ -368,12 +389,18 @@ def approve_transfer(directory_name, url, api_key, user_name):
     else:
         return None
 
-def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, see_files, hide_on_complete=False):
+
+def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, see_files, hide_on_complete=False, config_file=None):
+
+    setup(config_file)
+
     LOGGER.info("Waking up")
-    session = Session()
+
+    session = models.Session()
 
     # Check for evidence that this is already running
-    pid_file = os.path.join(THIS_DIR, 'pid.lck')
+    default_pidfile = os.path.join(THIS_DIR, 'pid.lck')
+    pid_file = get_setting('pidfile', default_pidfile)
     try:
         # Open PID file only if it doesn't exist for read/write
         f = os.fdopen(os.open(pid_file, os.O_CREAT | os.O_EXCL | os.O_RDWR), 'r+')
@@ -388,7 +415,7 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, 
     # Check status of last unit
     current_unit = None
     try:
-        current_unit = session.query(Unit).filter_by(current=True).one()
+        current_unit = session.query(models.Unit).filter_by(current=True).one()
         unit_uuid = current_unit.uuid
         unit_type = current_unit.unit_type
     except Exception:
@@ -418,7 +445,8 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, 
         LOGGER.info('Waiting on user input, running scripts in user-input directory.')
         # TODO What inputs do we want?
         microservice = status_info.get('microservice', '')
-        run_scripts('user-input',
+        run_scripts(
+            'user-input',
             microservice,  # Current microservice name
             str(microservice != current_unit.microservice),  # String True or False if this is the first time at this wait point
             status_info['path'],  # Absolute path
@@ -441,6 +469,7 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, 
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-u', '--user', metavar='USERNAME', required=True, help='Username of the dashboard user to authenticate as.')
     parser.add_argument('-k', '--api-key', metavar='KEY', required=True, help='API key of the dashboard user.')
@@ -452,6 +481,7 @@ if __name__ == '__main__':
     parser.add_argument('--transfer-type', metavar='TYPE', help="Type of transfer to start. One of: 'standard' (default), 'unzipped bag', 'zipped bag', 'dspace'.", default='standard', choices=['standard', 'unzipped bag', 'zipped bag', 'dspace'])
     parser.add_argument('--files', action='store_true', help='If set, start transfers from files as well as folders.')
     parser.add_argument('--hide', action='store_true', help='If set, hide the Transfers and SIPs in the dashboard once they complete.')
+    parser.add_argument('-c', '--config-file', metavar='FILE', help='Configuration file(log/db/PID files)', default=None)
     args = parser.parse_args()
 
     sys.exit(main(
@@ -465,4 +495,5 @@ if __name__ == '__main__':
         transfer_type=args.transfer_type,
         see_files=args.files,
         hide_on_complete=args.hide,
+        config_file=args.config_file,
     ))
