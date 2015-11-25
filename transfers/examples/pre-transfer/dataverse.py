@@ -77,6 +77,82 @@ def create_ddi(j):
 
     return ddi_root
 
+def create_bundle(tabfile_json):
+    """
+    Creates and returns the metsrw entries for a tabfile's bundle
+    """
+    # Base name is .tab with suffix stripped
+    base_name = tabfile_json['label'][:-4]
+    bundle = metsrw.FSEntry(
+        path=base_name,
+        type='Directory',
+    )
+
+    # Find original file
+    ext = EXTENSION_MAPPING[tabfile_json['datafile']['originalFormatLabel']]
+    original_file = metsrw.FSEntry(
+        path=base_name + '/' + base_name + ext,
+        use='original',
+        file_uuid=str(uuid.uuid4()),
+        checksumtype='MD5',
+        checksum=tabfile_json['datafile']['md5']
+    )
+    bundle.add_child(original_file)
+    if tabfile_json['datafile']['originalFormatLabel'] != "R Data":
+        # RData derivative
+        f = metsrw.FSEntry(
+            path=base_name + '/' + base_name + '.RData',
+            use='derivative',
+            derived_from=original_file,
+            file_uuid=str(uuid.uuid4()),
+        )
+        bundle.add_child(f)
+
+    # Add expected bundle contents
+    # FIXME what is the actual path for the files?
+    # Tabfile
+    f = metsrw.FSEntry(
+        path=base_name + '/' + tabfile_json['datafile']['name'],
+        use='derivative',
+        derived_from=original_file,
+        file_uuid=str(uuid.uuid4()),
+    )
+    f.add_dmdsec(
+        md=base_name + '/' + base_name + '-ddi.xml',
+        mdtype='DDI',
+        mode='mdref',
+        label=base_name + '-ddi.xml',
+        loctype='OTHER',
+        otherloctype='SYSTEM',
+    )
+    bundle.add_child(f)
+    # -ddi.xml
+    f = metsrw.FSEntry(
+        path=base_name + '/' + base_name + '-ddi.xml',
+        use='metadata',
+        derived_from=original_file,
+        file_uuid=str(uuid.uuid4()),
+    )
+    bundle.add_child(f)
+    # citation - endnote
+    f = metsrw.FSEntry(
+        path=base_name + '/' + base_name + 'citation-endnote.xml',
+        use='metadata',
+        derived_from=original_file,
+        file_uuid=str(uuid.uuid4()),
+    )
+    bundle.add_child(f)
+    # citation - ris
+    f = metsrw.FSEntry(
+        path=base_name + '/' + base_name + 'citation-ris.ris',
+        use='metadata',
+        derived_from=original_file,
+        file_uuid=str(uuid.uuid4()),
+    )
+    bundle.add_child(f)
+
+    return bundle
+
 def main(transfer_path):
     # Read JSON
     json_path = os.path.join(transfer_path, 'dataset.json')
@@ -107,11 +183,12 @@ def main(transfer_path):
     )
 
     # Add original files
-    tabfile_json = None
     for file_json in j['latestVersion']['files']:
         # TODO how to actually tell what is original file?
         if file_json['datafile']['name'].endswith('.tab'):
-            tabfile_json = file_json
+            # If tabfile, set up bundle
+            bundle = create_bundle(file_json)
+            sip.add_child(bundle)
         else:
             f = metsrw.FSEntry(
                 path=file_json['datafile']['name'],
@@ -129,79 +206,6 @@ def main(transfer_path):
         file_uuid=str(uuid.uuid4()),
     )
     sip.add_child(f)
-
-    # If tabfile, set up bundle
-    if tabfile_json:
-        # Base name is .tab with suffix stripped
-        base_name = tabfile_json['label'][:-4]
-        bundle = metsrw.FSEntry(
-            path=base_name,
-            type='Directory',
-        )
-        sip.add_child(bundle)
-
-        # Find original file
-        ext = EXTENSION_MAPPING[tabfile_json['datafile']['originalFormatLabel']]
-        original_file = metsrw.FSEntry(
-            path=base_name + '/' + base_name + ext,
-            use='original',
-            file_uuid=str(uuid.uuid4()),
-            checksumtype='MD5',
-            checksum=tabfile_json['datafile']['md5']
-        )
-        bundle.add_child(original_file)
-        if tabfile_json['datafile']['originalFormatLabel'] != "R Data":
-            # RData derivative
-            f = metsrw.FSEntry(
-                path=base_name + '/' + base_name + '.RData',
-                use='derivative',
-                derived_from=original_file,
-                file_uuid=str(uuid.uuid4()),
-            )
-            bundle.add_child(f)
-
-        # Add expected bundle contents
-        # FIXME what is the actual path for the files?
-        # Tabfile
-        f = metsrw.FSEntry(
-            path=base_name + '/' + tabfile_json['datafile']['name'],
-            use='derivative',
-            derived_from=original_file,
-            file_uuid=str(uuid.uuid4()),
-        )
-        f.add_dmdsec(
-            md=base_name + '/' + base_name + '-ddi.xml',
-            mdtype='DDI',
-            mode='mdref',
-            label=base_name + '-ddi.xml',
-            loctype='OTHER',
-            otherloctype='SYSTEM',
-        )
-        bundle.add_child(f)
-        # -ddi.xml
-        f = metsrw.FSEntry(
-            path=base_name + '/' + base_name + '-ddi.xml',
-            use='metadata',
-            derived_from=original_file,
-            file_uuid=str(uuid.uuid4()),
-        )
-        bundle.add_child(f)
-        # citation - endnote
-        f = metsrw.FSEntry(
-            path=base_name + '/' + base_name + 'citation-endnote.xml',
-            use='metadata',
-            derived_from=original_file,
-            file_uuid=str(uuid.uuid4()),
-        )
-        bundle.add_child(f)
-        # citation - ris
-        f = metsrw.FSEntry(
-            path=base_name + '/' + base_name + 'citation-ris.ris',
-            use='metadata',
-            derived_from=original_file,
-            file_uuid=str(uuid.uuid4()),
-        )
-        bundle.add_child(f)
 
     # Write METS
     metadata_path = os.path.join(transfer_path, 'metadata')
