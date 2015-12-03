@@ -155,7 +155,7 @@ def create_bundle(tabfile_json):
 
 def main(transfer_path):
     # Read JSON
-    json_path = os.path.join(transfer_path, 'dataset.json')
+    json_path = os.path.join(transfer_path, 'metadata', 'dataset.json')
     with open(json_path, 'r') as f:
         j = json.load(f)
 
@@ -199,13 +199,21 @@ def main(transfer_path):
             )
             sip.add_child(f)
 
+    # Add metadata directory
+    md_dir = metsrw.FSEntry(
+        path='metadata',
+        use=None,
+        type='Directory',
+    )
+    sip.add_child(md_dir)
     # Add dataset.json
     f = metsrw.FSEntry(
-        path='dataset.json',
+        path='metadata/dataset.json',
         use='metadata',
         file_uuid=str(uuid.uuid4()),
     )
-    sip.add_child(f)
+    # Add to metadata dir
+    md_dir.add_child(f)
 
     # Write METS
     metadata_path = os.path.join(transfer_path, 'metadata')
