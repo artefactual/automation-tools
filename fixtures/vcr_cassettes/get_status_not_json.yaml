@@ -7,7 +7,7 @@ interactions:
       Connection: [keep-alive]
       User-Agent: [python-requests/2.4.3 CPython/2.7.3 Linux/3.5.0-23-generic]
     method: GET
-    uri: http://127.0.0.1/api/transfer/status/dfc8cf5f-b5b1-408c-88b1-34215964e9d6/?api_key=1c34274c0df0bca7edf9831dd838b4a6345ac2ef&user=demo
+    uri: http://127.0.0.1/api/transfer/status/dfc8cf5f-b5b1-408c-88b1-34215964e9d6/?api_key=1c34274c0df0bca7edf9831dd838b4a6345ac2ef&username=demo
   response:
     body:
       string: !!binary |

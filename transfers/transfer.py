@@ -110,7 +110,7 @@ def get_status(am_url, user, api_key, unit_uuid, unit_type, session):
     """
     # Get status
     url = am_url + '/api/' + unit_type + '/status/' + unit_uuid + '/'
-    params = {'user': user, 'api_key': api_key}
+    params = {'username': user, 'api_key': api_key}
     unit_info = _call_url_json(url, params)
 
     # If Transfer is complete, get the SIP's status
@@ -256,7 +256,7 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, 
     LOGGER.info("Accession ID: %s", accession)
     # Start transfer
     url = am_url + '/api/transfer/start_transfer/'
-    params = {'user': user_name, 'api_key': api_key}
+    params = {'username': user_name, 'api_key': api_key}
     target_name = os.path.basename(target)
     data = {
         'name': target_name,
