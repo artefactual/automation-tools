@@ -40,6 +40,7 @@ This script can be modified, to adjust how automate transfers works.  The full s
 * `--ss-url URL, -s URL`: Storage Service URL. Default: http://127.0.0.1:8000
 * `--transfer-type TYPE`: Type of transfer to start. One of: 'standard' (default), 'unzipped bag', 'zipped bag', 'dspace'.
 * `--files`: If set, start transfers from files as well as folders.
+* `--hide`: If set, hides the Transfer and SIP once completed.
 
 Hooks
 -----

@@ -100,18 +100,27 @@ def _call_url_json(url, params):
         return None
 
 
-def get_status(am_url, user, api_key, unit_uuid, unit_type, session):
+def get_status(am_url, user, api_key, unit_uuid, unit_type, session, hide_on_complete=False):
     """
     Get status of the SIP or Transfer with unit_uuid.
 
     :param str unit_uuid: UUID of the unit to query for.
     :param str unit_type: 'ingest' or 'transfer'
+    :param bool hide_on_complete: If True, hide the unit in the dashboard if COMPLETE
     :returns: Dict with status of the unit from Archivematica or None.
     """
     # Get status
     url = am_url + '/api/' + unit_type + '/status/' + unit_uuid + '/'
     params = {'username': user, 'api_key': api_key}
     unit_info = _call_url_json(url, params)
+
+    # If complete, hide in dashboard
+    if hide_on_complete and unit_info and unit_info['status'] == 'COMPLETE':
+        LOGGER.info('Hiding %s %s in dashboard', unit_type, unit_uuid)
+        url = am_url + '/api/' + unit_type + '/' + unit_uuid + '/delete/'
+        LOGGER.debug('Method: DELETE; URL: %s; params: %s;', url, params)
+        response = requests.delete(url, params=params)
+        LOGGER.debug('Response: %s', response)
 
     # If Transfer is complete, get the SIP's status
     if unit_info and unit_type == 'transfer' and unit_info['status'] == 'COMPLETE' and unit_info['sip_uuid'] != 'BACKLOG':
@@ -123,6 +132,15 @@ def get_status(am_url, user, api_key, unit_uuid, unit_type, session):
         # Get SIP status
         url = am_url + '/api/ingest/status/' + unit_info['sip_uuid'] + '/'
         unit_info = _call_url_json(url, params)
+
+        # If complete, hide in dashboard
+        if hide_on_complete and unit_info and unit_info['status'] == 'COMPLETE':
+            LOGGER.info('Hiding SIP %s in dashboard', db_unit.uuid)
+            url = am_url + '/api/ingest/' + db_unit.uuid + '/delete/'
+            LOGGER.debug('Method: DELETE; URL: %s; params: %s;', url, params)
+            response = requests.delete(url, params=params)
+            LOGGER.debug('Response: %s', response)
+
     return unit_info
 
 
@@ -343,7 +361,7 @@ def approve_transfer(directory_name, url, api_key, user_name):
     else:
         return None
 
-def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, see_files):
+def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, see_files, hide_on_complete=False):
     LOGGER.info("Waking up")
     session = Session()
 
@@ -374,7 +392,7 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, 
     else:
         LOGGER.info('Current unit: %s', current_unit)
         # Get status
-        status_info = get_status(am_url, user, api_key, unit_uuid, unit_type, session)
+        status_info = get_status(am_url, user, api_key, unit_uuid, unit_type, session, hide_on_complete)
         LOGGER.info('Status info: %s', status_info)
         if not status_info:
             LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
@@ -426,6 +444,7 @@ if __name__ == '__main__':
     parser.add_argument('--ss-url', '-s', metavar='URL', help='Storage Service URL. Default: http://127.0.0.1:8000', default='http://127.0.0.1:8000')
     parser.add_argument('--transfer-type', metavar='TYPE', help="Type of transfer to start. One of: 'standard' (default), 'unzipped bag', 'zipped bag', 'dspace'.", default='standard', choices=['standard', 'unzipped bag', 'zipped bag', 'dspace'])
     parser.add_argument('--files', action='store_true', help='If set, start transfers from files as well as folders.')
+    parser.add_argument('--hide', action='store_true', help='If set, hide the Transfers and SIPs in the dashboard once they complete.')
     args = parser.parse_args()
 
     sys.exit(main(
@@ -438,4 +457,5 @@ if __name__ == '__main__':
         ss_url=args.ss_url,
         transfer_type=args.transfer_type,
         see_files=args.files,
+        hide_on_complete=args.hide,
     ))
