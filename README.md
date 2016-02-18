@@ -55,6 +55,10 @@ There are three places hooks can be used to change the automate tools behaviour.
 
 Any new scripts added to these directories will automatically be run alongside the existing scripts.
 
+There are also several scripts provided for common use cases and examples of processing that can be done.
+These are found in the `examples` directory sorted by their usecase and can be copied or symlinked to the appropriate directory for automation-tools to run them.
+If you write a script that might be useful for others, please make a pull request!
+
 ### get-accession-id
 
 * _Name:_ `get-accession-id`

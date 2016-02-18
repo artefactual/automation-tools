@@ -186,6 +186,9 @@ def run_scripts(directory, *args):
     for script in sorted(os.listdir(directory)):
         LOGGER.debug('Script: %s', script)
         script_path = os.path.join(directory, script)
+        if not os.path.isfile(script_path):
+            LOGGER.info('%s is not a file, skipping', script)
+            continue
         if not os.access(script_path, os.X_OK):
             LOGGER.info('%s is not executable, skipping', script)
             continue
