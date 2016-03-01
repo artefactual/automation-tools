@@ -112,3 +112,8 @@ Logs are written to the same directory as the `transfers.py` script. The logging
             'handlers': ['console', 'file'],
         },
     },
+
+Related Projects
+----------------
+
+* [automation-audit](https://github.com/finoradin/automation-audit): an interface for auditing and managing Archivematica's automation-tools.
