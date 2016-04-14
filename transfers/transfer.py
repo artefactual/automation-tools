@@ -156,7 +156,11 @@ def get_accession_id(dirname):
     :returns: accession number or None.
     """
     script_path = os.path.join(THIS_DIR, 'get-accession-number')
-    p = subprocess.Popen([script_path, dirname], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        p = subprocess.Popen([script_path, dirname], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except FileNotFoundError:
+        LOGGER.info('%s does not exist.', script_path)
+        return None
     output, err = p.communicate()
     if p.returncode != 0:
         LOGGER.info('Error running %s %s: RC: %s; stdout: %s; stderr: %s', script_path, dirname, p.returncode, output, err)
@@ -296,7 +300,7 @@ def start_transfer(ss_url, ts_location_uuid, ts_path, depth, am_url, user_name, 
         return None
     if not response.ok or resp_json.get('error'):
         LOGGER.error('Unable to start transfer.')
-        LOGGER.debug('Response: %s', resp_json)
+        LOGGER.error('Response: %s', resp_json)
         new_transfer = Unit(path=target, unit_type='transfer', status='FAILED', current=False)
         session.add(new_transfer)
         return None

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import os
 import unittest
 
 from sqlalchemy import create_engine
@@ -86,6 +86,10 @@ class TestAutomateTransfers(unittest.TestCase):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
         info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid, 'transfer', session)
         assert info is None
+
+    def test_get_accession_id_no_script(self):
+        accession_id = transfer.get_accession_id(os.path.curdir)
+        assert accession_id is None
 
     @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_first_run.yaml')
     def test_get_next_transfer_first_run(self):
