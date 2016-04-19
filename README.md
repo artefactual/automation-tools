@@ -3,6 +3,8 @@ Automation Tools
 
 The Automation Tools project is a set of python scripts, that are designed to automate the processing of transfers in an Archivematica pipeline.
 
+The code is available on [Github](http://github.com/artefactual/automation-tools).
+
 <!-- doctoc: https://www.npmjs.com/package/doctoc -->
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -20,6 +22,8 @@ The Automation Tools project is a set of python scripts, that are designed to au
     - [user-input](#user-input)
   - [Logs](#logs)
   - [Multiple automated transfer instances](#multiple-automated-transfer-instances)
+- [Automated Reingest](#automated-reingest)
+  - [Configuration](#configuration-1)
 - [Related Projects](#related-projects)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -195,6 +199,33 @@ You may need to set up multiple automated transfer instances, for example if req
 `<config_file_1>` and `<config_file_2>` should specify different file names for db/PID/log files. See transfers.conf and transfers-2.conf in etc/ for an example
 
 In case different hooks are required for each instance, a possible approach is to checkout a new instance of the automation tools, for example in `/usr/lib/archivematica/automation-tools-2`
+
+
+Automated Reingest
+-----------------
+
+`reingest/reingest.py` is a sample script to show how the reingest API can be automated.
+If the reingest type is 'full' and Archivematica API information is provided, it will automatically approve the reingest.
+
+### Configuration
+
+This script can be modified, to adjust how automated reingest works.
+
+Required parameters are:
+
+* `pipeline`: UUID of the pipeline to reingest the AIP on.
+* `reingest type`: Type of reingest to start. One of 'full', 'objects', 'metadata'
+* `AIP UUID`: UUID of the AIP to reingest.
+
+Optional parameters are:
+
+* `-c CONFIG, --config CONFIG`: Name of the processing config to use for a full reingest. This must already exist on the destination pipeline. Default: default
+* `--ss-url URL, -s URL`: Storage Service URL. Default: http://127.0.0.1:8000
+* `--am-url URL, -a URL`: Archivematica URL.  Username and API key should also be provided. Default: http://127.0.0.1
+* `-u USERNAME, --user USERNAME`: Username of the dashboard user to authenticate as.  Archivematica URL and API key should also be provided.
+* `-k KEY, --api-key KEY`: API key of the dashboard user.  Archivematica URL and username should also be provided.
+* `--debug`: Set logging level to DEBUG instead of INFO.
+
 
 Related Projects
 ----------------
