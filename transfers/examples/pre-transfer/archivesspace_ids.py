@@ -11,6 +11,11 @@ def main(transfer_path):
     """
     Generate archivesspaceids.csv with reference IDs based on filenames.
     """
+    archivesspaceids_path = os.path.join(transfer_path, 'metadata', 'archivesspaceids.csv')
+    if os.path.exists(archivesspaceids_path):
+        print(archivesspaceids_path, 'already exists, exiting')
+        return
+
     as_ids = []
 
     for dirpath, _, filenames in os.walk(transfer_path):
@@ -30,7 +35,7 @@ def main(transfer_path):
             pass  # Already exists
         else:
             raise
-    with open(os.path.join(transfer_path, 'metadata', 'archivesspaceids.csv'), 'w') as f:
+    with open(archivesspaceids_path, 'w') as f:
         writer = csv.writer(f)
         writer.writerows(as_ids)
 
