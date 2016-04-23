@@ -42,6 +42,11 @@ except ImportError:
         else:
             raise TypeError("expect bytes or str, not %s" % type(filename).__name__)
 
+try:  # Python3
+    FileNotFoundError
+except NameError:  # Python2
+    FileNotFoundError = OSError
+
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(THIS_DIR)
 
