@@ -8,6 +8,7 @@ Example script to automate reingesting AIPS.
 
 from __future__ import print_function, unicode_literals
 import argparse
+import base64
 import logging
 import logging.config  # Has to be imported separately
 import os
@@ -35,7 +36,11 @@ def start_reingest(ss_url, aip_uuid, pipeline, reingest_type, processing_config=
         'processing_config': processing_config,
     }
     LOGGER.debug('URL: %s; JSON body: %s', url, data)
-    response = requests.post(url, json=data)
+    try:
+        response = requests.post(url, json=data)
+    except Exception:
+        LOGGER.exception('Error POSTing to start reingest')
+        return None
     LOGGER.debug('Response: %s', response)
     if response.status_code != requests.codes.accepted:  # 202
         LOGGER.warning('Request to %s returned %s %s', url, response.status_code, response.reason)
@@ -103,7 +108,7 @@ def approve_transfer(unit_uuid, url, api_key, user_name):
         return None
 
 
-def main(ss_url, aip_uuid, pipeline, reingest_type, processing_config='default', am_url=None, user_name=None, api_key=None):
+def reingest(ss_url, aip_uuid, pipeline, reingest_type, processing_config='default', am_url=None, user_name=None, api_key=None):
     # Start reingest
     LOGGER.info('Starting %s reingest of AIP %s on pipeline %s with %s config', reingest_type, aip_uuid, pipeline, processing_config)
     response = start_reingest(ss_url, aip_uuid, pipeline, reingest_type, processing_config)
@@ -131,21 +136,57 @@ def main(ss_url, aip_uuid, pipeline, reingest_type, processing_config='default',
         LOGGER.info('Archivematica API not information provided, cannot approve transfer.')
     LOGGER.info('Done %s reingest of AIP %s on pipeline %s with %s config and reingest UUID of %s', reingest_type, aip_uuid, pipeline, processing_config, reingest_uuid)
 
+
+def metadata(sip_uuid, paths, am_url, user_name, api_key):
+    LOGGER.info('Starting adding metadata files to SIP %s', sip_uuid)
+    url = am_url + "/api/ingest/copy_metadata_files/"
+    params = {'username': user_name, 'api_key': api_key}
+    paths = [base64.b64encode(bytes(p, encoding='utf8')) for p in paths]
+    data = {'sip_uuid': sip_uuid, 'source_paths[]': paths}
+    try:
+        response = requests.post(url, params=params, data=data)
+    except Exception:
+        LOGGER.error('Error POSTing to add metadata files.')
+        return
+    if response.status_code != requests.codes.created:  # 201
+        LOGGER.warning('Request to %s returned %s %s', url, response.status_code, response.reason)
+        LOGGER.warning('Response: %s', response.text)
+        return
+    try:
+        LOGGER.info(response.json())
+    except ValueError:  # JSON could not be decoded
+        LOGGER.warning('Could not parse JSON from response: %s', response.text)
+        return
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-
-    parser.add_argument('pipeline', help='Pipeline to reingest this on.')
-    parser.add_argument('reingest_type', choices=['metadata', 'objects', 'full'], help='Type of reingest to start')
-    parser.add_argument('aip_uuid', help='UUID of the AIP to reingest')
-
-    parser.add_argument('--config', '-c', default='default', help='Processing config to use for a full reingest.')
-    parser.add_argument('--ss-url', '-s', metavar='URL', help='Storage Service URL. Default: http://127.0.0.1:8000', default='http://127.0.0.1:8000')
-
-    parser.add_argument('--am-url', '-a', metavar='URL', help='Archivematica URL. Default: http://127.0.0.1', default='http://127.0.0.1')
-    parser.add_argument('-u', '--user', metavar='USERNAME', help='Username of the dashboard user to authenticate as.')
-    parser.add_argument('-k', '--api-key', metavar='KEY', help='API key of the dashboard user.')
-
     parser.add_argument('--debug', default='INFO', action='store_const', const='DEBUG')
+    subparsers = parser.add_subparsers(help='Use <subcommand> --help for more information')
+
+    # Reingest subparser
+    parser_reingest = subparsers.add_parser('reingest', help='Reingest an AIP')
+    parser_reingest.set_defaults(func=reingest)
+    parser_reingest.add_argument('aip_uuid', help='UUID of the AIP to reingest')
+    parser_reingest.add_argument('pipeline', help='Pipeline to reingest this on.')
+    parser_reingest.add_argument('reingest_type', choices=['metadata', 'objects', 'full'], help='Type of reingest to start')
+
+    parser_reingest.add_argument('--config', '-c', default='default', help='Processing config to use for a full reingest.')
+    parser_reingest.add_argument('--ss-url', '-s', metavar='URL', help='Storage Service URL. Default: http://127.0.0.1:8000', default='http://127.0.0.1:8000')
+
+    parser_reingest.add_argument('--am-url', '-a', metavar='URL', help='Archivematica URL. Default: http://127.0.0.1', default='http://127.0.0.1')
+    parser_reingest.add_argument('-u', '--user', metavar='USERNAME', help='Username of the dashboard user to authenticate as.')
+    parser_reingest.add_argument('-k', '--api-key', metavar='KEY', help='API key of the dashboard user.')
+
+    # Add metadata subparser
+    parser_metadata = subparsers.add_parser('metadata', help='Add metadata to the AIP')
+    parser_metadata.set_defaults(func=metadata)
+    parser_metadata.add_argument('sip_uuid', help='UUID of the SIP to add metadata to')
+    parser_metadata.add_argument('paths', nargs='+', help='Paths to add. Format is <location uuid>:<path within location> E.g. 1250af65-57ff-4dbd-beef-0c487708e761:SampleTransfers/CSVmetadata/metadata/metadata.csv')
+
+    parser_metadata.add_argument('--am-url', '-a', metavar='URL', help='Archivematica URL. Default: http://127.0.0.1', default='http://127.0.0.1')
+    parser_metadata.add_argument('-u', '--user', metavar='USERNAME', required=True, help='Username of the dashboard user to authenticate as.')
+    parser_metadata.add_argument('-k', '--api-key', metavar='KEY', required=True, help='API key of the dashboard user.')
 
     args = parser.parse_args()
 
@@ -180,13 +221,26 @@ if __name__ == '__main__':
         },
     }
     logging.config.dictConfig(CONFIG)
-    sys.exit(main(
-        args.ss_url,
-        args.aip_uuid,
-        args.pipeline,
-        args.reingest_type,
-        args.config,
-        args.am_url,
-        args.user,
-        args.api_key,
-    ))
+
+    if args.func == reingest:
+        sys.exit(args.func(
+            args.ss_url,
+            args.aip_uuid,
+            args.pipeline,
+            args.reingest_type,
+            args.config,
+            args.am_url,
+            args.user,
+            args.api_key,
+        ))
+    elif args.func == metadata:
+        sys.exit(args.func(
+            args.sip_uuid,
+            args.paths,
+            args.am_url,
+            args.user,
+            args.api_key,
+        ))
+    else:
+        LOGGER.error('Error selecting a function. Exiting.')
+        sys.exit(-1)
