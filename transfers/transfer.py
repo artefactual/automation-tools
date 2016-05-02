@@ -433,7 +433,12 @@ def main(user, api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, 
     # If failed, rejected, completed etc, start new transfer
     if current_unit:
         current_unit.current = False
-    new_transfer = start_transfer(ss_url, ts_uuid, ts_path, depth, am_url, user, api_key, transfer_type, see_files, session)
+    try:
+        new_transfer = start_transfer(ss_url, ts_uuid, ts_path, depth, am_url, user, api_key, transfer_type, see_files, session)
+    except Exception:
+        LOGGER.error('Could not complete transfer at path %s. Exiting.', ts_path)
+        os.remove(pid_file)
+        raise
 
     session.commit()
     os.remove(pid_file)

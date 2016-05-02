@@ -29,11 +29,11 @@ When running, automate transfers stores its working state in transfers.db, a sql
 Configuration
 -------------
 
-This script can be modified, to adjust how automate transfers works.  The full set of parameters that can be changed are:
+This script can be modified to adjust how automated transfers work.  The full set of parameters that can be changed are:
 
 * `-u USERNAME, --user USERNAME` [REQUIRED]: Username of the dashboard user to authenticate as.
 * `-k KEY, --api-key KEY` [REQUIRED]: API key of the dashboard user.
-* `-t UUID, --transfer-source UUID`: [REQUIRED] Transfer Source Location UUID to fetch transfers from.
+* `-t UUID, --transfer-source UUID`: [REQUIRED] Transfer Source Location UUID to fetch transfers from. Check the next section for more details on this field.
 * `--transfer-path PATH`: Relative path within the Transfer Source. Default: ""
 * `--depth DEPTH, -d DEPTH`: Depth to create the transfers from relative to the transfer source location and path. Default of 1 creates transfers from the children of transfer-path.
 * `--am-url URL, -a URL`:Archivematica URL. Default: http://127.0.0.1
@@ -41,6 +41,20 @@ This script can be modified, to adjust how automate transfers works.  The full s
 * `--transfer-type TYPE`: Type of transfer to start. One of: 'standard' (default), 'unzipped bag', 'zipped bag', 'dspace'.
 * `--files`: If set, start transfers from files as well as folders.
 * `--hide`: If set, hides the Transfer and SIP once completed.
+
+### Configuration - Getting Correct UUIDs and Setting Processing Rules
+
+The easiest way to configure the tasks that automation-tools will run is by using the dashboard:
+
+1. Go to Administration|Processing Configuration and choose the options you wish to use.
+
+2. Save the configuation on the form.
+
+3. Copy the processing configuration file from '/var/archivematica/sharedDirectory/sharedMicroServiceTasksConfigs/processingMCPConfigs/defaultProcessingMCP.xml' on the Archivematica host machine to the transfers/ directory of your automation-tools installation location.
+
+
+The automation-tools command-line also relies on installation-specific UUIDs. To obtain the transfer source UUID for script invocation, visit the 'Transfer Source' tab in the Archivematica Storage Space web dashboard. If a row is marked as a transfer souce its UUID value will be valid as a transfer source argument.
+
 
 Hooks
 -----
