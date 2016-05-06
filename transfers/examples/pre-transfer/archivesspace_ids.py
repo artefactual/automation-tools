@@ -7,11 +7,16 @@ import errno
 import os
 import sys
 
+
 def main(transfer_path):
     """
     Generate archivesspaceids.csv with reference IDs based on filenames.
     """
-    archivesspaceids_path = os.path.join(transfer_path, 'metadata', 'archivesspaceids.csv')
+    data_path = transfer_path
+    if os.path.exists(os.path.join(transfer_path, 'data')):  # Assume this is a bag
+        data_path = os.path.join(transfer_path, 'data')
+
+    archivesspaceids_path = os.path.join(data_path, 'metadata', 'archivesspaceids.csv')
     if os.path.exists(archivesspaceids_path):
         print(archivesspaceids_path, 'already exists, exiting')
         return
@@ -29,7 +34,7 @@ def main(transfer_path):
     print(as_ids)
     # Write out CSV
     try:
-        os.mkdir(os.path.join(transfer_path, 'metadata'))
+        os.mkdir(os.path.join(data_path, 'metadata'))
     except OSError as e:
         if e.errno == errno.EEXIST:
             pass  # Already exists
