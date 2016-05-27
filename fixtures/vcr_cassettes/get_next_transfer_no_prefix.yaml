@@ -7,7 +7,7 @@ interactions:
       Connection: [keep-alive]
       User-Agent: [python-requests/2.5.3 CPython/3.4.0 Linux/3.13.0-43-generic]
     method: GET
-    uri: http://127.0.0.1:8000/api/v2/location/2a3d8d39-9cee-495e-b7ee-5e629254934d/browse/
+    uri: http://127.0.0.1:8000/api/v2/location/2a3d8d39-9cee-495e-b7ee-5e629254934d/browse/?api_key=7016762e174c940df304e8343c659af5005b4d6b&username=test
   response:
     body: {string: '{"directories": ["T1BGIGZvcm1hdC1jb3JwdXM=", "U2FtcGxlVHJhbnNmZXJz",
         "VGVzdFRyYW5zZmVycw=="], "entries": ["T1BGIGZvcm1hdC1jb3JwdXM=", "UkVBRE1FLm1k",

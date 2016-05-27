@@ -13,6 +13,8 @@ AM_URL = 'http://127.0.0.1'
 SS_URL = 'http://127.0.0.1:8000'
 USER = 'demo'
 API_KEY = '1c34274c0df0bca7edf9831dd838b4a6345ac2ef'
+SS_USER = 'test'
+SS_KEY = '7016762e174c940df304e8343c659af5005b4d6b'
 
 TS_LOCATION_UUID = '2a3d8d39-9cee-495e-b7ee-5e629254934d'
 PATH_PREFIX = b'SampleTransfers'
@@ -95,7 +97,7 @@ class TestAutomateTransfers(unittest.TestCase):
     def test_get_next_transfer_first_run(self):
         # All default values
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, COMPLETED, FILES)
+        path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, COMPLETED, FILES)
         # Verify
         assert path == b'SampleTransfers/BagTransfer'
 
@@ -104,7 +106,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Set completed set
         completed = {b'SampleTransfers/BagTransfer'}
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, FILES)
+        path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, FILES)
         # Verify
         assert path == b'SampleTransfers/CSVmetadata'
 
@@ -113,7 +115,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Set depth
         depth = 2
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, depth, COMPLETED, FILES)
+        path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, TS_LOCATION_UUID, PATH_PREFIX, depth, COMPLETED, FILES)
         # Verify
         assert path == b'SampleTransfers/BagTransfer/data'
 
@@ -122,7 +124,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Set no prefix
         path_prefix = b''
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, path_prefix, DEPTH, COMPLETED, FILES)
+        path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, TS_LOCATION_UUID, path_prefix, DEPTH, COMPLETED, FILES)
         # Verify
         assert path == b'OPF format-corpus'
 
@@ -131,7 +133,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Set completed set to be all elements
         completed = {b'SampleTransfers/BagTransfer', b'SampleTransfers/CSVmetadata', b'SampleTransfers/DigitizationOutput', b'SampleTransfers/DSpaceExport', b'SampleTransfers/Images', b'SampleTransfers/ISODiskImage', b'SampleTransfers/Multimedia', b'SampleTransfers/OCRImage', b'SampleTransfers/OfficeDocs', b'SampleTransfers/RawCameraImages', b'SampleTransfers/structMapSample'}
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, FILES)
+        path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, FILES)
         # Verify
         assert path is None
 
@@ -140,7 +142,7 @@ class TestAutomateTransfers(unittest.TestCase):
         # Set bad TS Location UUID
         ts_location_uuid = 'badd8d39-9cee-495e-b7ee-5e6292549bad'
         # Test
-        path = transfer.get_next_transfer(SS_URL, ts_location_uuid, PATH_PREFIX, DEPTH, COMPLETED, FILES)
+        path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, ts_location_uuid, PATH_PREFIX, DEPTH, COMPLETED, FILES)
         # Verify
         assert path is None
 
@@ -150,6 +152,16 @@ class TestAutomateTransfers(unittest.TestCase):
         files = True
         completed = {b'SampleTransfers/BagTransfer'}
         # Test
-        path = transfer.get_next_transfer(SS_URL, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, files)
+        path = transfer.get_next_transfer(SS_URL, SS_USER, SS_KEY, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, completed, files)
         # Verify
         assert path == b'SampleTransfers/BagTransfer.zip'
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_failed_auth.yaml')
+    def test_get_next_transfer_failed_auth(self):
+        # All default values
+        ss_user = 'demo'
+        ss_key = 'dne'
+        # Test
+        path = transfer.get_next_transfer(SS_URL, ss_user, ss_key, TS_LOCATION_UUID, PATH_PREFIX, DEPTH, COMPLETED, FILES)
+        # Verify
+        assert path is None

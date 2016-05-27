@@ -47,10 +47,11 @@ When running, automated transfers stores its working state in a sqlite database.
 
 The `transfers.py` script can be modified to adjust how automated transfers work.  The full set of parameters that can be changed are:
 
-* `-u USERNAME, --user USERNAME` [REQUIRED]: Username of the dashboard user to authenticate as.
-* `-k KEY, --api-key KEY` [REQUIRED]: API key of the dashboard user.
+* `-u USERNAME, --user USERNAME` [REQUIRED]: Username of the Archivematica dashboard user to authenticate as.
+* `-k KEY, --api-key KEY` [REQUIRED]: API key of the Archivematica dashboard user.
+* `--ss-user USERNAME, --user USERNAME` [REQUIRED]: Username of the Storage Service user to authenticate as. Storage Service 0.8 and up requires this; earlier versions will ignore any value provided.
+* `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage Service 0.8 and up requires this; earlier versions will ignore any value provided.
 * `-t UUID, --transfer-source UUID`: [REQUIRED] Transfer Source Location UUID to fetch transfers from. Check the next section for more details on this field.
-* `-c FILE, --config-file FILE`: config file containing file paths for log/database/PID files. Default: log/database/PID files stored in the same directory as the script (not recommended for production)
 * `--transfer-path PATH`: Relative path within the Transfer Source. Default: ""
 * `--depth DEPTH, -d DEPTH`: Depth to create the transfers from relative to the transfer source location and path. Default of 1 creates transfers from the children of transfer-path.
 * `--am-url URL, -a URL`:Archivematica URL. Default: http://127.0.0.1
@@ -58,6 +59,7 @@ The `transfers.py` script can be modified to adjust how automated transfers work
 * `--transfer-type TYPE`: Type of transfer to start. One of: 'standard' (default), 'unzipped bag', 'zipped bag', 'dspace'.
 * `--files`: If set, start transfers from files as well as folders.
 * `--hide`: If set, hides the Transfer and SIP once completed.
+* `-c FILE, --config-file FILE`: config file containing file paths for log/database/PID files. Default: log/database/PID files stored in the same directory as the script (not recommended for production)
 
 ### Configuration - Getting Correct UUIDs and Setting Processing Rules
 
