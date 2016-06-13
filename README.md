@@ -3,6 +3,27 @@ Automation Tools
 
 The Automation Tools project is a set of python scripts, that are designed to automate the processing of transfers in an Archivematica pipeline.
 
+<!-- doctoc: https://www.npmjs.com/package/doctoc -->
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Installation](#installation)
+- [Automated transfers](#automated-transfers)
+  - [Configuration](#configuration)
+    - [Parameters](#parameters)
+    - [Getting Correct UUIDs and Setting Processing Rules](#getting-correct-uuids-and-setting-processing-rules)
+    - [Getting API keys](#getting-api-keys)
+  - [Hooks](#hooks)
+    - [get-accession-id](#get-accession-id)
+    - [pre-transfer hooks](#pre-transfer-hooks)
+    - [user-input](#user-input)
+  - [Logs](#logs)
+  - [Multiple automated transfer instances](#multiple-automated-transfer-instances)
+- [Related Projects](#related-projects)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 Installation
 ------------
 
