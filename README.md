@@ -17,7 +17,7 @@ Automated transfers
 `transfers/transfer.py` is used to prepare transfers, move them into the pipelines processing location, and take actions when user input is required.
 Only one transfer is sent to the pipeline at a time, the scripts wait until the current transfer is resolved (failed, rejected or stored as an AIP) before automatically starting the next available transfer.
 
-### Configuration - Overview
+### Configuration
 
 Suggested deployment is to use cron to run a shell script that runs the automate transfer tool. Example shell script (for example in `/etc/archivematica/automation-tools/transfer-script.sh`):
 
@@ -43,7 +43,7 @@ It is suggested to run the script through a crontab entry for user archivematica
 
 When running, automated transfers stores its working state in a sqlite database.  It contains a record of all the transfers that have been processed.  In a testing environment, deleting this file will cause the tools to re-process any and all folders found in the Transfer Source Location.
 
-### Configuration - Parameters
+#### Parameters
 
 The `transfers.py` script can be modified to adjust how automated transfers work.  The full set of parameters that can be changed are:
 
@@ -61,17 +61,29 @@ The `transfers.py` script can be modified to adjust how automated transfers work
 * `--hide`: If set, hides the Transfer and SIP once completed.
 * `-c FILE, --config-file FILE`: config file containing file paths for log/database/PID files. Default: log/database/PID files stored in the same directory as the script (not recommended for production)
 
-### Configuration - Getting Correct UUIDs and Setting Processing Rules
+#### Getting Correct UUIDs and Setting Processing Rules
 
 The easiest way to configure the tasks that automation-tools will run is by using the dashboard:
 
-1. Go to Administration|Processing Configuration and choose the options you wish to use.
+1. Go to Administration > Processing Configuration and choose the options you wish to use.
 
 2. Save the configuration on the form.
 
-3. Copy the processing configuration file from '/var/archivematica/sharedDirectory/sharedMicroServiceTasksConfigs/processingMCPConfigs/defaultProcessingMCP.xml' on the Archivematica host machine to the transfers/ directory of your automation-tools installation location.
+3. Copy the processing configuration file from `/var/archivematica/sharedDirectory/sharedMicroServiceTasksConfigs/processingMCPConfigs/defaultProcessingMCP.xml` on the Archivematica host machine to the `transfers/` directory of your automation-tools installation location.
 
 The automation-tools command-line also relies on installation-specific UUIDs. To obtain the transfer source UUID for script invocation, visit the 'Transfer Source' tab in the Archivematica Storage Space web dashboard. If a row is marked as a transfer souce its UUID value will be valid as a transfer source argument.
+
+#### Getting API keys
+
+To get the Archivematica API key, log in to Archivematica as the user you wish to authenticate as.
+From the dashboard, click your username in the top right corner, then select 'Your profile'.
+The API key will be displayed at the bottom of the page.
+
+To get the Storage Service API key, log in to the Storage Service as the user you wish to authenticate as.
+From the dashboard, go to Administration > Users and select 'Edit' for the user you want the key for.
+The API key will be displayed at the bottom of the page.
+Storage Service versions earlier than 0.8.x do not require an API key, and will not provide one.
+In that case, fill in `--ss-user` and `--ss-api-key` with stub data, since those paramaters are required by automated transfers.
 
 ### Hooks
 
