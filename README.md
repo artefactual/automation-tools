@@ -45,7 +45,7 @@ Suggested deployment is to use cron to run a shell script that runs the automate
 ```
 #!/bin/bash
 cd /usr/lib/archivematica/automation-tools/
-/usr/share/python/automation-tools/bin/python -m transfers.transfer --user <user>  --api-key <apikey> --transfer-source <transfer_source_uuid> --config-file <config_file>
+/usr/share/python/automation-tools/bin/python -m transfers.transfer --user <user> --api-key <apikey> --ss-user <user> --ss-api-key <apikey> --transfer-source <transfer_source_uuid> --config-file <config_file>
 ```
 
 (Note that the script calls the transfers script as a module using python's `-m` flag, this is required due to the use of relative imports in the code)
@@ -70,7 +70,7 @@ The `transfers.py` script can be modified to adjust how automated transfers work
 
 * `-u USERNAME, --user USERNAME` [REQUIRED]: Username of the Archivematica dashboard user to authenticate as.
 * `-k KEY, --api-key KEY` [REQUIRED]: API key of the Archivematica dashboard user.
-* `--ss-user USERNAME, --user USERNAME` [REQUIRED]: Username of the Storage Service user to authenticate as. Storage Service 0.8 and up requires this; earlier versions will ignore any value provided.
+* `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to authenticate as. Storage Service 0.8 and up requires this; earlier versions will ignore any value provided.
 * `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage Service 0.8 and up requires this; earlier versions will ignore any value provided.
 * `-t UUID, --transfer-source UUID`: [REQUIRED] Transfer Source Location UUID to fetch transfers from. Check the next section for more details on this field.
 * `--transfer-path PATH`: Relative path within the Transfer Source. Default: ""
@@ -104,7 +104,7 @@ To get the Storage Service API key, log in to the Storage Service as the user yo
 From the dashboard, go to Administration > Users and select 'Edit' for the user you want the key for.
 The API key will be displayed at the bottom of the page.
 Storage Service versions earlier than 0.8.x do not require an API key, and will not provide one.
-In that case, fill in `--ss-user` and `--ss-api-key` with stub data, since those paramaters are required by automated transfers.
+In that case, fill in `--ss-user` and `--ss-api-key` with stub data, since those parameters are required by automated transfers.
 
 ### Hooks
 
