@@ -186,10 +186,10 @@ You may need to set up multiple automated transfer instances, for example if req
 
 ```
 # first script invokes like this (standard transfer):
-/usr/share/python/automation-tools/bin/python -m transfers.transfer --user <user>  --api-key <apikey> --transfer-source <transfer_source_uuid_for_std_xfers> --config-file <config_file>
+/usr/share/python/automation-tools/bin/python -m transfers.transfer --user <user>  --api-key <apikey> --ss-user <user> --ss-api-key <apikey> --transfer-source <transfer_source_uuid_for_std_xfers> --config-file <config_file>
 
 # second script invokes like this (unzipped bags):
-/usr/share/python/automation-tools/bin/python -m transfers.transfer --user <user>  --api-key <apikey> --transfer-source <transfer_source_2_uuid_for_bags> --config-file <config_file_2> --transfer-type 'unzipped bag'
+/usr/share/python/automation-tools/bin/python -m transfers.transfer --user <user>  --api-key <apikey> --ss-user <user> --ss-api-key <apikey> --transfer-source <transfer_source_2_uuid_for_bags> --config-file <config_file_2> --transfer-type 'unzipped bag'
 ```
 
 `<config_file_1>` and `<config_file_2>` should specify different file names for db/PID/log files. See transfers.conf and transfers-2.conf in etc/ for an example
