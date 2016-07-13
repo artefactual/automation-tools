@@ -59,7 +59,7 @@ def get_setting(setting, default=None):
         return default
 
 
-def setup(config_file):
+def setup(config_file, log_level):
     global CONFIG_FILE
     CONFIG_FILE = config_file
     models.init(get_setting('databasefile', os.path.join(THIS_DIR, 'transfers.db')))
@@ -90,7 +90,7 @@ def setup(config_file):
         },
         'loggers': {
             'transfer': {
-                'level': 'INFO',  # One of INFO, DEBUG, WARNING, ERROR, CRITICAL
+                'level': log_level,
                 'handlers': ['console', 'file'],
             },
         },
@@ -397,10 +397,9 @@ def approve_transfer(directory_name, url, am_api_key, am_user):
         return None
 
 
-def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, see_files, hide_on_complete=False, config_file=None):
+def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth, am_url, ss_url, transfer_type, see_files, hide_on_complete=False, config_file=None, log_level='INFO'):
 
-    setup(config_file)
-
+    setup(config_file, log_level)
     LOGGER.info("Waking up")
 
     session = models.Session()
@@ -491,7 +490,27 @@ if __name__ == '__main__':
     parser.add_argument('--files', action='store_true', help='If set, start transfers from files as well as folders.')
     parser.add_argument('--hide', action='store_true', help='If set, hide the Transfers and SIPs in the dashboard once they complete.')
     parser.add_argument('-c', '--config-file', metavar='FILE', help='Configuration file(log/db/PID files)', default=None)
+
+    # Logging
+    parser.add_argument('--verbose', '-v', action='count', default=0, help='Increase the debugging output.')
+    parser.add_argument('--quiet', '-q', action='count', default=0, help='Decrease the debugging output')
+    parser.add_argument('--log-level', choices=['ERROR', 'WARNING', 'INFO', 'DEBUG'], default=None, help='Set the debugging output level. This will override -q and -v')
+
     args = parser.parse_args()
+
+    log_levels = {
+        2: 'ERROR',
+        1: 'WARNING',
+        0: 'INFO',
+        -1: 'DEBUG',
+    }
+    if args.log_level is None:
+        level = args.quiet - args.verbose
+        level = max(level, -1)  # No smaller than -1
+        level = min(level, 2)  # No larger than 2
+        log_level = log_levels[level]
+    else:
+        log_level = args.log_level
 
     sys.exit(main(
         am_user=args.user,
@@ -507,4 +526,5 @@ if __name__ == '__main__':
         see_files=args.files,
         hide_on_complete=args.hide,
         config_file=args.config_file,
+        log_level=log_level,
     ))

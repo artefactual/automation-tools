@@ -81,6 +81,9 @@ The `transfers.py` script can be modified to adjust how automated transfers work
 * `--files`: If set, start transfers from files as well as folders.
 * `--hide`: If set, hides the Transfer and SIP once completed.
 * `-c FILE, --config-file FILE`: config file containing file paths for log/database/PID files. Default: log/database/PID files stored in the same directory as the script (not recommended for production)
+* `-v, --verbose`: Increase the debugging output. Can be specified multiple times, e.g. `-vv`
+* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times, e.g. `-qq`
+* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING', 'INFO', 'DEBUG'. This will override `-q` and `-v`
 
 #### Getting Correct UUIDs and Setting Processing Rules
 
