@@ -19,25 +19,35 @@ import time
 LOGGER = logging.getLogger('reingest')
 
 
-def start_reingest(ss_url, aip_uuid, pipeline, reingest_type, processing_config='default'):
+def start_reingest(ss_url, aip_uuid, pipeline, reingest_type,
+                   processing_config='default', ss_user_name=None,
+                   ss_api_key=None):
     """
     Start reingest on an AIP.
 
     :param ss_url: URL of the storage service.
     :param aip_uuid: UUID of the AIP to reingest.
     :param pipeline: UUID of the pipeline to reingest on.
-    :param reingest_type: Type of reingest to start. One of objects, metadata, full
-    :param processing_config: Processing configuration to specify for a full reingest.
+    :param reingest_type: Type of reingest to start. One of objects, metadata,
+        full
+    :param processing_config: Processing configuration to specify for a full
+        reingest.
+    :param ss_user_name: Username of Storage Service user.
+    :param ss_api_key: API Key of Storage Service user.
+
     """
     url = ss_url + '/api/v2/file/' + aip_uuid + '/reingest/'
     data = {
         'pipeline': pipeline,
         'reingest_type': reingest_type,
-        'processing_config': processing_config,
+        'processing_config': processing_config
     }
     LOGGER.debug('URL: %s; JSON body: %s', url, data)
+    # Authorization: ApiKey daniel:204db7bcfafb2deb7506b89eb3b9b715b09905c8
     try:
-        response = requests.post(url, json=data)
+        response = requests.post(url, json=data,
+            headers={'Authorization': 'ApiKey {}:{}'.format(ss_user_name, ss_api_key)})
+
     except Exception:
         LOGGER.exception('Error POSTing to start reingest')
         return None
@@ -108,10 +118,15 @@ def approve_transfer(unit_uuid, url, api_key, user_name):
         return None
 
 
-def reingest(ss_url, aip_uuid, pipeline, reingest_type, processing_config='default', am_url=None, user_name=None, api_key=None):
+def reingest(ss_url, aip_uuid, pipeline, reingest_type,
+             processing_config='default', am_url=None, user_name=None,
+             api_key=None, ss_user_name=None, ss_api_key=None):
+    """Initiate an AIP re-ingest and approve the start of re-ingest."""
     # Start reingest
-    LOGGER.info('Starting %s reingest of AIP %s on pipeline %s with %s config', reingest_type, aip_uuid, pipeline, processing_config)
-    response = start_reingest(ss_url, aip_uuid, pipeline, reingest_type, processing_config)
+    LOGGER.info('Starting %s reingest of AIP %s on pipeline %s with %s config',
+        reingest_type, aip_uuid, pipeline, processing_config)
+    response = start_reingest(ss_url, aip_uuid, pipeline, reingest_type,
+                              processing_config, ss_user_name, ss_api_key)
     if response is None:
         LOGGER.info('Exiting')
         return
@@ -133,8 +148,11 @@ def reingest(ss_url, aip_uuid, pipeline, reingest_type, processing_config='defau
             LOGGER.warning('Not approved')
             return None
     else:
-        LOGGER.info('Archivematica API not information provided, cannot approve transfer.')
-    LOGGER.info('Done %s reingest of AIP %s on pipeline %s with %s config and reingest UUID of %s', reingest_type, aip_uuid, pipeline, processing_config, reingest_uuid)
+        LOGGER.info('Archivematica API not information provided, cannot approve'
+                    ' transfer.')
+    LOGGER.info('Done %s reingest of AIP %s on pipeline %s with %s config and'
+                ' reingest UUID of %s', reingest_type, aip_uuid, pipeline,
+                processing_config, reingest_uuid)
 
 
 def metadata(sip_uuid, paths, am_url, user_name, api_key):
@@ -177,6 +195,10 @@ if __name__ == '__main__':
     parser_reingest.add_argument('--am-url', '-a', metavar='URL', help='Archivematica URL. Default: http://127.0.0.1', default='http://127.0.0.1')
     parser_reingest.add_argument('-u', '--user', metavar='USERNAME', help='Username of the dashboard user to authenticate as.')
     parser_reingest.add_argument('-k', '--api-key', metavar='KEY', help='API key of the dashboard user.')
+
+    # Storage Service user and API Key
+    parser_reingest.add_argument('--ss-user', metavar='SS_USER', help='Username of the Storage Service user.')
+    parser_reingest.add_argument('--ss-api-key', metavar='SS_KEY', help='API key of the Storage Service user.')
 
     # Add metadata subparser
     parser_metadata = subparsers.add_parser('metadata', help='Add metadata to the AIP')
@@ -232,6 +254,8 @@ if __name__ == '__main__':
             args.am_url,
             args.user,
             args.api_key,
+            args.ss_user,
+            args.ss_api_key
         ))
     elif args.func == metadata:
         sys.exit(args.func(
