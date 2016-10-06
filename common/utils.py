@@ -22,7 +22,7 @@ def get_setting(config_file, config_name, setting, default=None):
         return default
 
 
-def configure_logging(name, filename):
+def configure_logging(name, filename, loglevel):
     """
     Configure logging
 
@@ -54,7 +54,7 @@ def configure_logging(name, filename):
         },
         'loggers': {
             name: {
-                'level': 'INFO',  # One of INFO, DEBUG, WARNING, ERROR, CRITICAL
+                'level': loglevel,  # One of INFO, DEBUG, WARNING, ERROR, CRITICAL
                 'handlers': ['console', 'file'],
             },
         },
@@ -73,10 +73,10 @@ def open_pid_file(pid_file, logger=None):
     try:
         # Open PID file only if it doesn't exist for read/write
         f = os.fdopen(os.open(pid_file, os.O_CREAT | os.O_EXCL | os.O_RDWR), 'r+')
-    except OSError as e:
-         if logger:
-             logger.info('Error accessing pid file %s: %s', pid_file, exc_info=True)
-         return None
+    except OSError:
+        if logger:
+            logger.info('Error accessing pid file %s:', pid_file, exc_info=True)
+        return None
     except Exception:
         if logger:
             logger.info('This script is already running. To override this behaviour and start a new run, remove %s', pid_file)
