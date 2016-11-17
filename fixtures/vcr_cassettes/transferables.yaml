@@ -1,0 +1,24 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.11.1]
+    method: GET
+    uri: http://192.168.168.192:8000/api/v2/location/7609101e-15b2-4f4f-a19d-7b23673ac93b/browse/?api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&username=test
+  response:
+    body: {string: '{"directories": ["dWJ1bnR1", "dmFncmFudA=="], "entries": ["dWJ1bnR1",
+        "dmFncmFudA=="], "properties": {"dWJ1bnR1": {"object count": 3, "size": 4096},
+        "dmFncmFudA==": {"object count": 2103, "size": 4096}}}'}
+    headers:
+      Cache-Control: [no-cache]
+      Connection: [keep-alive]
+      Content-Type: [application/json]
+      Date: ['Mon, 07 Nov 2016 19:36:55 GMT']
+      Server: [nginx/1.4.6 (Ubuntu)]
+      Vary: ['Accept, Cookie']
+      X-Frame-Options: [SAMEORIGIN]
+    status: {code: 200, message: OK}
+version: 1

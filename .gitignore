@@ -9,3 +9,5 @@
 
 # Sublime files
 *.sublime-*
+
+*.log.[0-9]
