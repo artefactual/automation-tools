@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
+r"""
+Split a single large transfer into several.
 
-import argparse
-import csv
-import os
-import subprocess
-import sys
-
-"""
-Download this script and make it executable. Usage example:
+Usage example:
 
    $ ./split_transfer.py \
        --prefix="Foobar_" \
@@ -18,6 +13,14 @@ The original location is not modified. Preferably run locally. It's been tested 
 
 Make sure that you have permissions on the locations you are reading or writing!
 """
+from __future__ import print_function, unicode_literals
+
+import argparse
+import csv
+import os
+import subprocess
+import sys
+
 
 class SIPMetadata(object):
     def __init__(self, source_sip, csv_delimiter):
@@ -96,12 +99,11 @@ def main(source_sip, target_dir, csv_delimiter, prefix=None):
                 csvw.writerow(mdata)
 
 
-
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument('source_sip')
-    parser.add_argument('target_dir')
-    parser.add_argument('--csv-delimiter', type=str, default=',')
-    parser.add_argument('--prefix', type=str, default=',')
+    parser = argparse.ArgumentParser(description='Split a single large transfer into several')
+    parser.add_argument('source_sip', help='Transfer to split')
+    parser.add_argument('target_dir', help='Directory to place the output in')
+    parser.add_argument('--csv-delimiter', type=str, default=',', help='Delimiter of the CSV metadata file.')
+    parser.add_argument('--prefix', type=str, default=None, help='Prefix of the resulting split transfers.')
     args = parser.parse_args()
     sys.exit(main(args.source_sip, args.target_dir, args.csv_delimiter, args.prefix))
