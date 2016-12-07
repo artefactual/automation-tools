@@ -54,7 +54,7 @@ def make_dirs(dirname):
     except OSError:
         pass
 
-def main(source_sip, target_dir, csv_delimiter, prefix=None):
+def main(source_sip, target_dir, csv_delimiter, prefix=None, metadata_only=False):
     metadata = SIPMetadata(source_sip, csv_delimiter)
     objects_dir = os.path.abspath(os.path.join(source_sip, 'objects'))
     target_dir = os.path.abspath(target_dir)
@@ -82,11 +82,13 @@ def main(source_sip, target_dir, csv_delimiter, prefix=None):
         dst_objects = os.path.join(target_dir, item_dst, 'objects', item, '')
         dst_metadata = os.path.join(target_dir, item_dst, 'metadata', '')
 
-        for dst in (dst_objects, dst_metadata):
-            make_dirs(dst)
+        # Move objects
+        if not metadata_only:
+            make_dirs(dst_objects)
+            rsync(src, dst_objects)
 
-        rsync(src, dst_objects)
-
+        # Split metadata
+        make_dirs(dst_metadata)
         try:
             headers, mdata = metadata.get_object_metadata('objects/{}'.format(item))
         except KeyError:
@@ -106,5 +108,6 @@ if __name__ == '__main__':
     parser.add_argument('target_dir', help='Directory to place the output in')
     parser.add_argument('--csv-delimiter', type=str, default=',', help='Delimiter of the CSV metadata file.')
     parser.add_argument('--prefix', type=str, default=None, help='Prefix of the resulting split transfers.')
+    parser.add_argument('--metadata-only', action='store_true', help='Only update the metadata.csv; do not move files')
     args = parser.parse_args()
-    sys.exit(main(args.source_sip, args.target_dir, args.csv_delimiter, args.prefix))
+    sys.exit(main(args.source_sip, args.target_dir, args.csv_delimiter, args.prefix, args.metadata_only))
