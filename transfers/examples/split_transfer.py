@@ -47,6 +47,12 @@ def rsync(src, dst, verbose=False):
     print('Copying objects... [src={}] [dst={}]'.format(src, dst))
     subprocess.check_call(['rsync', '-a', src, dst])
 
+def make_dirs(dirname):
+    try:
+        os.makedirs(dirname)
+        print("make", dirname)
+    except OSError:
+        pass
 
 def main(source_sip, target_dir, csv_delimiter, prefix=None):
     metadata = SIPMetadata(source_sip, csv_delimiter)
@@ -57,11 +63,9 @@ def main(source_sip, target_dir, csv_delimiter, prefix=None):
     sdoc_prefix = 'transfer_' if prefix is None else prefix
     sdoc_dir_src = os.path.join(source_sip, 'metadata', 'submissionDocumentation', '')
     sdoc_dir_dst = os.path.join(target_dir, '{}submissionDocumentation'.format(sdoc_prefix), 'metadata', 'submissionDocumentation', '')
-    try:
-        os.makedirs(sdoc_dir_dst)
-        print("make", sdoc_dir_dst)
-    except OSError:
-        pass
+
+    make_dirs(sdoc_dir_dst)
+
     rsync(sdoc_dir_src, sdoc_dir_dst, verbose=True)
     print('\033[92m{}: {}\033[00m'.format('submissionDocumentation should be available at', sdoc_dir_dst))
 
@@ -77,12 +81,9 @@ def main(source_sip, target_dir, csv_delimiter, prefix=None):
         item_dst = item if prefix is None else prefix + item
         dst_objects = os.path.join(target_dir, item_dst, 'objects', item, '')
         dst_metadata = os.path.join(target_dir, item_dst, 'metadata', '')
+
         for dst in (dst_objects, dst_metadata):
-            try:
-                os.makedirs(dst)
-                print("make", dst)
-            except OSError:
-                pass
+            make_dirs(dst)
 
         rsync(src, dst_objects)
 
