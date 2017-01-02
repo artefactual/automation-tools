@@ -130,8 +130,20 @@ SUBCOMMANDS = (
         opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
     ),
     SubCommand(
+        name='close-completed-ingests',
+        help='Close all completed ingests.',
+        args=(AM_API_KEY,),
+        opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
+    ),
+    SubCommand(
         name='completed-transfers',
         help='Print all completed transfers.',
+        args=(AM_API_KEY,),
+        opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
+    ),
+    SubCommand(
+        name='completed-ingests',
+        help='Print all completed ingests.',
         args=(AM_API_KEY,),
         opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
     ),
@@ -382,34 +394,55 @@ class AMClient:
             method='DELETE'
         )
 
+    def hide_unit(self, unit_uuid, unit_type):
+        """GET <unit_type>/<unit_uuid>/delete/."""
+        return _call_url_json(
+            '{}/api/{}/{}/delete/'.format(self.am_url, unit_type, unit_uuid),
+            params=self._am_auth(),
+            method='DELETE'
+        )
+
     def close_completed_transfers(self):
         """Close all completed transfers::
 
             $ ./amclient.py close-completed-transfers \
                 --am-user-name=test \
-                --am-api-key=e8f8a0fb157f08a260045f805455e144d8ad0a5b
+                e8f8a0fb157f08a260045f805455e144d8ad0a5b
         """
+        return self._close_completed_units('transfer')
+
+    def close_completed_ingests(self):
+        """Close all completed ingests::
+
+            $ ./amclient.py close-completed-ingests \
+                --am-user-name=test \
+                e8f8a0fb157f08a260045f805455e144d8ad0a5b
+        """
+        return self._close_completed_units('ingest')
+
+    def _close_completed_units(self, unit_type):
+        """Close all completed transfers/ingests.  """
         try:
-            _completed_transfers = self.completed_transfers().get(
-                'results')
+            _completed_units = getattr(
+                self, 'completed_{0}s'.format(unit_type))().get('results')
         except AttributeError:
-            _completed_transfers = None
+            _completed_units = None
         ret = defaultdict(list)
-        if _completed_transfers is None:
+        if _completed_units is None:
             msg = ('Something went wrong when attempting to retrieve the'
-                   ' completed transfers.')
+                   ' completed {0}s.'.format(unit_type))
             LOGGER.warning(msg)
         else:
-            for transfer_uuid in _completed_transfers:
-                ret['completed_transfers'].append(transfer_uuid)
-                response = self.hide_transfer(transfer_uuid)
+            for unit_uuid in _completed_units:
+                ret['completed_{0}s'.format(unit_type)].append(unit_uuid)
+                response = self.hide_unit(unit_uuid, unit_type)
                 if response:
-                    ret['close_succeeded'].append(transfer_uuid)
-                    LOGGER.info('Closed transfer %s.', transfer_uuid)
+                    ret['close_succeeded'].append(unit_uuid)
+                    LOGGER.info('Closed %s %s.', unit_type, unit_uuid)
                 else:
-                    ret['close_failed'].append(transfer_uuid)
-                    LOGGER.warning('FAILED to close transfer %s.',
-                                   transfer_uuid)
+                    ret['close_failed'].append(unit_uuid)
+                    LOGGER.warning('FAILED to close %s %s.',
+                                   unit_type, unit_uuid)
         return ret
 
     def completed_transfers(self):
@@ -417,10 +450,20 @@ class AMClient:
 
             $ ./amclient.py completed-transfers \
                 --am-user-name=test \
-                --am-api-key=e8f8a0fb157f08a260045f805455e144d8ad0a5b
+                e8f8a0fb157f08a260045f805455e144d8ad0a5b
         """
         return _call_url_json(
             '{}/api/transfer/completed'.format(self.am_url), self._am_auth())
+
+    def completed_ingests(self):
+        """Return all completed ingests. GET /ingest/completed::
+
+            $ ./amclient.py completed-ingests \
+                --am-user-name=test \
+                e8f8a0fb157f08a260045f805455e144d8ad0a5b
+        """
+        return _call_url_json(
+            '{}/api/ingest/completed'.format(self.am_url), self._am_auth())
 
     def unapproved_transfers(self):
         """Return all unapproved transfers. GET transfer/unapproved::
