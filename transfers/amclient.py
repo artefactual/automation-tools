@@ -386,14 +386,6 @@ class AMClient:
             'api_key': self.ss_api_key
         }
 
-    def hide_transfer(self, transfer_uuid):
-        """GET transfer/<UUID>/delete/."""
-        return _call_url_json(
-            '{}/api/transfer/{}/delete/'.format(self.am_url, transfer_uuid),
-            params=self._am_auth(),
-            method='DELETE'
-        )
-
     def hide_unit(self, unit_uuid, unit_type):
         """GET <unit_type>/<unit_uuid>/delete/."""
         return _call_url_json(

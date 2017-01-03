@@ -17,7 +17,6 @@ AM_URL = 'http://192.168.168.192'
 SS_URL = 'http://192.168.168.192:8000'
 AM_USER_NAME = 'test'
 AM_API_KEY = '3c23b0361887ace72b9d42963d9acbdf06644673'
-AM_API_KEY_2 = 'ff8fa7f316168508bf9bc743ac589ec55bfd611a'
 SS_USER_NAME = 'test'
 SS_API_KEY = '5de62f6f4817f903dcfac47fa5cffd44685a2cf2'
 TMP_DIR = '.tmp-dip-downloads'
@@ -343,7 +342,7 @@ class TestAMClient(unittest.TestCase):
         to get.
         """
         completed_ingests = amclient.AMClient(
-            am_api_key=AM_API_KEY_2, am_user_name=AM_USER_NAME,
+            am_api_key=AM_API_KEY, am_user_name=AM_USER_NAME,
             am_url=AM_URL).completed_ingests()
         assert (completed_ingests['message'] ==
                 'Fetched completed ingests successfully.')
@@ -360,7 +359,7 @@ class TestAMClient(unittest.TestCase):
         to close.
         """
         response = amclient.AMClient(
-            am_api_key=AM_API_KEY_2, am_user_name=AM_USER_NAME,
+            am_api_key=AM_API_KEY, am_user_name=AM_USER_NAME,
             am_url=AM_URL).close_completed_ingests()
         close_succeeded = response['close_succeeded']
         completed_ingests = response['completed_ingests']
@@ -377,7 +376,7 @@ class TestAMClient(unittest.TestCase):
         ingests to get.
         """
         completed_ingests = amclient.AMClient(
-            am_api_key=AM_API_KEY_2, am_user_name=AM_USER_NAME,
+            am_api_key=AM_API_KEY, am_user_name=AM_USER_NAME,
             am_url=AM_URL).completed_ingests()
         assert (completed_ingests['message'] ==
                 'Fetched completed ingests successfully.')
@@ -392,7 +391,7 @@ class TestAMClient(unittest.TestCase):
         ingests to close.
         """
         response = amclient.AMClient(
-            am_api_key=AM_API_KEY_2, am_user_name=AM_USER_NAME,
+            am_api_key=AM_API_KEY, am_user_name=AM_USER_NAME,
             am_url=AM_URL).close_completed_ingests()
         close_succeeded = response['close_succeeded']
         completed_ingests = response['completed_ingests']

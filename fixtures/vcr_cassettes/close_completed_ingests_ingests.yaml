@@ -7,7 +7,7 @@ interactions:
       Connection: [keep-alive]
       User-Agent: [python-requests/2.7.0 CPython/2.7.6 Linux/3.13.0-87-generic]
     method: GET
-    uri: http://192.168.168.192/api/ingest/completed?username=test&api_key=ff8fa7f316168508bf9bc743ac589ec55bfd611a
+    uri: http://192.168.168.192/api/ingest/completed?username=test&api_key=3c23b0361887ace72b9d42963d9acbdf06644673
   response:
     body: {string: !!python/unicode '{"message": "Fetched completed ingests successfully.",
         "results": ["66391111-0dba-4236-877f-b61cda71cf23", "88394649-3d72-491b-9742-c5e673bf80e0"]}'}
@@ -28,7 +28,7 @@ interactions:
       Content-Length: ['0']
       User-Agent: [python-requests/2.7.0 CPython/2.7.6 Linux/3.13.0-87-generic]
     method: DELETE
-    uri: http://192.168.168.192/api/ingest/66391111-0dba-4236-877f-b61cda71cf23/delete/?username=test&api_key=ff8fa7f316168508bf9bc743ac589ec55bfd611a
+    uri: http://192.168.168.192/api/ingest/66391111-0dba-4236-877f-b61cda71cf23/delete/?username=test&api_key=3c23b0361887ace72b9d42963d9acbdf06644673
   response:
     body: {string: !!python/unicode '{"removed": true}'}
     headers:
@@ -48,7 +48,7 @@ interactions:
       Content-Length: ['0']
       User-Agent: [python-requests/2.7.0 CPython/2.7.6 Linux/3.13.0-87-generic]
     method: DELETE
-    uri: http://192.168.168.192/api/ingest/88394649-3d72-491b-9742-c5e673bf80e0/delete/?username=test&api_key=ff8fa7f316168508bf9bc743ac589ec55bfd611a
+    uri: http://192.168.168.192/api/ingest/88394649-3d72-491b-9742-c5e673bf80e0/delete/?username=test&api_key=3c23b0361887ace72b9d42963d9acbdf06644673
   response:
     body: {string: !!python/unicode '{"removed": true}'}
     headers:
