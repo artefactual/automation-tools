@@ -22,11 +22,7 @@ def main(transfer_path):
         data_contents = os.listdir(data_path)
         data_contents = [os.path.abspath(data_path) + '/' + filename for filename in data_contents]
         for f in data_contents:
-            if os.path.isdir(f):
-                shutil.copytree(f, os.path.join(transfer_path, os.path.basename(f)))
-            else:
-                shutil.copy2(f, transfer_path)
-        shutil.rmtree(data_path)
+            shutil.move(f, transfer_path)
     # otherwise, rename data to objects
     else:
         os.rename(data_path, os.path.join(transfer_path, 'objects'))
