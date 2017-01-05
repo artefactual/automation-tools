@@ -20,7 +20,7 @@ def main(transfer_path):
     data_path = os.path.join(transfer_path, 'data')
     if os.path.isdir(os.path.join(data_path, 'objects')):
         data_contents = os.listdir(data_path)
-        data_contents = [os.path.abspath(data_path) + '/' + filename for filename in data_contents]
+        data_contents = [os.path.join(data_path, filename) for filename in data_contents]
         for f in data_contents:
             shutil.move(f, transfer_path)
     # otherwise, rename data to objects
@@ -38,8 +38,7 @@ def main(transfer_path):
     # write manifest checksums to checksum file
     with open(os.path.join(transfer_path, 'manifest-md5.txt'), 'r') as old_file:
         with open (os.path.join(metadata_dir, 'checksum.md5'), 'w') as new_file:
-                manifest_content = old_file.readlines()
-                for line in manifest_content:
+                for line in old_file:
                     if "data/objects/" in line:
                         new_line = line.replace("data/objects/", "../objects/")
                     else:
