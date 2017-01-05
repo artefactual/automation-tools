@@ -54,4 +54,4 @@ def main(transfer_path):
 
 if __name__ == '__main__':
     transfer_path = sys.argv[1]
-    return main(transfer_path)
+    main(transfer_path)
