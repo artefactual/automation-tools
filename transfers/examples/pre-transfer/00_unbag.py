@@ -47,8 +47,7 @@ def main(transfer_path):
 
     # move bag files to submissionDocumentation
     for bagfile in 'bag-info.txt', 'bagit.txt', 'manifest-md5.txt', 'tagmanifest-md5.txt':
-        shutil.copy2(os.path.join(transfer_path, bagfile), os.path.join(subdoc_dir, bagfile))
-        os.remove(os.path.join(transfer_path, bagfile))
+        shutil.move(os.path.join(transfer_path, bagfile), subdoc_dir)
 
     return 0
 
