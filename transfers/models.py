@@ -1,3 +1,5 @@
+from os.path import isfile
+
 from sqlalchemy import create_engine
 from sqlalchemy import Sequence
 from sqlalchemy import Column, Binary, Boolean, Integer, String
@@ -22,6 +24,10 @@ class Unit(Base):
 
 
 def init(databasefile):
+    if not isfile(databasefile):
+        # We create the file
+        with open(databasefile, "a"):
+            pass
     engine = create_engine('sqlite:///{}'.format(databasefile), echo=False)
     global Session
     Session = sessionmaker(bind=engine)
