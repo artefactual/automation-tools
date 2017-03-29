@@ -382,7 +382,7 @@ def approve_transfer(directory_name, url, am_api_key, am_user):
         LOGGER.debug("Found waiting transfer: %s", a['directory'])
         if fsencode(a['directory']) == directory_name:
             # Post to approve transfer
-            post_url = url + "/api/transfer/approve/"
+            post_url = url + "/api/transfer/approve"
             params = {'username': am_user, 'api_key': am_api_key, 'type': a['type'], 'directory': directory_name}
             LOGGER.debug('URL: %s; Params: %s;', post_url, params)
             r = requests.post(post_url, data=params)
