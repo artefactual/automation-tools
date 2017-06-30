@@ -342,7 +342,7 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth
     """
     # Start new transfer
     completed = {x[0] for x in session.query(models.Unit.path).all()}
-    transfer_start_times = session.query(Unit.path, Unit.started_timestamp)
+    transfer_start_times = session.query(models.Unit.path, models.Unit.started_timestamp)
     target = get_next_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth, completed, see_files, transfer_start_times)
     if not target:
         LOGGER.warning("All potential transfers in %s have been created. Exiting", ts_path)
