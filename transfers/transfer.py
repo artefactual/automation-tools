@@ -87,8 +87,8 @@ def setup(config_file, log_level):
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'default',
                 'filename': get_setting('logfile', default_logfile),
-                'backupCount': 2,
-                'maxBytes': 10 * 1024,
+                'backupCount': 20,
+                'maxBytes': 10 * 1024 * 1024,
             },
         },
         'loggers': {
