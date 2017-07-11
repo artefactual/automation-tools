@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy import Sequence
-from sqlalchemy import Column, Binary, Boolean, Integer, String
+from sqlalchemy import Column, Binary, Boolean, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -16,9 +16,10 @@ class Unit(Base):
     status = Column(String(20), nullable=True)
     microservice = Column(String(50))
     current = Column(Boolean(create_constraint=False))
+    started_timestamp = Column(DateTime(timezone=True))  # UTC time started
 
     def __repr__(self):
-        return "<Unit(id={s.id}, uuid={s.uuid}, unit_type={s.unit_type}, path={s.path}, status={s.status}, current={s.current})>".format(s=self)
+        return "<Unit(id={s.id}, uuid={s.uuid}, unit_type={s.unit_type}, path={s.path}, status={s.status}, current={s.current}, timestamp={s.started_timestamp})>".format(s=self)
 
 
 def init(databasefile):

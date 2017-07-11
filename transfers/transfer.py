@@ -9,11 +9,14 @@ from __future__ import print_function, unicode_literals
 import argparse
 import ast
 import base64
+import datetime
+from dateutil.parser import parse
 import logging
 import logging.config  # Has to be imported separately
 import os
 import requests
 from six.moves import configparser
+from sqlalchemy import inspect
 import subprocess
 import sys
 import time
@@ -84,8 +87,8 @@ def setup(config_file, log_level):
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'default',
                 'filename': get_setting('logfile', default_logfile),
-                'backupCount': 2,
-                'maxBytes': 10 * 1024,
+                'backupCount': 20,
+                'maxBytes': 10 * 1024 * 1024,
             },
         },
         'loggers': {
@@ -225,7 +228,7 @@ def run_scripts(directory, *args):
             LOGGER.warning('stderr: %s', stderr)
 
 
-def get_next_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, path_prefix, depth, completed, see_files):
+def get_next_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, path_prefix, depth, completed, see_files, transfer_start_times=None):
     """
     Helper to find the first directory that doesn't have an associated transfer.
 
@@ -237,6 +240,7 @@ def get_next_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, path_prefix
     :param depth: Depth relative to path_prefix to create a transfer from. Should be 1 or greater.
     :param set completed: Set of the paths of completed transfers. Ideally, relative to the same transfer source location, including the same path_prefix, and at the same depth.
     :param bool see_files: Return files as well as folders to become transfers.
+    :param transfer_start_times: List of objects with attributes 'path' and 'started_timestamp'. Likely a SQLAlchemy query, but could also be a NamedTuple.
     :returns: Path relative to TS Location of the new transfer
     """
     # Get sorted list from source dir
@@ -262,21 +266,61 @@ def get_next_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, path_prefix
         # Find the directories that are not already in the DB using sets
         entries = set(entries) - completed
         LOGGER.debug("New transfer candidates: %s", entries)
+        if not entries:
+            LOGGER.info("All potential transfers in %s have been created. Checking for updated transfers", path_prefix)
+            if not transfer_start_times:
+                LOGGER.info('Starting times for transfers not provided.')
+                return None
+            # Find transfers whose started_timestamp is newer than the one provided by browse
+            browse_timestamps = {
+                os.path.join(path_prefix, base64.b64decode(e)): parse(d['timestamp'])
+                for e, d in browse_info['properties'].items()
+                if 'timestamp' in d
+            }
+            LOGGER.debug('browse_timestamps: %s', browse_timestamps)
+            LOGGER.debug('transfer_start_times: %s', list(transfer_start_times))
+            updated = {
+                e.path
+                for e in transfer_start_times
+                if e.started_timestamp and e.path in browse_timestamps and browse_timestamps[e.path] > e.started_timestamp}
+            LOGGER.debug('Updated transfer candidates: %s', updated)
+            entries = updated
+        if not entries:
+            return None
         # Sort, take the first
         entries = sorted(list(entries))
-        if not entries:
-            LOGGER.info("All potential transfers in %s have been created.", path_prefix)
-            return None
         target = entries[0]
         return target
     else:  # if depth > 1
         # Recurse on each directory
         for e in entries:
             LOGGER.debug('New path: %s', e)
-            target = get_next_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, e, depth - 1, completed, see_files)
+            target = get_next_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, e, depth - 1, completed, see_files, transfer_start_times)
             if target:
                 return target
     return None
+
+
+def create_or_update_unit(session, path, **kwargs):
+    """
+    Create a new Unit, or update an existing one with the same path.
+
+    :param session: SQLAlchemy session with the DB
+    :param path: Path for the new Unit, or Unit to be updated
+    :parma kwargs: Other attributes for the new Unit. Should be attributes of Unit.
+    :return: New or updated transfer
+    """
+    unit_attrs = [c.key for c in inspect(models.Unit).attrs if c.key not in ('id', 'path',)]
+    params = {k: v for k, v in kwargs.items() if k in unit_attrs}
+    params['path'] = path
+    try:
+        new_unit = session.query(models.Unit).filter_by(path=path)[0]
+        for attr, value in params.items():
+            setattr(new_unit, attr, value)
+    except IndexError:
+        new_unit = models.Unit(**params)
+    new_unit = session.merge(new_unit)
+    return new_unit
 
 
 def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth, am_url, am_user, am_api_key, transfer_type, see_files, session):
@@ -298,7 +342,8 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth
     """
     # Start new transfer
     completed = {x[0] for x in session.query(models.Unit.path).all()}
-    target = get_next_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth, completed, see_files)
+    transfer_start_times = session.query(models.Unit.path, models.Unit.started_timestamp)
+    target = get_next_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth, completed, see_files, transfer_start_times)
     if not target:
         LOGGER.warning("All potential transfers in %s have been created. Exiting", ts_path)
         return None
@@ -328,8 +373,7 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth
     if not response.ok or resp_json.get('error'):
         LOGGER.error('Unable to start transfer.')
         LOGGER.error('Response: %s', resp_json)
-        new_transfer = models.Unit(path=target, unit_type='transfer', status='FAILED', current=False)
-        session.add(new_transfer)
+        new_transfer = create_or_update_unit(session, path=target, unit_type='transfer', status='FAILED', current=False, started_timestamp=datetime.datetime.now())
         return None
 
     # Run all scripts in pre-transfer directory
@@ -348,15 +392,13 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth
         # Mark as started
         if result:
             LOGGER.info('Approved %s', result)
-            new_transfer = models.Unit(uuid=result, path=target, unit_type='transfer', current=True)
+            new_transfer = create_or_update_unit(session, path=target, uuid=result, unit_type='transfer', current=True, started_timestamp=datetime.datetime.now())
             LOGGER.info('New transfer: %s', new_transfer)
-            session.add(new_transfer)
             break
         LOGGER.info('Failed approve, try %s of %s', i + 1, retry_count)
     else:
         LOGGER.warning('Not approved')
-        new_transfer = models.Unit(uuid=None, path=target, unit_type='transfer', current=False)
-        session.add(new_transfer)
+        new_transfer = create_or_update_unit(session, path=target, uuid=None, unit_type='transfer', current=False, started_timestamp=datetime.datetime.now())
         return None
 
     LOGGER.info('Finished %s', target)

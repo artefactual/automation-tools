@@ -68,5 +68,10 @@
       <appliesTo>b320ce81-9982-408a-9502-097d0daa48fa</appliesTo>
       <goToChain>/api/v2/location/edc821af-b9c0-480f-9465-e6b38b23dc99/</goToChain>
     </preconfiguredChoice>
+    <!-- DSpace skips quarantine -->
+    <preconfiguredChoice>
+      <appliesTo>05f99ffd-abf2-4f5a-9ec8-f80a59967b89</appliesTo>
+      <goToChain>d4404ab1-dc7f-4e9e-b1f8-aa861e766b8e</goToChain>
+    </preconfiguredChoice>
   </preconfiguredChoices>
 </processingMCP>
