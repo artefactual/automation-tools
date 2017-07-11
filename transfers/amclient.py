@@ -204,8 +204,7 @@ def get_parser():
         description='Archivematica Client',
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
-        '--config-file', metavar='FILE', help='Configuration'
-        ' file (log/db/PID files)', default=DEFAULT_LOGFILE)
+        '--log-file', metavar='FILE', help='logfile', default=DEFAULT_LOGFILE)
     parser.add_argument(
         '--log-level', choices=['ERROR', 'WARNING', 'INFO', 'DEBUG'],
         default='INFO', help='Set the debugging output level.')
@@ -584,7 +583,7 @@ class AMClient:
 def main():
     parser = get_parser()
     args = parser.parse_args()
-    setup_logger(args.config_file, args.log_level)
+    setup_logger(args.log_file, args.log_level)
     am_client = AMClient(**vars(args))
     try:
         getattr(am_client, 'print_{0}'.format(args.subcommand.replace('-', '_')))
