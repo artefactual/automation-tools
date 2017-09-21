@@ -55,8 +55,16 @@ def setup_logger(log_file, log_level='INFO'):
     logging.config.dictConfig(CONFIG)
 
 
-def main(ss_url, ss_user, ss_api_key, aip_uuid):
-    aip_filename = download_aip(ss_url, ss_user, ss_api_key, aip_uuid)
+def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
+    if not os.path.isdir(tmp_dir):
+        if os.path.isdir('/tmp'):
+            LOGGER.warning('%s is not a valid directory, using /tmp', tmp_dir)
+            tmp_dir = '/tmp'
+        else:
+            LOGGER.error('%s and /tmp are not valid directories. Please, select a valid temporary directory with --tmp-dir', tmp_dir)
+            return
+
+    aip_filename = download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir)
 
     if not aip_filename:
         LOGGER.error('Unable to download AIP %s', aip_uuid)
@@ -65,7 +73,7 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid):
     LOGGER.info('AIP downloaded to %s', aip_filename)
 
 
-def download_aip(ss_url, ss_user, ss_api_key, aip_uuid):
+def download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
     """Download the AIP from Storage Service"""
     aip_url = '{}/api/v2/file/{}/download/'.format(ss_url, aip_uuid)
     params = { 'username': ss_user, 'api_key': ss_api_key }
@@ -79,9 +87,9 @@ def download_aip(ss_url, ss_user, ss_api_key, aip_uuid):
                 'filename="(.+)"',
                 response.headers['content-disposition'])[0]
         except KeyError:
-            # NOTE: assuming .7z format
-            local_filename = 'aip-{}.7z'.format(aip_uuid)
-        local_filename = os.path.join('/tmp', local_filename)
+            # Assuming .7z format if content-disposition is missing
+            local_filename = 'Untitled-{}.7z'.format(aip_uuid)
+        local_filename = os.path.join(tmp_dir, local_filename)
         with open(local_filename, 'wb') as file_:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
@@ -96,6 +104,7 @@ if __name__ == '__main__':
     parser.add_argument('--ss-user', metavar='USERNAME', required=True, help='Username of the Storage Service user to authenticate as.')
     parser.add_argument('--ss-api-key', metavar='KEY', required=True, help='API key of the Storage Service user.')
     parser.add_argument('--aip-uuid', metavar='UUID', required=True, help='UUID of the AIP in the Storage Service')
+    parser.add_argument('--tmp-dir', metavar='PATH', help='Absolute path to the directory used for temporary files. Default: /tmp', default='/tmp')
 
     # Logging
     parser.add_argument('--log-file', metavar='FILE', help='Location of log file', default=None)
@@ -125,5 +134,6 @@ if __name__ == '__main__':
         ss_url=args.ss_url,
         ss_user=args.ss_user,
         ss_api_key=args.ss_api_key,
-        aip_uuid=args.aip_uuid
+        aip_uuid=args.aip_uuid,
+        tmp_dir=args.tmp_dir
     ))

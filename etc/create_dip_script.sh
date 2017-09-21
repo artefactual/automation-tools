@@ -5,4 +5,6 @@ cd /usr/lib/archivematica/automation-tools/
 /usr/share/python/automation-tools/bin/python -m aips.create_dip \
   --ss-user <username> \
   --ss-api-key <api_key> \
-  --aip-uuid <uuid>
+  --aip-uuid <uuid> \
+  --tmp-dir <path> \
+  --log-file <path>
