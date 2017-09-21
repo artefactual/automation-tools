@@ -12,6 +12,7 @@ import os
 import sys
 import requests
 import re
+import tarfile
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 LOGGER = logging.getLogger('create_dip')
@@ -64,13 +65,21 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
             LOGGER.error('%s and /tmp are not valid directories. Please, select a valid temporary directory with --tmp-dir', tmp_dir)
             return
 
-    aip_filename = download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir)
+    aip_file = download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir)
 
-    if not aip_filename:
+    if not aip_file:
         LOGGER.error('Unable to download AIP %s', aip_uuid)
         return
 
-    LOGGER.info('AIP downloaded to %s', aip_filename)
+    LOGGER.info('AIP downloaded to %s', aip_file)
+
+    aip_name = extract_aip(aip_file, tmp_dir)
+
+    if not aip_name:
+        LOGGER.error('Unable to extract AIP %s', aip_file)
+        return
+
+    aip_dir = os.path.join(tmp_dir, aip_name)
 
 
 def download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
@@ -95,6 +104,34 @@ def download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
                 if chunk:
                     file_.write(chunk)
         return local_filename
+
+
+def extract_aip(aip_file, tmp_dir):
+    """Extract a downloaded AIP to a folder. Accepted formats: '.tar', '.7z'"""
+    LOGGER.info('Extracting AIP to %s', tmp_dir)
+
+    # tar archives, including those using gzip or bz2 compression
+    if tarfile.is_tarfile(aip_file):
+        LOGGER.debug('AIP can be handled with tarfile')
+        tar = tarfile.open(aip_file)
+
+        # Get top-level folders from tar file
+        dirs = []
+        for tarinfo in tar:
+            if '/' not in tarinfo.name and tarinfo.isdir():
+                dirs.append(tarinfo.name)
+
+        if len(dirs) is not 1:
+            LOGGER.error('AIP has none or more than one folder')
+            return
+
+        LOGGER.info('Extracting %s to %s', dirs[0], tmp_dir)
+        tar.extractall(tmp_dir)
+        tar.close()
+
+        return dirs[0]
+
+    # 7z archives
 
 
 if __name__ == '__main__':
