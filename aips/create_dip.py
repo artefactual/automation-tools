@@ -57,26 +57,24 @@ def setup_logger(log_file, log_level='INFO'):
 
 
 def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
-    if not os.path.isdir(tmp_dir):
-        if os.path.isdir('/tmp'):
-            LOGGER.warning('%s is not a valid directory, using /tmp', tmp_dir)
-            tmp_dir = '/tmp'
-        else:
-            LOGGER.error('%s and /tmp are not valid directories. Please, select a valid temporary directory with --tmp-dir', tmp_dir)
-            return
+    LOGGER.info('Starting DIP creation from AIP: %s', aip_uuid)
 
+    if not os.path.isdir(tmp_dir):
+        LOGGER.error('%s is not a valid directory', tmp_dir)
+        return
+
+    LOGGER.info('Downloading AIP from Storage Service')
     aip_file = download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir)
 
     if not aip_file:
-        LOGGER.error('Unable to download AIP %s', aip_uuid)
+        LOGGER.error('Unable to download AIP')
         return
 
-    LOGGER.info('AIP downloaded to %s', aip_file)
-
+    LOGGER.info('Extracting AIP')
     aip_name = extract_aip(aip_file, tmp_dir)
 
     if not aip_name:
-        LOGGER.error('Unable to extract AIP %s', aip_file)
+        LOGGER.error('Unable to extract AIP')
         return
 
     aip_dir = os.path.join(tmp_dir, aip_name)
@@ -86,33 +84,35 @@ def download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
     """Download the AIP from Storage Service"""
     aip_url = '{}/api/v2/file/{}/download/'.format(ss_url, aip_uuid)
     params = { 'username': ss_user, 'api_key': ss_api_key }
-
-    LOGGER.info('Downloading AIP from Storage Service, URL: %s', aip_url)
+    LOGGER.debug('SS AIP URL: %s', aip_url)
 
     response = requests.get(aip_url, params, stream=True)
     if response.status_code == 200:
         try:
-            local_filename = re.findall(
+            aip_filename = re.findall(
                 'filename="(.+)"',
                 response.headers['content-disposition'])[0]
         except KeyError:
             # Assuming .7z format if content-disposition is missing
-            local_filename = 'Untitled-{}.7z'.format(aip_uuid)
-        local_filename = os.path.join(tmp_dir, local_filename)
-        with open(local_filename, 'wb') as file_:
+            LOGGER.warning('Response headers is missing content-disposition')
+            aip_filename = 'Untitled-{}.7z'.format(aip_uuid)
+
+        LOGGER.debug('AIP filename: %s', aip_filename)
+
+        aip_path = os.path.join(tmp_dir, aip_filename)
+        with open(aip_path, 'wb') as file_:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
                     file_.write(chunk)
-        return local_filename
+
+        return aip_path
 
 
 def extract_aip(aip_file, tmp_dir):
     """Extract a downloaded AIP to a folder. Accepted formats: '.tar', '.7z'"""
-    LOGGER.info('Extracting AIP to %s', tmp_dir)
 
     # tar archives, including those using gzip or bz2 compression
     if tarfile.is_tarfile(aip_file):
-        LOGGER.debug('AIP can be handled with tarfile')
         tar = tarfile.open(aip_file)
 
         # Get top-level folders from tar file
@@ -122,10 +122,10 @@ def extract_aip(aip_file, tmp_dir):
                 dirs.append(tarinfo.name)
 
         if len(dirs) is not 1:
-            LOGGER.error('AIP has none or more than one folder')
+            LOGGER.warning('AIP has none or more than one folder')
             return
 
-        LOGGER.info('Extracting %s to %s', dirs[0], tmp_dir)
+        LOGGER.debug('AIP dir: %s', dirs[0])
         tar.extractall(tmp_dir)
         tar.close()
 
