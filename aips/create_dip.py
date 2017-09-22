@@ -13,6 +13,7 @@ import sys
 import requests
 import re
 import tarfile
+import subprocess
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 LOGGER = logging.getLogger('create_dip')
@@ -71,7 +72,7 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
         return
 
     LOGGER.info('Extracting AIP')
-    aip_name = extract_aip(aip_file, tmp_dir)
+    aip_name = extract_aip(aip_file, aip_uuid, tmp_dir)
 
     if not aip_name:
         LOGGER.error('Unable to extract AIP')
@@ -108,7 +109,7 @@ def download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
         return aip_path
 
 
-def extract_aip(aip_file, tmp_dir):
+def extract_aip(aip_file, aip_uuid, tmp_dir):
     """Extract a downloaded AIP to a folder. Accepted formats: '.tar', '.7z'"""
 
     # tar archives, including those using gzip or bz2 compression
@@ -132,10 +133,27 @@ def extract_aip(aip_file, tmp_dir):
 
             return dirs[0]
         except tarfile.TarError as err:
-            LOGGER.error('Tarfile error: {}'.format(err))
-            return
+            LOGGER.warning('Tarfile error: {}. Trying with /bin/tar'.format(err))
 
-    # 7z archives
+    # 7z, failed tar and other archives based on file last extension
+    ext = aip_file.split('.')[-1]
+    command = {
+        'tar': ['tar', 'xvf', aip_file, '-C', tmp_dir],
+        'bz2': ['tar', 'xvjf', aip_file, '-C', tmp_dir],
+        'gz': ['tar', 'xvzf', aip_file, '-C', tmp_dir],
+        '7z': ['7z', 'x', '-bd', '-y', '-o{0}'.format(tmp_dir), aip_file]
+    }.get(ext, ['unar', '-force-overwrite', '-o', tmp_dir, aip_file])
+
+    LOGGER.debug('Extract command: %s', command)
+    if subprocess.call(command) is not 0:
+        return
+
+    # Get extracted folder name. Assuming it contains the AIP UUID
+    for folder in os.listdir(tmp_dir):
+        if os.path.isdir(os.path.join(tmp_dir, folder)) and aip_uuid in folder:
+            return folder
+
+    LOGGER.warning('Can not find extracted AIP folder by UUID')
 
 
 if __name__ == '__main__':
