@@ -113,23 +113,27 @@ def extract_aip(aip_file, tmp_dir):
 
     # tar archives, including those using gzip or bz2 compression
     if tarfile.is_tarfile(aip_file):
-        tar = tarfile.open(aip_file)
+        try:
+            tar = tarfile.open(aip_file)
 
-        # Get top-level folders from tar file
-        dirs = []
-        for tarinfo in tar:
-            if '/' not in tarinfo.name and tarinfo.isdir():
-                dirs.append(tarinfo.name)
+            # Get top-level folders from tar file
+            dirs = []
+            for tarinfo in tar:
+                if '/' not in tarinfo.name and tarinfo.isdir():
+                    dirs.append(tarinfo.name)
 
-        if len(dirs) is not 1:
-            LOGGER.warning('AIP has none or more than one folder')
+            if len(dirs) is not 1:
+                LOGGER.warning('AIP has none or more than one folder')
+                return
+
+            LOGGER.debug('AIP dir: %s', dirs[0])
+            tar.extractall(tmp_dir)
+            tar.close()
+
+            return dirs[0]
+        except tarfile.TarError as err:
+            LOGGER.error('Tarfile error: {}'.format(err))
             return
-
-        LOGGER.debug('AIP dir: %s', dirs[0])
-        tar.extractall(tmp_dir)
-        tar.close()
-
-        return dirs[0]
 
     # 7z archives
 
