@@ -2,7 +2,7 @@
 """
 Create DIP from AIP
 
-Downloads and AIP from the Storage Service and creates a DIP
+Downloads an AIP from the Storage Service and creates a DIP
 """
 
 import argparse
@@ -14,6 +14,7 @@ import requests
 import re
 import tarfile
 import subprocess
+import shutil
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 LOGGER = logging.getLogger('create_dip')
@@ -79,6 +80,15 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
         return
 
     aip_dir = os.path.join(tmp_dir, aip_name)
+
+    LOGGER.info('Creating DIP')
+    dip_dir = create_dip(aip_dir, aip_uuid)
+
+    if not dip_dir:
+        LOGGER.error('Unable to create DIP')
+        return
+
+    LOGGER.info('DIP created in: %s', dip_dir)
 
 
 def download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
@@ -154,6 +164,22 @@ def extract_aip(aip_file, aip_uuid, tmp_dir):
             return folder
 
     LOGGER.warning('Can not find extracted AIP folder by UUID')
+
+
+def create_dip(aip_dir, aip_uuid):
+    dip_dir = aip_dir + '_DIP'
+    LOGGER.debug('DIP dir: %s', dip_dir)
+
+    if os.path.exists(dip_dir):
+        LOGGER.warning('DIP folder already exists, overwriting')
+        shutil.rmtree(dip_dir)
+    os.makedirs(os.path.join(dip_dir, 'objects'))
+
+    LOGGER.info('Moving METS file')
+    mets_file = '{}/METS.{}.xml'.format(dip_dir, aip_uuid)
+    shutil.move('{}/data/METS.{}.xml'.format(aip_dir, aip_uuid), mets_file)
+
+    return dip_dir
 
 
 if __name__ == '__main__':
