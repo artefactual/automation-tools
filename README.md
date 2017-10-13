@@ -1,3 +1,5 @@
+[![Travis CI](https://travis-ci.org/artefactual/automation-tools.svg?branch=master)](https://travis-ci.org/artefactual/automation-tools)
+
 Automation Tools
 ================
 
