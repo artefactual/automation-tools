@@ -5,6 +5,7 @@ Module and CLI that holds functionality for interacting with the various
 Archivematica APIs.
 """
 from __future__ import print_function, unicode_literals
+
 import argparse
 import binascii
 import base64
@@ -13,25 +14,28 @@ import json
 import logging
 import logging.config  # Has to be imported separately
 import os
+import pprint
+import re
+import sys
+
+import requests
+from six import binary_type, text_type
+from six.moves import configparser
+
+
 try:
     from os import fsencode
 except ImportError:
     def fsencode(filename):
         """Cribbed & modified from Python3's OS module to support Python2."""
         encoding = sys.getfilesystemencoding()
-        if isinstance(filename, str):
+        if isinstance(filename, binary_type):
             return filename
-        elif isinstance(filename, unicode):
+        elif isinstance(filename, text_type):
             return filename.encode(encoding)
         else:
             raise TypeError("expect bytes or str, not %s" %
                             type(filename).__name__)
-import pprint
-import re
-import sys
-
-import requests
-from six.moves import configparser
 
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))

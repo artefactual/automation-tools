@@ -6,17 +6,21 @@ Helper script to automate running transfers through Archivematica.
 """
 
 from __future__ import print_function, unicode_literals
+
 import argparse
 import ast
 import base64
 import logging
 import logging.config  # Has to be imported separately
 import os
-import requests
-from six.moves import configparser
 import subprocess
 import sys
 import time
+
+import requests
+from six import binary_type, text_type
+from six.moves import configparser
+
 
 from . import models
 
@@ -26,18 +30,18 @@ except ImportError:
     # Cribbed & modified from Python3's OS module to support Python2
     def fsencode(filename):
         encoding = sys.getfilesystemencoding()
-        if isinstance(filename, str):
+        if isinstance(filename, binary_type):
             return filename
-        elif isinstance(filename, unicode):
+        elif isinstance(filename, text_type):
             return filename.encode(encoding)
         else:
             raise TypeError("expect bytes or str, not %s" % type(filename).__name__)
 
     def fsdecode(filename):
         encoding = sys.getfilesystemencoding()
-        if isinstance(filename, unicode):
+        if isinstance(filename, text_type):
             return filename
-        elif isinstance(filename, str):
+        elif isinstance(filename, binary_type):
             return filename.decode(encoding)
         else:
             raise TypeError("expect bytes or str, not %s" % type(filename).__name__)

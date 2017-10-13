@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 from __future__ import print_function, unicode_literals
+
 import datetime
 import os
 import sys
+
 
 def main(transfer_path):
     """
@@ -18,6 +20,7 @@ def main(transfer_path):
     os.rename(transfer_path, os.path.join(temp_dir, transfer_name))
     # Rename temp dir to the same as the file
     os.rename(temp_dir, transfer_path)
+
 
 if __name__ == '__main__':
     transfer_path = sys.argv[1]

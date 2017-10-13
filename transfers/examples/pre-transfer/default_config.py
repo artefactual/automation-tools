@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+
 import os
 import shutil
 import sys
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+
 
 def main(transfer_path):
     # Update default config

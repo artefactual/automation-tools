@@ -44,6 +44,7 @@ def main(transfer_path):
         writer = csv.writer(f)
         writer.writerows(as_ids)
 
+
 if __name__ == '__main__':
     transfer_path = sys.argv[1]
     sys.exit(main(transfer_path))

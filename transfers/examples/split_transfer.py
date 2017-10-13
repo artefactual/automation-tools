@@ -47,12 +47,14 @@ def rsync(src, dst, verbose=False):
     print('Copying objects... [src={}] [dst={}]'.format(src, dst))
     subprocess.check_call(['rsync', '-a', src, dst])
 
+
 def make_dirs(dirname):
     try:
         os.makedirs(dirname)
         print("make", dirname)
     except OSError:
         pass
+
 
 def main(source_sip, target_dir, csv_delimiter, prefix=None, metadata_only=False):
     metadata = SIPMetadata(source_sip, csv_delimiter)

@@ -6,6 +6,7 @@ import csv
 import os
 import sys
 
+
 def main(transfer_path):
     if not os.path.isdir(transfer_path):
         return 1
@@ -30,6 +31,7 @@ def main(transfer_path):
         csvwriter.writerows(metadata)
 
     return 0
+
 
 if __name__ == '__main__':
     transfer_path = sys.argv[1]
