@@ -20,7 +20,6 @@ import sys
 
 import requests
 from six import binary_type, text_type
-from six.moves import configparser
 
 
 try:
@@ -41,7 +40,6 @@ except ImportError:
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_LOGFILE = os.path.join(THIS_DIR, 'amclient.log')
 LOGGER = logging.getLogger('amclient')
-CONFIG_FILE = None
 RETRY_COUNT = 5
 DEF_AM_URL = 'http://127.0.0.1'
 DEF_SS_URL = 'http://127.0.0.1:8000'
@@ -221,18 +219,6 @@ def get_parser():
                 '--' + opt.name, metavar=opt.metavar, help=opt.help,
                 default=opt.default, type=opt.type)
     return parser
-
-
-def get_setting(setting, default=None):
-    """Get ``setting`` from our config file; return ``default`` if not
-    possible.
-    """
-    config = configparser.SafeConfigParser()
-    try:
-        config.read(CONFIG_FILE)
-        return config.get('amclient', setting)
-    except (TypeError, configparser.Error):
-        return default
 
 
 def _call_url_json(url, params, method='GET'):
