@@ -246,9 +246,6 @@ script. One of 'standard', 'unzipped bag', 'zipped bag', 'dspace'.
 There are some sample scripts in the pre-transfers directory that may be
 useful, or models for your own scripts.
 
-* `00_file_to_folder.py`: If the transfer is a single file (eg a zipped bag or
-DSpace transfer), it moves it into an identically named folder. This is not
-required for processing, but allows other pre-transfer scripts to run.
 * `00_unbag.py`: Repackages a bag as a standard transfer, writing md5 hashes
 from bag manifest into metadata/checksum.md5 file. This enables use of scripts
 such as add_metadata.py with bags, which would otherwise cause failure at the
