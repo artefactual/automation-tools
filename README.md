@@ -22,6 +22,7 @@ The Automation Tools project is a set of python scripts, that are designed to au
     - [user-input](#user-input)
   - [Logs](#logs)
   - [Multiple automated transfer instances](#multiple-automated-transfer-instances)
+- [Automated package moving](#automated-package-moving)
 - [Related Projects](#related-projects)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -201,6 +202,37 @@ You may need to set up multiple automated transfer instances, for example if req
 `<config_file_1>` and `<config_file_2>` should specify different file names for db/PID/log files. See transfers.conf and transfers-2.conf in etc/ for an example
 
 In case different hooks are required for each instance, a possible approach is to checkout a new instance of the automation tools, for example in `/usr/lib/archivematica/automation-tools-2`
+
+
+Automated package moving
+------------------------
+
+`storage/move_packages.py` is a helper script used to automate moving packages between locations.
+
+The script takes the UUID of a `<move_from>` Location, and the UUID of a `<move_to>` Location.
+
+When executed, the script will:
+
+* query the storage service and ask for a list of packages in the move_from Location. 
+* check if the first package returned is in the automation tools db. 
+* If it is not there, the script will call the move_package endpoint with this packages’s UUID and the UUID of the move_to Location, then exit. 
+* The next time the script is executed, it will query the status of the package. 
+* If it is ‘moving’, the script will go back to sleep. 
+* Once the status of the current package is no longer ‘moving’, the script will go on to the next package.
+
+The script makes use of the `move` endpoint in the Storage Service REST API. 
+The `move` endpoint takes two arguments: UUID of an existing package (AIP or DIP or transfer) and the UUID of a Location. 
+
+The move_package endpoint will:
+* Confirm that the type of package (AIP or DIP or Transfer) matches the new Location
+* Set the status of the package to ‘moving’
+* Copy the package from its current location to the new location using rsync and leave the original copy of the package alone
+* Execute any post store hooks configured for the Location (for example, call the Arkivum finalize command)
+* Update the internal storage service database with the new location of the package (and new status, set by the Space)
+* If the rsync command does not work or there is a failure in post store commands, the status of the package will be set to ‘move failed’, and the internal ss database will not be updated
+
+The `etc` directory contains an example script (`storage-script.sh`) and config file (`storage.conf`)
+
 
 Related Projects
 ----------------
