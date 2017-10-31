@@ -320,7 +320,7 @@ class TestAMClient(unittest.TestCase):
                 ss_api_key=SS_API_KEY,
                 directory=TMP_DIR).download_dip()
             assert (dip_path ==
-                    '{}/dip-c0e37bab-e51e-482d-a066-a277330de9a7.7z'.format(
+                    '{}/package-c0e37bab-e51e-482d-a066-a277330de9a7.7z'.format(
                         TMP_DIR))
             assert os.path.isfile(dip_path)
 

@@ -10,11 +10,11 @@ import logging
 import logging.config  # Has to be imported separately
 import os
 import sys
-import re
 import tarfile
 import subprocess
 import shutil
-import requests
+
+from transfers import amclient
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 LOGGER = logging.getLogger('create_dip')
@@ -27,7 +27,7 @@ def setup_logger(log_file, log_level='INFO'):
 
     CONFIG = {
         'version': 1,
-        'disable_existing_loggers': False,
+        'disable_existing_loggers': True,
         'formatters': {
             'default': {
                 'format': '%(levelname)-8s  %(asctime)s  %(filename)s:%(lineno)-4s %(message)s',
@@ -66,7 +66,15 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
         return
 
     LOGGER.info('Downloading AIP from Storage Service')
-    aip_file = download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir)
+
+    am_client = amclient.AMClient(
+        aip_uuid=aip_uuid,
+        ss_url=ss_url,
+        ss_user_name=ss_user,
+        ss_api_key=ss_api_key,
+        directory=tmp_dir)
+
+    aip_file = am_client.download_aip()
 
     if not aip_file:
         LOGGER.error('Unable to download AIP')
@@ -89,34 +97,6 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
         return
 
     LOGGER.info('DIP created in: %s', dip_dir)
-
-
-def download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
-    """Download the AIP from Storage Service"""
-    aip_url = '{}/api/v2/file/{}/download/'.format(ss_url, aip_uuid)
-    params = {'username': ss_user, 'api_key': ss_api_key}
-    LOGGER.debug('SS AIP URL: %s', aip_url)
-
-    response = requests.get(aip_url, params, stream=True)
-    if response.status_code == 200:
-        try:
-            aip_filename = re.findall(
-                'filename="(.+)"',
-                response.headers['content-disposition'])[0]
-        except KeyError:
-            # Assuming .7z format if content-disposition is missing
-            LOGGER.warning('Response headers is missing content-disposition')
-            aip_filename = 'Untitled-{}.7z'.format(aip_uuid)
-
-        LOGGER.debug('AIP filename: %s', aip_filename)
-
-        aip_path = os.path.join(tmp_dir, aip_filename)
-        with open(aip_path, 'wb') as file_:
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
-                    file_.write(chunk)
-
-        return aip_path
 
 
 def extract_aip(aip_file, aip_uuid, tmp_dir):
