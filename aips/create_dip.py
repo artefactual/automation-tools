@@ -81,13 +81,10 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
         return
 
     LOGGER.info('Extracting AIP')
-    aip_name = extract_aip(aip_file, aip_uuid, tmp_dir)
+    aip_dir = extract_aip(aip_file, aip_uuid, tmp_dir)
 
-    if not aip_name:
-        LOGGER.error('Unable to extract AIP')
+    if not aip_dir:
         return
-
-    aip_dir = os.path.join(tmp_dir, aip_name)
 
     LOGGER.info('Creating DIP')
     dip_dir = create_dip(aip_dir, aip_uuid)
@@ -100,50 +97,35 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
 
 
 def extract_aip(aip_file, aip_uuid, tmp_dir):
-    """Extract a downloaded AIP to a folder. Accepted formats: '.tar', '.7z'"""
-
-    # tar archives, including those using gzip or bz2 compression
-    if tarfile.is_tarfile(aip_file):
-        try:
-            tar = tarfile.open(aip_file)
-
-            # Get top-level folders from tar file
-            dirs = []
-            for tarinfo in tar:
-                if '/' not in tarinfo.name and tarinfo.isdir():
-                    dirs.append(tarinfo.name)
-
-            if len(dirs) is not 1:
-                LOGGER.warning('AIP has none or more than one folder')
-                return
-
-            LOGGER.debug('AIP dir: %s', dirs[0])
-            tar.extractall(tmp_dir)
-            tar.close()
-
-            return dirs[0]
-        except tarfile.TarError as err:
-            LOGGER.warning('Tarfile error: {}. Trying with /bin/tar'.format(err))
-
-    # 7z, failed tar and other archives based on file last extension
-    ext = aip_file.split('.')[-1]
-    command = {
-        'tar': ['tar', 'xvf', aip_file, '-C', tmp_dir],
-        'bz2': ['tar', 'xvjf', aip_file, '-C', tmp_dir],
-        'gz': ['tar', 'xvzf', aip_file, '-C', tmp_dir],
-        '7z': ['7z', 'x', '-bd', '-y', '-o{0}'.format(tmp_dir), aip_file]
-    }.get(ext, ['unar', '-force-overwrite', '-o', tmp_dir, aip_file])
-
-    LOGGER.debug('Extract command: %s', command)
-    if subprocess.call(command) is not 0:
+    """Extract a downloaded AIP to a folder."""
+    command = ['7z', 'x', '-bd', '-y', '-o{0}'.format(tmp_dir), aip_file]
+    try:
+        subprocess.check_output(command, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        LOGGER.error('Could not extract AIP, error: %s', e.output)
         return
 
-    # Get extracted folder name. Assuming it contains the AIP UUID
-    for folder in os.listdir(tmp_dir):
-        if os.path.isdir(os.path.join(tmp_dir, folder)) and aip_uuid in folder:
-            return folder
+    # Remove extracted file to avoid multiple entries with the same UUID
+    try:
+        os.remove(aip_file)
+    except OSError:
+        pass
 
-    LOGGER.warning('Can not find extracted AIP folder by UUID')
+    # Find extracted entry. Assuming it contains the AIP UUID
+    for entry in os.listdir(tmp_dir):
+        if aip_uuid in entry:
+            extracted_entry = os.path.join(tmp_dir, entry)
+
+    if not extracted_entry:
+        LOGGER.error('Can not find extracted AIP by UUID')
+        return
+
+    # Return folder path if it's a directory
+    if os.path.isdir(extracted_entry):
+        return extracted_entry
+
+    # Re-try extraction if it's not a directory
+    return extract_aip(extracted_entry, aip_uuid, tmp_dir)
 
 
 def create_dip(aip_dir, aip_uuid):
