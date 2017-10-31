@@ -10,7 +10,6 @@ import logging
 import logging.config  # Has to be imported separately
 import os
 import sys
-import tarfile
 import subprocess
 import shutil
 
