@@ -10,11 +10,11 @@ import logging
 import logging.config  # Has to be imported separately
 import os
 import sys
-import requests
 import re
 import tarfile
 import subprocess
 import shutil
+import requests
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 LOGGER = logging.getLogger('create_dip')
@@ -94,7 +94,7 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
 def download_aip(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
     """Download the AIP from Storage Service"""
     aip_url = '{}/api/v2/file/{}/download/'.format(ss_url, aip_uuid)
-    params = { 'username': ss_user, 'api_key': ss_api_key }
+    params = {'username': ss_user, 'api_key': ss_api_key}
     LOGGER.debug('SS AIP URL: %s', aip_url)
 
     response = requests.get(aip_url, params, stream=True)
