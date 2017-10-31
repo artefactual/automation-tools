@@ -65,6 +65,17 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
         LOGGER.error('%s is not a valid directory', tmp_dir)
         return
 
+    # Create empty workspace directory
+    tmp_dir = os.path.join(tmp_dir, aip_uuid)
+    if os.path.exists(tmp_dir):
+        LOGGER.warning('Workspace directory already exists, overwriting')
+        shutil.rmtree(tmp_dir)
+    try:
+        os.makedirs(tmp_dir)
+    except OSError:
+        LOGGER.error('Could not create workspace directory: %s', tmp_dir)
+        return
+
     LOGGER.info('Downloading AIP from Storage Service')
 
     am_client = amclient.AMClient(
