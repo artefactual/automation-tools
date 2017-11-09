@@ -163,8 +163,10 @@ def create_dip(aip_dir, aip_uuid, output_dir):
 
     LOGGER.info('Moving METS file')
     aip_mets_file = '{}/data/METS.{}.xml'.format(aip_dir, aip_uuid)
+    if not os.path.exists(aip_mets_file):
+        LOGGER.error('Could not find AIP METS file')
+        return
     to_zip_mets_file = '{}/METS.{}.xml'.format(to_zip_dir, aip_uuid)
-    # Move AIP METS file to folder to zip
     shutil.move(aip_mets_file, to_zip_mets_file)
 
     return dip_dir
