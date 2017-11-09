@@ -153,6 +153,14 @@ def create_dip(aip_dir, aip_uuid, output_dir):
         shutil.rmtree(dip_dir)
     os.makedirs(to_zip_dir)
 
+    LOGGER.info('Moving submissionDocumentation folder')
+    aip_sub_doc = '{}/data/objects/submissionDocumentation'.format(aip_dir)
+    if os.path.exists(aip_sub_doc):
+        to_zip_sub_doc = os.path.join(to_zip_dir, 'submissionDocumentation')
+        shutil.move(aip_sub_doc,to_zip_sub_doc)
+    else:
+        LOGGER.warning('submissionDocumentation folder not found')
+
     LOGGER.info('Moving METS file')
     aip_mets_file = '{}/data/METS.{}.xml'.format(aip_dir, aip_uuid)
     to_zip_mets_file = '{}/METS.{}.xml'.format(to_zip_dir, aip_uuid)
