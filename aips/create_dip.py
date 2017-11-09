@@ -13,6 +13,8 @@ import sys
 import subprocess
 import shutil
 
+import metsrw
+
 from transfers import amclient
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -168,6 +170,18 @@ def create_dip(aip_dir, aip_uuid, output_dir):
         return
     to_zip_mets_file = '{}/METS.{}.xml'.format(to_zip_dir, aip_uuid)
     shutil.move(aip_mets_file, to_zip_mets_file)
+
+    # TODO: parse and modify METS file
+    mets = metsrw.METSDocument.fromfile(to_zip_mets_file)
+
+    # Create DIP METS file
+    LOGGER.info('Creating DIP METS file')
+    dip_mets_file = '{}/METS.{}.xml'.format(dip_dir, aip_uuid)
+    try:
+        mets.write(dip_mets_file, fully_qualified=True, pretty_print=True)
+    except Exception:
+        LOGGER.error('Could not create DIP METS file')
+        return
 
     return dip_dir
 
