@@ -157,7 +157,7 @@ def create_dip(aip_dir, aip_uuid, output_dir):
     aip_sub_doc = '{}/data/objects/submissionDocumentation'.format(aip_dir)
     if os.path.exists(aip_sub_doc):
         to_zip_sub_doc = os.path.join(to_zip_dir, 'submissionDocumentation')
-        shutil.move(aip_sub_doc,to_zip_sub_doc)
+        shutil.move(aip_sub_doc, to_zip_sub_doc)
     else:
         LOGGER.warning('submissionDocumentation folder not found')
 
