@@ -57,11 +57,15 @@ def setup_logger(log_file, log_level='INFO'):
     logging.config.dictConfig(CONFIG)
 
 
-def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
+def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir, output_dir):
     LOGGER.info('Starting DIP creation from AIP: %s', aip_uuid)
 
     if not os.path.isdir(tmp_dir):
-        LOGGER.error('%s is not a valid directory', tmp_dir)
+        LOGGER.error('%s is not a valid temporary directory', tmp_dir)
+        return
+
+    if not os.path.isdir(output_dir):
+        LOGGER.error('%s is not a valid output directory', output_dir)
         return
 
     # Create empty workspace directory
@@ -97,7 +101,7 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir):
         return
 
     LOGGER.info('Creating DIP')
-    dip_dir = create_dip(aip_dir, aip_uuid)
+    dip_dir = create_dip(aip_dir, aip_uuid, output_dir)
 
     if not dip_dir:
         LOGGER.error('Unable to create DIP')
@@ -138,18 +142,22 @@ def extract_aip(aip_file, aip_uuid, tmp_dir):
     return extract_aip(extracted_entry, aip_uuid, tmp_dir)
 
 
-def create_dip(aip_dir, aip_uuid):
-    dip_dir = aip_dir + '_DIP'
-    LOGGER.debug('DIP dir: %s', dip_dir)
+def create_dip(aip_dir, aip_uuid, output_dir):
+    aip_name = os.path.basename(aip_dir)[:-37]
+    dip_dir = os.path.join(output_dir, '{}_{}_DIP'.format(aip_name, aip_uuid))
+    objects_dir = os.path.join(dip_dir, 'objects')
+    to_zip_dir = os.path.join(objects_dir, aip_name)
 
     if os.path.exists(dip_dir):
         LOGGER.warning('DIP folder already exists, overwriting')
         shutil.rmtree(dip_dir)
-    os.makedirs(os.path.join(dip_dir, 'objects'))
+    os.makedirs(to_zip_dir)
 
     LOGGER.info('Moving METS file')
-    mets_file = '{}/METS.{}.xml'.format(dip_dir, aip_uuid)
-    shutil.move('{}/data/METS.{}.xml'.format(aip_dir, aip_uuid), mets_file)
+    aip_mets_file = '{}/data/METS.{}.xml'.format(aip_dir, aip_uuid)
+    to_zip_mets_file = '{}/METS.{}.xml'.format(to_zip_dir, aip_uuid)
+    # Move AIP METS file to folder to zip
+    shutil.move(aip_mets_file, to_zip_mets_file)
 
     return dip_dir
 
@@ -162,6 +170,7 @@ if __name__ == '__main__':
     parser.add_argument('--ss-api-key', metavar='KEY', required=True, help='API key of the Storage Service user.')
     parser.add_argument('--aip-uuid', metavar='UUID', required=True, help='UUID of the AIP in the Storage Service')
     parser.add_argument('--tmp-dir', metavar='PATH', help='Absolute path to the directory used for temporary files. Default: /tmp', default='/tmp')
+    parser.add_argument('--output-dir', metavar='PATH', help='Absolute path to the directory used to place the final DIP. Default: /tmp', default='/tmp')
 
     # Logging
     parser.add_argument('--log-file', metavar='FILE', help='Location of log file', default=None)
@@ -192,5 +201,6 @@ if __name__ == '__main__':
         ss_user=args.ss_user,
         ss_api_key=args.ss_api_key,
         aip_uuid=args.aip_uuid,
-        tmp_dir=args.tmp_dir
+        tmp_dir=args.tmp_dir,
+        output_dir=args.output_dir
     ))

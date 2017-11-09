@@ -7,4 +7,5 @@ cd /usr/lib/archivematica/automation-tools/
   --ss-api-key <api_key> \
   --aip-uuid <uuid> \
   --tmp-dir <path> \
+  --output-dir <path> \
   --log-file <path>
