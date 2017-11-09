@@ -171,8 +171,51 @@ def create_dip(aip_dir, aip_uuid, output_dir):
     to_zip_mets_file = '{}/METS.{}.xml'.format(to_zip_dir, aip_uuid)
     shutil.move(aip_mets_file, to_zip_mets_file)
 
-    # TODO: parse and modify METS file
     mets = metsrw.METSDocument.fromfile(to_zip_mets_file)
+    for fsentry in mets.all_files():
+        if fsentry.use != 'original' or not fsentry.path or not fsentry.file_uuid:
+            continue
+
+        LOGGER.info('Moving original file: %s', fsentry.file_uuid)
+        aip_file_path = os.path.join(os.path.join(aip_dir, 'data'), fsentry.path)
+        if not os.path.exists(aip_file_path):
+            LOGGER.warning('Could not find file in AIP')
+            continue
+
+        if not len(fsentry.amdsecs):
+            LOGGER.warning('Missing amdSec in METS file')
+            continue
+
+        amdsec = fsentry.amdsecs[0]
+        for item in amdsec.subsections:
+            if item.subsection == 'techMD':
+                techmd = item
+        if not techmd:
+            LOGGER.warning('techMD section could not be found')
+            continue
+
+        if techmd.contents.mdtype != 'PREMIS:OBJECT':
+            LOGGER.warning('premis:object could not be found')
+            continue
+
+        premis = techmd.contents.document
+        original_name = premis.findtext('premis:originalName',
+                                        namespaces=metsrw.utils.NAMESPACES)
+        if not original_name:
+            LOGGER.warning('premis:originalName could not be found')
+            continue
+
+        string_start = '%transferDirectory%objects/'
+        if original_name[:27] != string_start:
+            LOGGER.warning('premis:originalName not starting with %s', string_start)
+            continue
+
+        dip_file_path = os.path.join(to_zip_dir, original_name[27:])
+        dip_dir_path = os.path.dirname(dip_file_path)
+        if not os.path.exists(dip_dir_path):
+            os.makedirs(dip_dir_path)
+
+        shutil.move(aip_file_path, dip_file_path)
 
     # Create DIP METS file
     LOGGER.info('Creating DIP METS file')
