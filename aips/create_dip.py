@@ -210,12 +210,23 @@ def create_dip(aip_dir, aip_uuid, output_dir):
             LOGGER.warning('premis:originalName not starting with %s', string_start)
             continue
 
+        # Move original file with original name and create parent folders
         dip_file_path = os.path.join(to_zip_dir, original_name[27:])
         dip_dir_path = os.path.dirname(dip_file_path)
         if not os.path.exists(dip_dir_path):
             os.makedirs(dip_dir_path)
 
         shutil.move(aip_file_path, dip_file_path)
+
+        # Obtain and set the fslastmodified date to the moved files
+        fslastmodified = premis.findtext('premis:objectCharacteristics/premis:objectCharacteristicsExtension/fits:fits/fits:fileinfo/fits:fslastmodified', namespaces=metsrw.utils.NAMESPACES)
+        if not fslastmodified:
+            LOGGER.warning('fits/fileinfo/fslastmodified not found')
+            continue
+
+        # Convert from miliseconds to seconds
+        timestamp = int(fslastmodified) // 1000
+        os.utime(dip_file_path, (timestamp, timestamp))
 
     # Create DIP METS file
     LOGGER.info('Creating DIP METS file')
