@@ -31,7 +31,7 @@ def setup_logger(log_file, log_level='INFO'):
         'disable_existing_loggers': True,
         'formatters': {
             'default': {
-                'format': '%(levelname)-8s  %(asctime)s  %(filename)s:%(lineno)-4s %(message)s',
+                'format': '%(levelname)-8s  %(asctime)s  %(message)s',
                 'datefmt': '%Y-%m-%d %H:%M:%S',
             },
         },
