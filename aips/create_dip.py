@@ -237,6 +237,17 @@ def create_dip(aip_dir, aip_uuid, output_dir):
         LOGGER.error('Could not create DIP METS file')
         return
 
+    # Compress to_zip_dir inside the DIP objects folder
+    LOGGER.info('Compressing ZIP folder inside objects')
+    command = ['7z', 'a', '-tzip', '{0}.zip'.format(to_zip_dir), to_zip_dir]
+    try:
+        subprocess.check_output(command, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        LOGGER.error('Could not compress ZIP folder, error: %s', e.output)
+        return
+
+    shutil.rmtree(to_zip_dir)
+
     return dip_dir
 
 
