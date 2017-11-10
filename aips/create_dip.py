@@ -12,6 +12,7 @@ import os
 import sys
 import subprocess
 import shutil
+import uuid
 
 import metsrw
 
@@ -172,7 +173,8 @@ def create_dip(aip_dir, aip_uuid, output_dir):
     shutil.move(aip_mets_file, to_zip_mets_file)
 
     mets = metsrw.METSDocument.fromfile(to_zip_mets_file)
-    for fsentry in mets.all_files():
+    fsentries = mets.all_files()
+    for fsentry in fsentries:
         if fsentry.use != 'original' or not fsentry.path or not fsentry.file_uuid:
             continue
 
@@ -227,6 +229,35 @@ def create_dip(aip_dir, aip_uuid, output_dir):
         # Convert from miliseconds to seconds
         timestamp = int(fslastmodified) // 1000
         os.utime(dip_file_path, (timestamp, timestamp))
+
+    # Modify METS file for DIP
+    objects_entry = None
+    for fsentry in fsentries:
+        # Do not delete AIP entry
+        if fsentry.label == os.path.basename(aip_dir) and fsentry.type.lower() == 'directory':
+            continue
+
+        # Do not delete objects entry and save it for parenting
+        if fsentry.label == 'objects' and fsentry.type.lower() == 'directory':
+            objects_entry = fsentry
+            continue
+
+        # Delete all the others
+        mets.remove_entry(fsentry)
+
+    if not objects_entry:
+        LOGGER.error('Could not find objects entry in METS file')
+        return
+
+    # Create new entry for ZIP file
+    entry = metsrw.FSEntry(
+        label='{}.zip'.format(aip_name),
+        path='objects/{}.zip'.format(aip_name),
+        file_uuid=str(uuid.uuid4())
+    )
+
+    # Add new entry to objects directory
+    objects_entry.add_child(entry)
 
     # Create DIP METS file
     LOGGER.info('Creating DIP METS file')
