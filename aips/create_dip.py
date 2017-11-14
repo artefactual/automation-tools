@@ -178,7 +178,7 @@ def create_dip(aip_dir, aip_uuid, output_dir):
         if fsentry.use != 'original' or not fsentry.path or not fsentry.file_uuid:
             continue
 
-        LOGGER.info('Moving original file: %s', fsentry.file_uuid)
+        LOGGER.info('Moving file: %s', fsentry.path)
         aip_file_path = os.path.join(os.path.join(aip_dir, 'data'), fsentry.path)
         if not os.path.exists(aip_file_path):
             LOGGER.warning('Could not find file in AIP')
