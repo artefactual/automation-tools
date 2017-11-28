@@ -117,6 +117,9 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir, output_dir):
         LOGGER.error('Unable to create DIP')
         return 6
 
+    # Remove workspace directory
+    shutil.rmtree(tmp_dir)
+
     LOGGER.info('DIP created in: %s', dip_dir)
 
 
