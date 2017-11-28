@@ -537,9 +537,9 @@ class AMClient:
                             if d['current_path'].endswith(a['uuid'])]
                 for a in self.aips()}
 
-    def download_dip(self):
-        """Download the DIP with UUID ``self.dip_uuid``."""
-        url = '{}/api/v2/file/{}/download/'.format(self.ss_url, self.dip_uuid)
+    def download_package(self, uuid):
+        """Download the package from SS by UUID."""
+        url = '{}/api/v2/file/{}/download/'.format(self.ss_url, uuid)
         response = requests.get(url, params=self._ss_auth(), stream=True)
         if response.status_code == 200:
             try:
@@ -547,8 +547,8 @@ class AMClient:
                     'filename="(.+)"',
                     response.headers['content-disposition'])[0]
             except KeyError:
-                # NOTE: assuming that DIPs are always stored as .7z
-                local_filename = 'dip-{}.7z'.format(self.dip_uuid)
+                # NOTE: assuming that packages are always stored as .7z
+                local_filename = 'package-{}.7z'.format(uuid)
             if getattr(self, 'directory', None):
                 dir_ = self.directory
                 if os.path.isdir(dir_):
@@ -563,7 +563,13 @@ class AMClient:
                         file_.write(chunk)
             return local_filename
         else:
-            LOGGER.warning('Unable to download DIP %s', self.dip_uuid)
+            LOGGER.warning('Unable to download package %s', uuid)
+
+    def download_dip(self):
+        return self.download_package(self.dip_uuid)
+
+    def download_aip(self):
+        return self.download_package(self.aip_uuid)
 
 
 def main():

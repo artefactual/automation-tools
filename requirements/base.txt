@@ -1,3 +1,4 @@
+metsrw==0.2.0
 requests<3.0
 sqlalchemy
 six

@@ -320,7 +320,7 @@ class TestAMClient(unittest.TestCase):
                 ss_api_key=SS_API_KEY,
                 directory=TMP_DIR).download_dip()
             assert (dip_path ==
-                    '{}/dip-c0e37bab-e51e-482d-a066-a277330de9a7.7z'.format(
+                    '{}/package-c0e37bab-e51e-482d-a066-a277330de9a7.7z'.format(
                         TMP_DIR))
             assert os.path.isfile(dip_path)
 
@@ -334,6 +334,42 @@ class TestAMClient(unittest.TestCase):
             ss_user_name=SS_USER_NAME,
             ss_api_key=SS_API_KEY).download_dip()
         assert dip_path is None
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/download_aip_success.yaml')
+    def test_download_aip_success(self):
+        """Test that we can download an AIP when there is one."""
+        with TmpDir(TMP_DIR):
+            aip_uuid = '216dd8a6-c366-41f8-b11e-0c70814b3992'
+            transfer_name = 'transfer'
+            # Changing the SS_API_KEY global var to generate the cassetes
+            # for the new test cases makes all the other cassetes to fail.
+            # Adding a local var to be able to generate the new cassetes.
+            ss_api_key = '7021334bee4c9155c07e531608dd28a9d8039420'
+            aip_path = amclient.AMClient(
+                aip_uuid=aip_uuid,
+                ss_url=SS_URL,
+                ss_user_name=SS_USER_NAME,
+                ss_api_key=ss_api_key,
+                directory=TMP_DIR).download_aip()
+            assert (aip_path ==
+                    '{}/{}-{}.7z'.format(
+                        TMP_DIR, transfer_name, aip_uuid))
+            assert os.path.isfile(aip_path)
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/download_aip_fail.yaml')
+    def test_download_aip_fail(self):
+        """Test that we can try to download an AIP that does not exist."""
+        aip_uuid = 'bad-aip-uuid'
+        # Changing the SS_API_KEY global var to generate the cassetes
+        # for the new test cases makes all the other cassetes to fail.
+        # Adding a local var to be able to generate the new cassetes.
+        ss_api_key = '7021334bee4c9155c07e531608dd28a9d8039420'
+        aip_path = amclient.AMClient(
+            aip_uuid=aip_uuid,
+            ss_url=SS_URL,
+            ss_user_name=SS_USER_NAME,
+            ss_api_key=ss_api_key).download_aip()
+        assert aip_path is None
 
     @vcr.use_cassette(
         'fixtures/vcr_cassettes/completed_ingests_ingests.yaml')

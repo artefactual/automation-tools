@@ -5,6 +5,11 @@ sudo: false
 language: python
 cache: pip
 
+addons:
+  apt:
+    packages:
+      - p7zip-full
+
 before_script:
   - pip install tox
 
