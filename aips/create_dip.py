@@ -65,11 +65,11 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir, output_dir):
 
     if not os.path.isdir(tmp_dir):
         LOGGER.error('%s is not a valid temporary directory', tmp_dir)
-        return
+        return 1
 
     if not os.path.isdir(output_dir):
         LOGGER.error('%s is not a valid output directory', output_dir)
-        return
+        return 2
 
     # Create empty workspace directory
     tmp_dir = os.path.join(tmp_dir, aip_uuid)
@@ -80,7 +80,7 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir, output_dir):
         os.makedirs(tmp_dir)
     except OSError:
         LOGGER.error('Could not create workspace directory: %s', tmp_dir)
-        return
+        return 3
 
     LOGGER.info('Downloading AIP from Storage Service')
 
@@ -95,20 +95,20 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir, output_dir):
 
     if not aip_file:
         LOGGER.error('Unable to download AIP')
-        return
+        return 4
 
     LOGGER.info('Extracting AIP')
     aip_dir = extract_aip(aip_file, aip_uuid, tmp_dir)
 
     if not aip_dir:
-        return
+        return 5
 
     LOGGER.info('Creating DIP')
     dip_dir = create_dip(aip_dir, aip_uuid, output_dir)
 
     if not dip_dir:
         LOGGER.error('Unable to create DIP')
-        return
+        return 6
 
     LOGGER.info('DIP created in: %s', dip_dir)
 
