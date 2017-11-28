@@ -2,7 +2,14 @@
 """
 Create DIP from AIP
 
-Downloads an AIP from the Storage Service and creates a DIP
+Downloads an AIP from the Storage Service and creates a DIP. Unlike DIPs created
+in Archivematica, the ones created with this script will include only the original
+files from the transfer and they will maintain the directories, filenames and last
+modified date from those files. They will be placed in a single ZIP file under the
+objects directory which will also include a copy of the submissionDocumentation
+folder (if present in the AIP) and the AIP METS file. Another METS file will be
+generated alongside the objects folder containing only a reference to the ZIP file
+(without AMD or DMD sections).
 """
 
 import argparse
@@ -114,7 +121,14 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir, output_dir):
 
 
 def extract_aip(aip_file, aip_uuid, tmp_dir):
-    """Extract a downloaded AIP to a folder."""
+    """
+    Extracts an AIP to a folder.
+
+    :param str aip_file: absolute path to an AIP
+    :param str aip_uuid: UUID from the AIP
+    :param str tmp_dir: absolute path to a directory to place the extracted AIP
+    :returns: absolute path to the extracted AIP folder
+    """
     command = ['7z', 'x', '-bd', '-y', '-o{0}'.format(tmp_dir), aip_file]
     try:
         subprocess.check_output(command, stderr=subprocess.STDOUT)
@@ -146,6 +160,14 @@ def extract_aip(aip_file, aip_uuid, tmp_dir):
 
 
 def create_dip(aip_dir, aip_uuid, output_dir):
+    """
+    Creates a DIP from an uncompressed AIP.
+
+    :param str aip_dir: absolute path to an uncompressed AIP
+    :param str aip_uuid: UUID from the AIP
+    :param str output_dir: absolute path to a directory to place the DIP
+    :returns: absolute path to the created DIP folder
+    """
     aip_name = os.path.basename(aip_dir)[:-37]
     dip_dir = os.path.join(output_dir, '{}_{}_DIP'.format(aip_name, aip_uuid))
     objects_dir = os.path.join(dip_dir, 'objects')
