@@ -10,6 +10,7 @@ The Automation Tools project is a set of python scripts, that are designed to au
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
+- [Requirements](#requirements)
 - [Installation](#installation)
 - [Automated transfers](#automated-transfers)
   - [Configuration](#configuration)
@@ -22,9 +23,18 @@ The Automation Tools project is a set of python scripts, that are designed to au
     - [user-input](#user-input)
   - [Logs](#logs)
   - [Multiple automated transfer instances](#multiple-automated-transfer-instances)
+- [DIP creation](#dip-creation)
+  - [Configuration](#configuration-1)
+    - [Parameters](#parameters-1)
+    - [Getting Storage Service API key](#getting-storage-service-api-key)
 - [Related Projects](#related-projects)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+Requirements
+------------
+
+* 7z (only for DIP creation script)
 
 Installation
 ------------
@@ -302,6 +312,56 @@ In addition, these optional arguments are available for all subcommands:
 * --output-mode <mode> - how to print output, JSON (default) or Python
 
 See notes above about finding the Archivematica and Storage Service API keys.
+
+DIP creation
+------------
+
+`aips/create_dip.py` can be used to make a DIP from an AIP available in an Storage Service instance. Unlike DIPs created in Archivematica, the ones created with this script will include only the original files from the transfer and they will maintain the directories, filenames and last modified date from those files. They will be placed in a single ZIP file under the objects directory which will also include a copy of the submissionDocumentation folder (if present in the AIP) and the AIP METS file. Another METS file will be generated alongside the objects folder containing only a reference to the ZIP file (without AMD or DMD sections).
+
+Although this script is part of the automation-tools it's not completely automated yet, so it needs to be executed once per AIP and it requires the AIP UUID. It also requires 7z installed and available to extract the AIPs downloaded from the Storage Service.
+
+### Configuration
+
+Suggested use of this script is by using the example shell script in the `etc` directory (`/etc/archivematica/automation-tools/create_dip_script.sh`):
+
+```
+#!/bin/bash
+cd /usr/lib/archivematica/automation-tools/
+/usr/share/python/automation-tools/bin/python -m aips.create_dip \
+  --ss-user <username> \
+  --ss-api-key <api_key> \
+  --aip-uuid <uuid> \
+  --tmp-dir <path> \
+  --output-dir <path> \
+  --log-file <path>
+```
+
+(Note that the script calls the DIP creation script as a module using python's `-m` flag, this is required due to the use of relative imports in the code)
+
+The script can be run from a shell window like:
+
+```
+user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./create_dip_script.sh
+```
+
+#### Parameters
+
+The `aips/create_dip.py` accepts the following parameters:
+
+* `--ss-url URL, -s URL`: Storage Service URL. Default: http://127.0.0.1:8000
+* `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to authenticate as. Storage Service 0.8 and up requires this; earlier versions will ignore any value provided.
+* `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage Service 0.8 and up requires this; earlier versions will ignore any value provided.
+* `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to create the DIP from.
+* `--tmp-dir PATH`: Absolute path to a directory where the AIP will be downloaded and extracted. Default: "/tmp"
+* `--output-dir PATH`: Absolute path to a directory where the DIP will be created. Default: "/tmp"
+* `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it will be created in the script directory.
+* `-v, --verbose`: Increase the debugging output. Can be specified multiple times, e.g. `-vv`
+* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times, e.g. `-qq`
+* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING', 'INFO', 'DEBUG'. This will override `-q` and `-v`
+
+#### Getting Storage Service API key
+
+See [Getting API keys](#getting-api-keys)
 
 Related Projects
 ----------------
