@@ -1,0 +1,27 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [Basic YmFkQGVtYWlsLmNvbTpkZW1v]
+      Connection: [keep-alive]
+      Content-Length: ['0']
+      Content-Location: ['file:///fake_DIP']
+      Content-Type: [application/zip]
+      User-Agent: [Archivematica]
+      X-No-Op: ['false']
+      X-Packaging: ['http://purl.org/net/sword-types/METSArchivematicaDIP']
+      X-Verbose: ['false']
+    method: POST
+    uri: http://192.168.168.193/sword/deposit/test
+  response:
+    body: {string: !!python/unicode ''}
+    headers:
+      connection: [keep-alive]
+      content-type: [text/html]
+      date: ['Wed, 06 Dec 2017 18:46:05 GMT']
+      server: [nginx]
+      www-authenticate: [Basic realm="Secure area"]
+    status: {code: 401, message: Unauthorized}
+version: 1

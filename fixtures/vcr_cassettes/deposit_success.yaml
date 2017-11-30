@@ -1,0 +1,38 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [Basic ZGVtb0BleGFtcGxlLmNvbTpkZW1v]
+      Connection: [keep-alive]
+      Content-Length: ['0']
+      Content-Location: ['file:///fake_DIP']
+      Content-Type: [application/zip]
+      User-Agent: [Archivematica]
+      X-No-Op: ['false']
+      X-Packaging: ['http://purl.org/net/sword-types/METSArchivematicaDIP']
+      X-Verbose: ['false']
+    method: POST
+    uri: http://192.168.168.193/sword/deposit/test
+  response:
+    body: {string: !!python/unicode "<?xml version=\"1.0\" encoding=\"utf-8\" ?><entry\
+        \ xmlns=\"http://www.w3.org/2005/Atom\"\n       xmlns:sword=\"http://purl.org/net/sword/\"\
+        >\n\n  <title>test</title>\n\n  \n  <id>439 / 2017-11-30T02:47:10</id>\n\n\
+        \  <updated>2017-11-30T02:47:10</updated>\n  <author>\n    <name>demo</name>\n\
+        \  </author>\n\n  <generator uri=\"http://192.168.168.193/\" version=\"2.4.0\"\
+        >Qubit 2.4.0</generator>\n\n  <content type=\"text/html\" src=\"http://192.168.168.193/test\"\
+        \ />\n\n  <sword:noOp>false</sword:noOp>\n\n  <sword:packaging>http://purl.org/net/sword-types/METSArchivematicaDIP</sword:packaging>\n\
+        \n  <sword:userAgent>Archivematica</sword:userAgent>\n\n  \n</entry>\n"}
+    headers:
+      cache-control: [private]
+      connection: [keep-alive]
+      content-type: [text/xml; charset="utf-8"]
+      date: ['Wed, 06 Dec 2017 18:41:44 GMT']
+      location: [/test]
+      server: [nginx]
+      set-cookie: ['symfony=34c64df5d7ca27051add42c8b6ba5e30:69d5ae9bc2aac268be09749a7b419f6747da10f0;
+          expires=Fri, 05-Jan-2018 18:41:44 GMT; Max-Age=2592000; path=/; httponly']
+      x-ua-compatible: ['IE=edge,chrome=1']
+    status: {code: 302, message: Moved Temporarily}
+version: 1

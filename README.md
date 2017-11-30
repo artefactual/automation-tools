@@ -27,6 +27,9 @@ The Automation Tools project is a set of python scripts, that are designed to au
   - [Configuration](#configuration-1)
     - [Parameters](#parameters-1)
     - [Getting Storage Service API key](#getting-storage-service-api-key)
+- [DIP upload to AtoM](#dip-upload-to-atom)
+  - [Configuration](#configuration-2)
+    - [Parameters](#parameters-2)
 - [Related Projects](#related-projects)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -261,6 +264,53 @@ The `aips/create_dip.py` accepts the following parameters:
 #### Getting Storage Service API key
 
 See [Getting API keys](#getting-api-keys)
+
+DIP upload to AtoM
+------------------
+
+`dips/atom_upload.py` is available to upload a DIP folder from the local filesystem to an external AtoM instance. It requires a passwordless SSH connection to the AtoM host for the user running the script and the AtoM host has to be already added to list of known hosts. [More info](https://wiki.archivematica.org/Upload_DIP#Send_your_DIPs_using_rsync)
+
+Although this script is part of the automation-tools it's not completely automated yet, so it needs to be executed once per DIP and it requires the DIP path and the AtoM target description slug.
+
+### Configuration
+
+Suggested use of this script is by using the example shell script in the `etc` directory (`/etc/archivematica/automation-tools/atom_upload_script.sh`):
+
+```
+#!/bin/bash
+cd /usr/lib/archivematica/automation-tools/
+/usr/share/python/automation-tools/bin/python -m dips.atom_upload \
+  --atom-url <url> \
+  --atom-email <email> \
+  --atom-password <password> \
+  --atom-slug <slug> \
+  --rsync-target <host:path> \
+  --dip-path <path> \
+  --log-file <path>
+```
+
+(Note that the script calls the upload to AtoM script as a module using python's `-m` flag, this is required due to the use of relative imports in the code)
+
+The script can be run from a shell window like:
+
+```
+user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./atom_upload_script.sh
+```
+
+#### Parameters
+
+The `dips/atom_upload.py` accepts the following parameters:
+
+* `--atom-url URL`: AtoM URL. Default: http://192.168.168.193
+* `--atom-email EMAIL` [REQUIRED]: Email of the AtoM user to authenticate as.
+* `--atom-password PASSWORD` [REQUIRED]: Password of the AtoM user to authenticate as.
+* `--atom-slug SLUG` [REQUIRED]: Slug of the AtoM archival description to target in the upload.
+* `--rsync-target HOST:PATH`: Host and path to place the DIP folder with `rsync`. Default: 192.168.168.193:/tmp
+* `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to upload.
+* `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it will be created in the script directory.
+* `-v, --verbose`: Increase the debugging output. Can be specified multiple times, e.g. `-vv`
+* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times, e.g. `-qq`
+* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING', 'INFO', 'DEBUG'. This will override `-q` and `-v`
 
 Related Projects
 ----------------
