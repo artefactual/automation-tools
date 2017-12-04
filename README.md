@@ -23,6 +23,7 @@ The Automation Tools project is a set of python scripts, that are designed to au
     - [user-input](#user-input)
   - [Logs](#logs)
   - [Multiple automated transfer instances](#multiple-automated-transfer-instances)
+- [Archivematica client](#archivematica-client)
 - [DIP creation](#dip-creation)
   - [Configuration](#configuration-1)
     - [Parameters](#parameters-1)
@@ -218,7 +219,7 @@ Archivematica Client
 The transfers/amclient.py script is a module and CLI that provides functionality for interacting with the various Archivematica APIs.
 
 Basic usage: amclient.py <subcommand> [optional arguments] <positional argument(s)>
-  E.g.: amclient.py close-completed-transfers --am-user-name islandora 234deffdf89d887a7023546e6bc0031167cedf6
+  E.g.: `amclient.py close-completed-transfers --am-user-name islandora 234deffdf89d887a7023546e6bc0031167cedf6`
   
 ### Subcommands and arguments
 
@@ -226,36 +227,36 @@ Basic usage: amclient.py <subcommand> [optional arguments] <positional argument(
   * purpose: close all completed transfers (those not failed or rejected)
   * positional argument: am_api_key - API key for Archivematica dashboard user
   * optional arguments: 
-    * --am-user-name <username> - username for Archivematica dashboard user (default: test)
-    * --am-url <url> - Archivematica URL (default: http://127.0.0.1)
+    * `--am-user-name <username>` - username for Archivematica dashboard user (default: test)
+    * `--am-url <url>` - Archivematica URL (default: `http://127.0.0.1`)
 
 * close-completed-ingests
-  * purpose: close all completed ingests (those not failied or rejected)
+  * purpose: close all completed ingests (those not failed or rejected)
   * positional argument: am_api_key - API key for Archivematica dashboard user
   * optional arguments: 
-    * --am-user-name <username> - username for Archivematica dashboard user (default: test)
-    * --am-url <url> - Archivematica URL (default: http://127.0.0.1)
+    * `--am-user-name <username>` - username for Archivematica dashboard user (default: test)
+    * `--am-url <url>` - Archivematica URL (default: `http://127.0.0.1`)
 
 * completed-transfers
   * purpose: print all completed transfers
   * positional argument: am_api_key - API key for Archivematica dashboard user
   * optional arguments: 
-    * --am-user-name <username> - username for Archivematica dashboard user (default: test)
-    * --am-url <url> - Archivematica URL (default: http://127.0.0.1)
+    * `--am-user-name <username>` - username for Archivematica dashboard user (default: test)
+    * `--am-url <url>` - Archivematica URL (default: `http://127.0.0.1`)
 
 * completed-ingests
   * purpose: print all completed ingests
   * positional argument: am_api_key - API key for Archivematica dashboard user
   * optional arguments: 
-    * --am-user-name <username> - username for Archivematica dashboard user (default: test)
-    * --am-url <url> - Archivematica URL (default: http://127.0.0.1)
+    * `--am-user-name <username>` - username for Archivematica dashboard user (default: test)
+    * `--am-url <url>` - Archivematica URL (default: `http://127.0.0.1`)
 
 * unapproved-transfers
   * purpose: print all unapproved transfers
   * positional argument: am_api_key - API key for Archivematica dashboard user
   * optional arguments: 
-    * --am-user-name <username> - username for Archivematica dashboard user (default: test)
-    * --am-url <url> - Archivematica URL (default: http://127.0.0.1)
+    * `--am-user-name <username>` - username for Archivematica dashboard user (default: test)
+    * `--am-url <url>` - Archivematica URL (default: `http://127.0.0.1`)
 
 * transferables
   * purpose: print all transferable entities in the Storage Service
@@ -263,30 +264,30 @@ Basic usage: amclient.py <subcommand> [optional arguments] <positional argument(
     * ss_api_key - Storage Service API key
     * transfer_source - transfer source UUID
   * optional arguments:
-    * --ss-user-name <username> - Storage Service username (default: test)
-    * --ss-url <url> - Storage Service URL (default: http://127.0.0.1:8000)
-    * --transfer-path <path> - relative path within the Transfer Source (default: "")
+    * `--ss-user-name <username>` - Storage Service username (default: `test`)
+    * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
+    * `--transfer-path <path>` - relative path within the Transfer Source (default: `""`)
 
 * aips
   * purpose: print all AIPs in the Storage Service
   * positional argument: ss_api_key - Storage Service API key
   * optional arguments:
-    * --ss-user-name <username> - Storage Service username (default: test)
-    * --ss-url <url> - Storage Service URL (default: http://127.0.0.1:8000)
+    * `--ss-user-name <username>` - Storage Service username (default: `test`)
+    * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
 
 * dips
   * purpose: print all DIPs in the Storage Service
   * positional argument: ss_api_key - Storage Service API key
   * optional arguments:
-    * --ss-user-name <username> - Storage Service username (default: test)
-    * --ss-url <url> - Storage Service URL (default: http://127.0.0.1:8000)
+    * `--ss-user-name <username>` - Storage Service username (default: `test`)
+    * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
 
 * aips2dips
   * purpose: print all AIPs in the Storage Service along with their corresponding DIPs
   * positional argument: ss_api_key - Storage Service API key
   * optional arguments:
-    * --ss-user-name <username> - Storage Service username (default: test)
-    * --ss-url <url> - Storage Service URL (default: http://127.0.0.1:8000)
+    * `--ss-user-name <username>` - Storage Service username (default: `test`)
+    * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
 
 * aip2dips
   * purpose: print an AIP with AIP_UUID along with its corresponding DIPs
@@ -294,8 +295,8 @@ Basic usage: amclient.py <subcommand> [optional arguments] <positional argument(
     * aip_uuid - UUID of the target AIP
     * ss_api_key - Storage Service API key
   * optional arguments:
-    * --ss-user-name <username> - Storage Service username (default: test)
-    * --ss-url <url> - Storage Service URL (default: http://127.0.0.1:8000)
+    * `--ss-user-name <username>` - Storage Service username (default: `test`)
+    * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
 
 * download-dip
   * purpose: download a DIP with DIP_UUID
@@ -303,13 +304,13 @@ Basic usage: amclient.py <subcommand> [optional arguments] <positional argument(
     * dip_uuid - UUID of the target DIP
     * ss_api_key - Storage Service API key
   * optional arguments:
-    * --ss-user-name <username> - Storage Service username (default: test)
-    * --ss-url <url> - Storage Service URL (default: http://127.0.0.1:8000)
-    * --directory <dir> - directory path in which to save the DIP
+    * `--ss-user-name <username>` - Storage Service username (default: `test`)
+    * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
+    * `--directory <dir>` - directory path in which to save the DIP
 
 In addition, these optional arguments are available for all subcommands:
-* --help, --h - show help message and exit
-* --output-mode <mode> - how to print output, JSON (default) or Python
+* `--help`, `--h` - show help message and exit
+* `--output-mode <mode>` - how to print output, JSON (default) or Python
 
 See notes above about finding the Archivematica and Storage Service API keys.
 
