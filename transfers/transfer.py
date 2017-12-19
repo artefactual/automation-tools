@@ -213,7 +213,7 @@ def run_scripts(directory, *args):
     LOGGER.debug('script_args: %s', script_args)
     for script in sorted(os.listdir(directory)):
         LOGGER.debug('Script: %s', script)
-        script_path = os.path.join(directory, script)
+        script_path = os.path.realpath(os.path.join(directory, script))
         if not os.path.isfile(script_path):
             LOGGER.info('%s is not a file, skipping', script)
             continue
