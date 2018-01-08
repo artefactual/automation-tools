@@ -211,14 +211,20 @@ def run_scripts(directory, *args):
         return
     script_args = list(args)
     LOGGER.debug('script_args: %s', script_args)
+    script_extensions = get_setting('scriptextensions', '').split(':')
+    LOGGER.debug('script_extensions: %s', script_extensions)
     for script in sorted(os.listdir(directory)):
         LOGGER.debug('Script: %s', script)
         script_path = os.path.realpath(os.path.join(directory, script))
         if not os.path.isfile(script_path):
-            LOGGER.info('%s is not a file, skipping', script)
+            LOGGER.info('%s is not a file, skipping', script_path)
             continue
         if not os.access(script_path, os.X_OK):
-            LOGGER.info('%s is not executable, skipping', script)
+            LOGGER.info('%s is not executable, skipping', script_path)
+            continue
+        script_name, script_ext = os.path.splitext(script)
+        if script_extensions and script_ext not in script_extensions:
+            LOGGER.info("'%s' for '%s' not in configured list of script file extensions, skipping", script_ext, script_path)
             continue
         LOGGER.info('Running %s "%s"', script_path, '" "'.join(args))
         p = subprocess.Popen([script_path] + script_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -336,13 +342,18 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth
         session.add(new_transfer)
         return None
 
-    # Run all scripts in pre-transfer directory
-    # TODO what inputs do we want?
-    run_scripts(
-        'pre-transfer',
-        resp_json['path'],  # Absolute path
-        'standard',  # Transfer type
-    )
+    try:
+        # Run all scripts in pre-transfer directory
+        # TODO what inputs do we want?
+        run_scripts(
+            'pre-transfer',
+            resp_json['path'],  # Absolute path
+            'standard',  # Transfer type
+        )
+    except BaseException as err:
+        # An error occurred, log and recover cleanly, returning to main process
+        LOGGER.error("Failed to run pre-transfer scripts: %s", err)
+        return None
 
     # Approve transfer
     LOGGER.info("Ready to start")

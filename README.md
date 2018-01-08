@@ -102,6 +102,8 @@ The `transfers.py` script can be modified to adjust how automated transfers work
 * `-q, --quiet`: Decrease the debugging output. Can be specified multiple times, e.g. `-qq`
 * `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING', 'INFO', 'DEBUG'. This will override `-q` and `-v`
 
+The `--config-file` specified can also be used to define a list of file extensions that script files should have for execution. By default there is no limitation, but it may be useful to specify this, for example `scriptextensions = .py:.sh`. Multiple extensions may be specified, using '`:`' as a separator.
+
 #### Getting Correct UUIDs and Setting Processing Rules
 
 The easiest way to configure the tasks that automation-tools will run is by using the dashboard:
