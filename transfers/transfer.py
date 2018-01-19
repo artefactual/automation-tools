@@ -13,6 +13,7 @@ import ast
 import base64
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -45,8 +46,69 @@ def get_setting(config_file, setting, default=None):
         return default
 
 
-def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session,
-               hide_on_complete=False):
+def setup(config_file, log_level):
+    global CONFIG_FILE
+    CONFIG_FILE = config_file
+    models.init(get_setting('databasefile', os.path.join(THIS_DIR, 'transfers.db')))
+
+    # Configure logging
+    default_logfile = os.path.join(THIS_DIR, 'automate-transfer.log')
+    CONFIG = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'default': {
+                'format': '%(levelname)-8s  %(asctime)s  %(filename)s:%(lineno)-4s %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S',
+            },
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'default',
+            },
+            'file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'formatter': 'default',
+                'filename': get_setting('logfile', default_logfile),
+                'backupCount': 2,
+                'maxBytes': 10 * 1024,
+            },
+        },
+        'loggers': {
+            'transfer': {
+                'level': log_level,
+                'handlers': ['console', 'file'],
+            },
+        },
+    }
+    logging.config.dictConfig(CONFIG)
+
+
+def _call_url_json(url, params):
+    """
+    Helper to GET a URL where the expected response is 200 with JSON.
+
+    :param str url: URL to call
+    :param dict params: Params to pass to requests.get
+    :returns: Dict of the returned JSON or None
+    """
+    LOGGER.debug('URL: %s; params: %s;', url, params)
+    response = requests.get(url, params=params)
+    LOGGER.debug('Response: %s', response)
+    if not response.ok:
+        LOGGER.warning('Request to %s returned %s %s', url, response.status_code, response.reason)
+        LOGGER.debug('Response: %s', response.text)
+        return None
+    try:
+        return response.json()
+    except ValueError:  # JSON could not be decoded
+        LOGGER.warning('Could not parse JSON from response: %s', response.text)
+        return None
+
+
+def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session, 
+               hide_on_complete=False, delete_on_complete=False):
     """
     Get status of the SIP or Transfer with unit_uuid.
 
@@ -99,6 +161,15 @@ def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session,
             LOGGER.debug('Method: DELETE; URL: %s; params: %s;', url, params)
             response = requests.delete(url, params=params)
             LOGGER.debug('Response: %s', response)
+
+        # If complete, delete source files
+        if delete_on_complete and unit_info and unit_info['status'] == 'COMPLETE':
+            LOGGER.info('Deleting source files for SIP %s from watched directory', db_unit.uuid)
+            try:
+                shutil.rmtree(db_unit.path)
+                LOGGER.info('Source files deleted for SIP %s deleted', db_unit.uuid)
+            except OSError as e:
+                LOGGER.info('Error deleting source files: %s', e)
 
     return unit_info
 
@@ -391,9 +462,9 @@ def approve_transfer(dirname, url, am_api_key, am_user):
         return approved['uuid']
 
 
-def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
-         am_url, ss_url, transfer_type, see_files, hide_on_complete=False,
-         config_file=None, log_level='INFO'):
+def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth, 
+         am_url, ss_url, transfer_type, see_files, hide_on_complete=False, 
+         delete_on_complete=False, config_file=None, log_level='INFO'):
 
     loggingconfig.setup(
         log_level,
@@ -439,7 +510,7 @@ def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
         # Get status
         status_info = get_status(
             am_url, am_user, am_api_key, unit_uuid, unit_type, session,
-            hide_on_complete)
+            hide_on_complete, delete_on_complete)
         LOGGER.info('Status info: %s', status_info)
         if not status_info:
             LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
@@ -506,6 +577,7 @@ if __name__ == '__main__':
         transfer_type=args.transfer_type,
         see_files=args.files,
         hide_on_complete=args.hide,
+        delete_on_complete=args.delete,
         config_file=args.config_file,
         log_level=log_level,
     ))
