@@ -493,13 +493,19 @@ class AMClient:
         else:
             pprint.pprint(stuff)
 
-    def aips(self):
-        return self.get_all_packages('AIP')
+    def aips(self, params=None):
+        final_params = {'package_type': 'AIP'}
+        if params:
+            final_params.update(params)
+        return self.get_all_packages(final_params)
 
-    def dips(self):
-        return self.get_all_packages('DIP')
+    def dips(self, params=None):
+        final_params = {'package_type': 'DIP'}
+        if params:
+            final_params.update(params)
+        return self.get_all_packages(final_params)
 
-    def get_all_packages(self, ptype='AIP', packages=None, next_=None):
+    def get_all_packages(self, params=None, packages=None, next_=None):
         """Get all packages (AIPs or DIPs) in the Storage Service, following
         the pagination trail if necessary.
         """
@@ -508,12 +514,13 @@ class AMClient:
         if next_:
             response = self.get_next_package_page(next_)
         else:
-            response = self.get_package({'package_type': ptype})
-        if response:
-            packages = packages + response['objects']
-            if response['meta']['next']:
-                packages = self.get_all_packages(
-                    ptype, packages, response['meta']['next'])
+            response = self.get_package(params)
+        if not response:
+            raise Exception('Error connecting to the SS')
+        packages = packages + response['objects']
+        if response['meta']['next']:
+            packages = self.get_all_packages(
+                params, packages, response['meta']['next'])
         return packages
 
     def aip2dips(self):

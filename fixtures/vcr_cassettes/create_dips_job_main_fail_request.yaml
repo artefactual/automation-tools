@@ -1,0 +1,23 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.18.4]
+    method: GET
+    uri: http://192.168.168.192:8000/api/v2/file/?username=test&api_key=bad_api_key&status__in=UPLOADED%2CVERIFIED&package_type=AIP
+  response:
+    body: {string: !!python/unicode ''}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [text/html; charset=utf-8]
+      date: ['Sat, 30 Dec 2017 21:15:18 GMT']
+      server: [nginx/1.4.6 (Ubuntu)]
+      vary: ['Accept-Language, Cookie']
+      www-authenticate: [Basic Realm="django-tastypie"]
+      x-frame-options: [SAMEORIGIN]
+    status: {code: 401, message: UNAUTHORIZED}
+version: 1

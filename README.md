@@ -222,48 +222,57 @@ In case different hooks are required for each instance, a possible approach is t
 DIP creation
 ------------
 
-`aips/create_dip.py` can be used to make a DIP from an AIP available in an Storage Service instance. Unlike DIPs created in Archivematica, the ones created with this script will include only the original files from the transfer and they will maintain the directories, filenames and last modified date from those files. They will be placed in a single ZIP file under the objects directory which will also include a copy of the submissionDocumentation folder (if present in the AIP) and the AIP METS file. Another METS file will be generated alongside the objects folder containing only a reference to the ZIP file (without AMD or DMD sections).
+`aips/create_dip.py` and `aips/create_dips_job.py` can be used to make DIPs from AIPs available in a Storage Service instance. Unlike DIPs created in Archivematica, the ones created with this script will include only the original files from the transfer and they will maintain the directories, filenames and last modified date from those files. They will be placed with a copy of the submissionDocumentation folder (if present in the AIP) and the AIP METS file in a single ZIP file under the objects directory. Another METS file will be generated alongside the objects folder containing only a reference to the ZIP file (without AMD or DMD sections).
 
-Although this script is part of the automation-tools it's not completely automated yet, so it needs to be executed once per AIP and it requires the AIP UUID. It also requires 7z installed and available to extract the AIPs downloaded from the Storage Service.
+While `aips/create_dip.py` only processes one AIP per execution, `aips/create_dips_job.py` will process all AIPs in a given Storage Service location, keeping track of them in an SQLite database. Both scripts require 7z installed and available to extract the AIPs downloaded from the Storage Service.
 
 ### Configuration
 
-Suggested use of this script is by using the example shell script in the `etc` directory (`/etc/archivematica/automation-tools/create_dip_script.sh`):
+Suggested use of these scripts is by using the example shell scripts in the `etc` directory:
 
-```
-#!/bin/bash
-cd /usr/lib/archivematica/automation-tools/
-/usr/share/python/automation-tools/bin/python -m aips.create_dip \
-  --ss-user <username> \
-  --ss-api-key <api_key> \
-  --aip-uuid <uuid> \
-  --tmp-dir <path> \
-  --output-dir <path> \
-  --log-file <path>
-```
+* [create_dip_script.sh](https://github.com/artefactual/automation-tools/blob/master/etc/create_dip_script.sh)
+* [create_dips_job_script.sh](https://github.com/artefactual/automation-tools/blob/master/etc/create_dips_job_script.sh)
 
-(Note that the script calls the DIP creation script as a module using python's `-m` flag, this is required due to the use of relative imports in the code)
+(Note that the scripts call the DIP creation scripts as modules using python's `-m` flag; this is required due to the use of relative imports in the code)
 
-The script can be run from a shell window like:
+The scripts can be run from a shell window like:
 
 ```
 user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./create_dip_script.sh
+
+user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./create_dips_job_script.sh
 ```
+
+For `aips/create_dips_job.py`, it is suggested to run the script through a crontab entry for user archivematica, to avoid the need to repeatedly invoke it manually to keep processing the same location:
+
+```
+*/5 * * * * /etc/archivematica/automation-tools/create_dips_job_script.sh
+```
+
+To process multiple Storage Service locations, `create_dips_job_script.sh` could be duplicated with a different set of parameters to call `aips/create_dips_job.py` and be executed in the same manner.
 
 #### Parameters
 
-The `aips/create_dip.py` accepts the following parameters:
+Both scripts have the following parameters in common:
 
 * `--ss-url URL, -s URL`: Storage Service URL. Default: http://127.0.0.1:8000
 * `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to authenticate as. Storage Service 0.8 and up requires this; earlier versions will ignore any value provided.
 * `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage Service 0.8 and up requires this; earlier versions will ignore any value provided.
-* `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to create the DIP from.
-* `--tmp-dir PATH`: Absolute path to a directory where the AIP will be downloaded and extracted. Default: "/tmp"
-* `--output-dir PATH`: Absolute path to a directory where the DIP will be created. Default: "/tmp"
+* `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be downloaded and extracted. Default: "/tmp"
+* `--output-dir PATH`: Absolute path to a directory where the DIP(s) will be created. Default: "/tmp"
 * `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it will be created in the script directory.
 * `-v, --verbose`: Increase the debugging output. Can be specified multiple times, e.g. `-vv`
 * `-q, --quiet`: Decrease the debugging output. Can be specified multiple times, e.g. `-qq`
 * `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING', 'INFO', 'DEBUG'. This will override `-q` and `-v`
+
+`aips/create_dip.py` requires the following extra parameter:
+
+* `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to create the DIP from.
+
+`aips/create_dips_job.py` requires the following extra parameters:
+
+* `--location-uuid UUID` [REQUIRED]: Storage Service location UUID to be processed.
+* `--database-file PATH` [REQUIRED]: Absolute path to an SQLite database file to keep track of the processed AIPs.
 
 #### Getting Storage Service API key
 
