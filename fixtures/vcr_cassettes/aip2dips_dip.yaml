@@ -34,9 +34,9 @@ interactions:
       Connection: [keep-alive]
       User-Agent: [python-requests/2.11.1]
     method: GET
-    uri: http://192.168.168.192:8000/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=1&package_type=DIP&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2
+    uri: http://192.168.168.192:8000/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=1&package_type=DIP
   response:
-    body: {string: '{"meta": {"limit": 1, "next": null, "offset": 1, "previous": "/api/v2/file/?username=test&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&package_type=DIP&limit=1&offset=0",
+    body: {string: '{"meta": {"limit": 1, "next": null, "offset": 1, "previous": "/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&package_type=DIP&limit=1&offset=0",
         "total_count": 2}, "objects": [{"current_full_path": "/var/archivematica/sharedDirectory/www/DIPsStore/c0e3/7bab/e51e/482d/a066/a277/330d/e9a7/make_dips_2-721b98b9-b894-4cfb-80ab-624e52263300",
         "current_location": "/api/v2/location/5150d0e2-f643-404c-aab5-cf7ebcea05bf/",
         "current_path": "c0e3/7bab/e51e/482d/a066/a277/330d/e9a7/make_dips_2-721b98b9-b894-4cfb-80ab-624e52263300",

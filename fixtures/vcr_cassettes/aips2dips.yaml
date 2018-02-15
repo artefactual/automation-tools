@@ -34,9 +34,9 @@ interactions:
       Connection: [keep-alive]
       User-Agent: [python-requests/2.11.1]
     method: GET
-    uri: http://192.168.168.192:8000/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=1&package_type=DIP&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2
+    uri: http://192.168.168.192:8000/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=1&package_type=DIP
   response:
-    body: {string: '{"meta": {"limit": 1, "next": null, "offset": 1, "previous": "/api/v2/file/?username=test&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&package_type=DIP&limit=1&offset=0",
+    body: {string: '{"meta": {"limit": 1, "next": null, "offset": 1, "previous": "/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&package_type=DIP&limit=1&offset=0",
         "total_count": 2}, "objects": [{"current_full_path": "/var/archivematica/sharedDirectory/www/DIPsStore/c0e3/7bab/e51e/482d/a066/a277/330d/e9a7/make_dips_2-721b98b9-b894-4cfb-80ab-624e52263300",
         "current_location": "/api/v2/location/5150d0e2-f643-404c-aab5-cf7ebcea05bf/",
         "current_path": "c0e3/7bab/e51e/482d/a066/a277/330d/e9a7/make_dips_2-721b98b9-b894-4cfb-80ab-624e52263300",
@@ -87,9 +87,9 @@ interactions:
       Connection: [keep-alive]
       User-Agent: [python-requests/2.11.1]
     method: GET
-    uri: http://192.168.168.192:8000/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=1&package_type=AIP&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2
+    uri: http://192.168.168.192:8000/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=1&package_type=AIP
   response:
-    body: {string: '{"meta": {"limit": 1, "next": "/api/v2/file/?username=test&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&package_type=AIP&limit=1&offset=2",
+    body: {string: '{"meta": {"limit": 1, "next": "/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&package_type=AIP&limit=1&offset=2",
         "offset": 1, "previous": "/api/v2/file/?username=test&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&package_type=AIP&limit=1&offset=0",
         "total_count": 4}, "objects": [{"current_full_path": "/var/archivematica/sharedDirectory/www/AIPsStore/3500/aee0/08ca/40ff/8d2d/9fe9/a2c3/ae3b/itbetter-3500aee0-08ca-40ff-8d2d-9fe9a2c3ae3b.7z",
         "current_location": "/api/v2/location/91b917bb-57ea-4cca-8c16-f6b598713f93/",
@@ -114,10 +114,10 @@ interactions:
       Connection: [keep-alive]
       User-Agent: [python-requests/2.11.1]
     method: GET
-    uri: http://192.168.168.192:8000/api/v2/file/?username=test&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&package_type=AIP&limit=1&offset=2&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2
+    uri: http://192.168.168.192:8000/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&package_type=AIP&limit=1&offset=2
   response:
-    body: {string: '{"meta": {"limit": 1, "next": "/api/v2/file/?username=test&username=test&username=test&package_type=AIP&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=3",
-        "offset": 2, "previous": "/api/v2/file/?username=test&username=test&username=test&package_type=AIP&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=1",
+    body: {string: '{"meta": {"limit": 1, "next": "/api/v2/file/?username=test&package_type=AIP&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=3",
+        "offset": 2, "previous": "/api/v2/file/?username=test&package_type=AIP&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=1",
         "total_count": 4}, "objects": [{"current_full_path": "/var/archivematica/sharedDirectory/www/AIPsStore/99bb/20ee/69c6/43d0/acf0/c566/0203/57d2/make_dips-99bb20ee-69c6-43d0-acf0-c566020357d2.7z",
         "current_location": "/api/v2/location/91b917bb-57ea-4cca-8c16-f6b598713f93/",
         "current_path": "99bb/20ee/69c6/43d0/acf0/c566/0203/57d2/make_dips-99bb20ee-69c6-43d0-acf0-c566020357d2.7z",
@@ -141,9 +141,9 @@ interactions:
       Connection: [keep-alive]
       User-Agent: [python-requests/2.11.1]
     method: GET
-    uri: http://192.168.168.192:8000/api/v2/file/?username=test&username=test&username=test&package_type=AIP&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=3&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2
+    uri: http://192.168.168.192:8000/api/v2/file/?username=test&package_type=AIP&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=3
   response:
-    body: {string: '{"meta": {"limit": 1, "next": null, "offset": 3, "previous": "/api/v2/file/?username=test&username=test&username=test&username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=2&package_type=AIP",
+    body: {string: '{"meta": {"limit": 1, "next": null, "offset": 3, "previous": "/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&limit=1&offset=2&package_type=AIP",
         "total_count": 4}, "objects": [{"current_full_path": "/var/archivematica/sharedDirectory/www/AIPsStore/721b/98b9/b894/4cfb/80ab/624e/5226/3300/make_dips_2-721b98b9-b894-4cfb-80ab-624e52263300.7z",
         "current_location": "/api/v2/location/91b917bb-57ea-4cca-8c16-f6b598713f93/",
         "current_path": "721b/98b9/b894/4cfb/80ab/624e/5226/3300/make_dips_2-721b98b9-b894-4cfb-80ab-624e52263300.7z",

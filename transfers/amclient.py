@@ -484,7 +484,10 @@ class AMClient:
             '{}/api/v2/file/'.format(self.ss_url), payload)
 
     def get_next_package_page(self, next_path):
-        return _call_url_json('{}{}'.format(self.ss_url, next_path), self._ss_auth())
+        """SS GET  /api/v2/file/?<GET_PARAMS> using the next URL from
+        previous responses, which includes the auth. parameters.
+        """
+        return _call_url_json('{}{}'.format(self.ss_url, next_path), {})
 
     def stdout(self, stuff):
         """Print to stdout, either as JSON or pretty-printed Python."""
