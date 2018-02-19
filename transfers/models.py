@@ -20,7 +20,8 @@ class Unit(Base):
     current = Column(Boolean(create_constraint=False))
 
     def __repr__(self):
-        return "<Unit(id={s.id}, uuid={s.uuid}, unit_type={s.unit_type}, path={s.path}, status={s.status}, current={s.current})>".format(s=self)
+        return "<Unit(id={s.id}, uuid={s.uuid}, unit_type={s.unit_type}, \
+        path={s.path}, status={s.status}, current={s.current})>".format(s=self)
 
 
 def init(databasefile):

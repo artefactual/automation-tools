@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """To run the tests::
 
     $ python -m unittest tests.test_amclient
@@ -11,6 +10,7 @@ import unittest
 import vcr
 
 from transfers import amclient
+from transfers import errors
 
 
 AM_URL = 'http://192.168.168.192'
@@ -24,6 +24,7 @@ TRANSFER_SOURCE_UUID = '7609101e-15b2-4f4f-a19d-7b23673ac93b'
 
 
 class TmpDir:
+
     """Context manager to clear and create a temporary directory and destroy it
     after usage.
     """
@@ -110,7 +111,8 @@ class TestAMClient(unittest.TestCase):
         assert isinstance(close_succeeded, list)
         assert len(close_succeeded) == 0
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/completed_transfers_bad_key.yaml')
+    @vcr.use_cassette('fixtures/vcr_cassettes/'
+                      'completed_transfers_bad_key.yaml')
     def test_completed_transfers_bad_key(self):
         """Test getting completed transfers when a bad AM API key is
         provided.
@@ -118,13 +120,13 @@ class TestAMClient(unittest.TestCase):
         completed_transfers = amclient.AMClient(
             am_api_key='bad api key', am_user_name=AM_USER_NAME,
             am_url=AM_URL).completed_transfers()
-        assert completed_transfers is None
+        assert completed_transfers is errors.ERR_INVALID_RESPONSE
 
     @vcr.use_cassette(
         'fixtures/vcr_cassettes/unapproved_transfers_transfers.yaml')
     def test_unapproved_transfers_transfers(self):
-        """Test getting unapproved transfers when there are unapproved transfers
-        to get.
+        """Test getting unapproved transfers when there are
+        unapproved transfers to get.
         """
         unapproved_transfers = amclient.AMClient(
             am_api_key=AM_API_KEY, am_user_name=AM_USER_NAME,
@@ -320,8 +322,8 @@ class TestAMClient(unittest.TestCase):
                 ss_api_key=SS_API_KEY,
                 directory=TMP_DIR).download_dip()
             assert (dip_path ==
-                    '{}/package-c0e37bab-e51e-482d-a066-a277330de9a7.7z'.format(
-                        TMP_DIR))
+                    '{}/package-c0e37bab-e51e-482d-a066-a277330de9a7.7z'
+                    .format(TMP_DIR))
             assert os.path.isfile(dip_path)
 
     @vcr.use_cassette('fixtures/vcr_cassettes/download_dip_no_dip.yaml')

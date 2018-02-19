@@ -10,5 +10,14 @@
 # Sublime files
 *.sublime-*
 
+# Log files
 *.log.[0-9]
+*.log
+
+# Tox files
 .tox/
+
+# Script generated files
+*.db
+*.lck
+

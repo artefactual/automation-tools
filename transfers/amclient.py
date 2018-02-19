@@ -1,249 +1,44 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """Archivematica Client.
 
 Module and CLI that holds functionality for interacting with the various
 Archivematica APIs.
 """
+
 from __future__ import print_function, unicode_literals
 
-import argparse
 import binascii
 import base64
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import json
-import logging
-import logging.config  # Has to be imported separately
 import os
 import pprint
 import re
 import sys
 
 import requests
-from six import binary_type, text_type
+
+# AM Client module configuration
+
+# Allow execution as an executable and the script to be run at package level
+# by ensuring that it can see itself.
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from transfers import loggingconfig
+from transfers import defaults
+from transfers import amclientargs
+from transfers import errors
+from transfers import utils
 
 
-try:
-    from os import fsencode
-except ImportError:
-    def fsencode(filename):
-        """Cribbed & modified from Python3's OS module to support Python2."""
-        encoding = sys.getfilesystemencoding()
-        if isinstance(filename, binary_type):
-            return filename
-        elif isinstance(filename, text_type):
-            return filename.encode(encoding)
-        else:
-            raise TypeError("expect bytes or str, not %s" %
-                            type(filename).__name__)
+def get_logger(log_file_name, log_level):
+    return loggingconfig.setup(log_level, log_file_name, "amclient")
 
 
-THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-DEFAULT_LOGFILE = os.path.join(THIS_DIR, 'amclient.log')
-LOGGER = logging.getLogger('amclient')
-RETRY_COUNT = 5
-DEF_AM_URL = 'http://127.0.0.1'
-DEF_SS_URL = 'http://127.0.0.1:8000'
-DEF_USER_NAME = 'test'
-UUID_PATT = re.compile(
-    '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
-UNDECODABLE = 'UNABLE TO DECODE'
-UNDEC_MSG = ('Unable to decode a transfer source component; giving up and'
-             ' returning {0}'.format(UNDECODABLE))
-
-
-# Reusable argument constants (for CLI).
-Arg = namedtuple('Arg', ['name', 'help', 'type'])
-AIP_UUID = Arg(
-    name='aip_uuid',
-    help='UUID of the target AIP',
-    type=None)
-AM_API_KEY = Arg(
-    name='am_api_key',
-    help='Archivematica API key',
-    type=None)
-DIP_UUID = Arg(
-    name='dip_uuid',
-    help='UUID of the target DIP',
-    type=None)
-SS_API_KEY = Arg(
-    name='ss_api_key',
-    help='Storage Service API key',
-    type=None)
-TRANSFER_SOURCE = Arg(
-    name='transfer_source',
-    help='Transfer source UUID',
-    type=None)
-
-
-# Reusable option constants (for CLI).
-Opt = namedtuple('Opt', ['name', 'metavar', 'help', 'default', 'type'])
-AM_URL = Opt(
-    name='am-url',
-    metavar='URL',
-    help='Archivematica URL. Default: {0}'.format(DEF_AM_URL),
-    default=DEF_AM_URL,
-    type=None)
-AM_USER_NAME = Opt(
-    name='am-user-name',
-    metavar='USERNAME',
-    help='Archivematica username. Default: {0}'.format(DEF_USER_NAME),
-    default=DEF_USER_NAME,
-    type=None)
-DIRECTORY = Opt(
-    name='directory',
-    metavar='DIR',
-    help='Directory path to save the DIP in',
-    default=None,
-    type=None)
-OUTPUT_MODE = Opt(
-    name='output-mode',
-    metavar='MODE',
-    help='How to print output, JSON (default) or Python',
-    default='json',
-    type=None)
-SS_URL = Opt(
-    name='ss-url',
-    metavar='URL',
-    help='Storage Service URL. Default: {0}'.format(DEF_SS_URL),
-    default=DEF_SS_URL,
-    type=None)
-SS_USER_NAME = Opt(
-    name='ss-user-name',
-    metavar='USERNAME',
-    help='Storage Service username. Default: {0}'.format(DEF_USER_NAME),
-    default=DEF_USER_NAME,
-    type=None)
-TRANSFER_PATH = Opt(
-    name='transfer-path',
-    metavar='PATH',
-    help='Relative path within the Transfer Source. Default: ""',
-    default=b'',
-    type=fsencode)
-
-
-# Sub-command configuration: give them a name, help text, a tuple of ``Arg``
-# instances and a tuple of ``Opts`` instances.
-SubCommand = namedtuple('SubCommand', ['name', 'help', 'args', 'opts'])
-SUBCOMMANDS = (
-    SubCommand(
-        name='close-completed-transfers',
-        help='Close all completed transfers.',
-        args=(AM_API_KEY,),
-        opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
-    ),
-    SubCommand(
-        name='close-completed-ingests',
-        help='Close all completed ingests.',
-        args=(AM_API_KEY,),
-        opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
-    ),
-    SubCommand(
-        name='completed-transfers',
-        help='Print all completed transfers.',
-        args=(AM_API_KEY,),
-        opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
-    ),
-    SubCommand(
-        name='completed-ingests',
-        help='Print all completed ingests.',
-        args=(AM_API_KEY,),
-        opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
-    ),
-    SubCommand(
-        name='unapproved-transfers',
-        help='Print all unapproved transfers.',
-        args=(AM_API_KEY,),
-        opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
-    ),
-    SubCommand(
-        name='transferables',
-        help='Print all transferable entities in the Storage Service.',
-        args=(SS_API_KEY, TRANSFER_SOURCE),
-        opts=(SS_USER_NAME, SS_URL, TRANSFER_PATH, OUTPUT_MODE)
-    ),
-    SubCommand(
-        name='aips',
-        help='Print all AIPs in the Storage Service.',
-        args=(SS_API_KEY,),
-        opts=(SS_USER_NAME, SS_URL, OUTPUT_MODE)
-    ),
-    SubCommand(
-        name='dips',
-        help='Print all DIPs in the Storage Service.',
-        args=(SS_API_KEY,),
-        opts=(SS_USER_NAME, SS_URL, OUTPUT_MODE)
-    ),
-    SubCommand(
-        name='aips2dips',
-        help='Print all AIPs in the Storage Service along with their corresponding DIPs.',
-        args=(SS_API_KEY,),
-        opts=(SS_USER_NAME, SS_URL, OUTPUT_MODE)
-    ),
-    SubCommand(
-        name='aip2dips',
-        help='Print the AIP with AIP_UUID along with its corresponding DIP(s).',
-        args=(AIP_UUID, SS_API_KEY),
-        opts=(SS_USER_NAME, SS_URL, OUTPUT_MODE)
-    ),
-    SubCommand(
-        name='download-dip',
-        help='Download the DIP with DIP_UUID.',
-        args=(DIP_UUID, SS_API_KEY),
-        opts=(SS_USER_NAME, SS_URL, DIRECTORY, OUTPUT_MODE)
-    )
-)
-
-
-def get_parser():
-    """Parse arguments according to the ``SUBCOMMANDS`` configuration. Return
-    an argparse ``Namespace`` instance representing the parsed arguments.
-    """
-    parser = argparse.ArgumentParser(
-        description='Archivematica Client',
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument(
-        '--log-file', metavar='FILE', help='logfile', default=DEFAULT_LOGFILE)
-    parser.add_argument(
-        '--log-level', choices=['ERROR', 'WARNING', 'INFO', 'DEBUG'],
-        default='INFO', help='Set the debugging output level.')
-    subparsers = parser.add_subparsers(help='sub-command help',
-                                       dest='subcommand')
-    for subcommand in SUBCOMMANDS:
-        subparser = subparsers.add_parser(subcommand.name,
-                                          help=subcommand.help)
-        for arg in subcommand.args:
-            subparser.add_argument(
-                arg.name, help=arg.help, type=arg.type)
-        for opt in subcommand.opts:
-            subparser.add_argument(
-                '--' + opt.name, metavar=opt.metavar, help=opt.help,
-                default=opt.default, type=opt.type)
-    return parser
-
-
-def _call_url_json(url, params, method='GET'):
-    """Helper to GET a URL where the expected response is 200 with JSON.
-    :param str url: URL to call
-    :param dict params: Params to pass to requests.get
-    :returns: Dict of the returned JSON or None
-    """
-    method = method.upper()
-    LOGGER.debug('URL: %s; params: %s; method: %s', url, params, method)
-    response = requests.request(method, url=url, params=params)
-    LOGGER.debug('Response: %s', response)
-    LOGGER.debug('type(response.text): %s ', type(response.text))
-    LOGGER.debug('Response content-type: %s', response.headers['content-type'])
-    if not response.ok:
-        LOGGER.warning('%s Request to %s returned %s %s', method, url,
-                       response.status_code, response.reason)
-        LOGGER.debug('Response: %s', response.text)
-        return None
-    try:
-        return response.json()
-    except ValueError:  # JSON could not be decoded
-        LOGGER.warning('Could not parse JSON from response: %s',
-                       response.text)
-        return None
+# Default logging if no other logging is provided in the class.
+LOGGER = get_logger(defaults.AMCLIENT_LOG_FILE, defaults.DEFAULT_LOG_LEVEL)
 
 
 def b64decode_ts_location_browse(result):
@@ -268,17 +63,17 @@ def b64decode_ts_location_browse(result):
             try:
                 import chardet
             except ImportError:
-                LOGGER.debug(UNDEC_MSG)
-                return UNDECODABLE
+                LOGGER.debug(defaults.UNDEC_MSG)
+                return defaults.UNDECODABLE
             encoding = chardet.detect(thing).get('encoding')
             if encoding:
                 try:
                     return thing.decode(encoding)
                 except ValueError:
-                    LOGGER.debug(UNDEC_MSG)
-                    return UNDECODABLE
-            LOGGER.debug(UNDEC_MSG)
-            return UNDECODABLE
+                    LOGGER.debug(defaults.UNDEC_MSG)
+                    return defaults.UNDECODABLE
+            LOGGER.debug(defaults.UNDEC_MSG)
+            return defaults.UNDECODABLE
 
     try:
         result['directories'] = [dec(d) for d in result['directories']]
@@ -292,46 +87,8 @@ def b64decode_ts_location_browse(result):
     return result
 
 
-def setup_logger(log_file, log_level):
-    logging.config.dictConfig({
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'default': {
-                'format': ('%(levelname)-8s  %(asctime)s  '
-                           '%(filename)s:%(lineno)-4s %(message)s'),
-                'datefmt': '%Y-%m-%d %H:%M:%S',
-            },
-        },
-        'handlers': {
-            'file': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'default',
-                'filename': log_file,
-                'backupCount': 2,
-                'maxBytes': 10 * 1024,
-            },
-            'console': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'default',
-                'level': 'WARNING'
-            }
-        },
-        'loggers': {
-            'amclient': {
-                'level': log_level,
-                'handlers': ['file'],
-            },
-            'requests.packages.urllib3': {
-                'level': log_level,
-                'handlers': ['file'],
-            }
-        },
-    })
-
-
 def is_uuid(thing):
-    return UUID_PATT.search(thing) is not None
+    return defaults.UUID_PATT.search(thing) is not None
 
 
 class AMClient:
@@ -355,11 +112,30 @@ class AMClient:
         for key, val in kwargs.items():
             setattr(self, key, val)
 
+    # stdout and __getattr__ help us to deal with class output, and output
+    # formatting in a useful way, e.g. returning user friendly error messages
+    # from any failed calls to the AM or SS servers.
+    def stdout(self, stuff):
+        """Print to stdout, either as JSON or pretty-printed Python."""
+        if self.output_mode.lower() == 'json':
+            print(json.dumps(stuff))
+        else:
+            pprint.pprint(stuff)
+
     def __getattr__(self, name):
         if name.startswith('print_'):
-            method = name.replace('print_', '', 1)
-            self.stdout(getattr(self, method)())
-            return lambda: None
+            try:
+                method = name.replace('print_', '', 1)
+                res = getattr(self, method)()
+                # Shortening variable for PEP8 conformance.
+                err_lookup = errors.error_lookup
+                if isinstance(res, int):
+                    self.stdout(err_lookup.get(res,
+                                err_lookup(errors.ERR_AMCLIENT_UNKNOWN)))
+                else:
+                    self.stdout(getattr(self, method)())
+            except:
+                self.stdout(errors.error_lookup(errors.ERR_AMCLIENT_UNKNOWN))
         else:
             raise AttributeError('AMClient has no method {0}'.format(name))
 
@@ -377,7 +153,7 @@ class AMClient:
 
     def hide_unit(self, unit_uuid, unit_type):
         """GET <unit_type>/<unit_uuid>/delete/."""
-        return _call_url_json(
+        return utils._call_url_json(
             '{}/api/{}/{}/delete/'.format(self.am_url, unit_type, unit_uuid),
             params=self._am_auth(),
             method='DELETE'
@@ -433,7 +209,7 @@ class AMClient:
                 --am-user-name=test \
                 e8f8a0fb157f08a260045f805455e144d8ad0a5b
         """
-        return _call_url_json(
+        return utils._call_url_json(
             '{}/api/transfer/completed'.format(self.am_url), self._am_auth())
 
     def completed_ingests(self):
@@ -443,7 +219,7 @@ class AMClient:
                 --am-user-name=test \
                 e8f8a0fb157f08a260045f805455e144d8ad0a5b
         """
-        return _call_url_json(
+        return utils._call_url_json(
             '{}/api/ingest/completed'.format(self.am_url), self._am_auth())
 
     def unapproved_transfers(self):
@@ -453,7 +229,7 @@ class AMClient:
                 --am-user-name=test \
                 --am-api-key=e8f8a0fb157f08a260045f805455e144d8ad0a5b
         """
-        return _call_url_json(
+        return utils._call_url_json(
             '{}/api/transfer/unapproved'.format(self.am_url), self._am_auth())
 
     def transferables(self, b64decode=True):
@@ -471,7 +247,7 @@ class AMClient:
         params = self._ss_auth()
         if self.transfer_path:
             params['path'] = base64.b64encode(self.transfer_path)
-        result = _call_url_json(url, params)
+        result = utils._call_url_json(url, params)
         if b64decode:
             return b64decode_ts_location_browse(result)
         return result
@@ -480,21 +256,14 @@ class AMClient:
         """SS GET  /api/v2/file/?<GET_PARAMS>."""
         payload = self._ss_auth()
         payload.update(params)
-        return _call_url_json(
+        return utils._call_url_json(
             '{}/api/v2/file/'.format(self.ss_url), payload)
 
     def get_next_package_page(self, next_path):
         """SS GET  /api/v2/file/?<GET_PARAMS> using the next URL from
         previous responses, which includes the auth. parameters.
         """
-        return _call_url_json('{}{}'.format(self.ss_url, next_path), {})
-
-    def stdout(self, stuff):
-        """Print to stdout, either as JSON or pretty-printed Python."""
-        if self.output_mode == 'json':
-            print(json.dumps(stuff))
-        else:
-            pprint.pprint(stuff)
+        return utils._call_url_json('{}{}'.format(self.ss_url, next_path), {})
 
     def aips(self, params=None):
         final_params = {'package_type': 'AIP'}
@@ -583,14 +352,27 @@ class AMClient:
 
 
 def main():
-    parser = get_parser()
-    args = parser.parse_args()
-    setup_logger(args.log_file, args.log_level)
+
+    argparser = amclientargs.get_parser()
+
+    # Python 2.x, ensures that help is printed consistently like we see in
+    # Python 3.x.
+    if len(sys.argv) < 2:
+        argparser.print_help()
+        sys.exit(0)
+
+    args = argparser.parse_args()
     am_client = AMClient(**vars(args))
+
+    # Re-configure global LOGGER based on user provided parameters.
+    global LOGGER
+    LOGGER = get_logger(args.log_file, args.log_level)
+
     try:
-        getattr(am_client, 'print_{0}'.format(args.subcommand.replace('-', '_')))
+        getattr(am_client, 'print_{0}'.format(args.subcommand.replace('-',
+                                                                      '_')))
     except AttributeError:
-        parser.print_help()
+        argparser.print_help()
         sys.exit(0)
 
 
