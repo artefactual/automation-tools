@@ -7,6 +7,7 @@ import os
 import re
 import sys
 
+
 def main(transfer_path):
     """
     Add DSpace identifier to SIP metadata.
@@ -43,6 +44,7 @@ def main(transfer_path):
         w.writerow(header)
         w.writerow(data)
     return 0
+
 
 if __name__ == '__main__':
     transfer_path = sys.argv[1]

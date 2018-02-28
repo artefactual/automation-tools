@@ -24,6 +24,7 @@ The Automation Tools project is a set of python scripts, that are designed to au
   - [Logs](#logs)
   - [Multiple automated transfer instances](#multiple-automated-transfer-instances)
   - [`transfer_async.py`](#transfer_asyncpy)
+  - [Tips for ingesting DSpace exports](#tips-for-ingesting-dspace-exports)
 - [DIP creation](#dip-creation)
   - [Configuration](#configuration-1)
     - [Parameters](#parameters-1)
@@ -105,7 +106,7 @@ The `transfers.py` script can be modified to adjust how automated transfers work
 
 The `--config-file` specified can also be used to define a list of file extensions that script files should have for execution. By default there is no limitation, but it may be useful to specify this, for example `scriptextensions = .py:.sh`. Multiple extensions may be specified, using '`:`' as a separator.
 
-#### Getting Correct UUIDs and Setting Processing Rules
+#### Setting processing rules
 
 The easiest way to configure the tasks that automation-tools will run is by using the dashboard:
 
@@ -113,9 +114,11 @@ The easiest way to configure the tasks that automation-tools will run is by usin
 
 2. Save the configuration on the form.
 
-3. Copy the processing configuration file from `/var/archivematica/sharedDirectory/sharedMicroServiceTasksConfigs/processingMCPConfigs/defaultProcessingMCP.xml` on the Archivematica host machine to the `transfers/` directory of your automation-tools installation location.
+3. Copy the processing configuration file from `/var/archivematica/sharedDirectory/sharedMicroServiceTasksConfigs/processingMCPConfigs/defaultProcessingMCP.xml` on the Archivematica host machine to the `transfers/pre-transfer/` directory of your automation-tools installation location (also ensure that the `default_config.py` script exists in the same directory)
 
-The automation-tools command-line also relies on installation-specific UUIDs. To obtain the transfer source UUID for script invocation, visit the 'Transfer Source' tab in the Archivematica Storage Space web dashboard. If a row is marked as a transfer souce its UUID value will be valid as a transfer source argument.
+#### Getting the transfer source UUID
+
+To obtain the transfer source UUID for script invocation, visit the 'Locations' tab in the Archivematica Storage Service web UI.
 
 #### Getting API keys
 
@@ -171,6 +174,7 @@ There are some sample scripts in the pre-transfers directory that may be useful,
 * `00_file_to_folder.py`: If the transfer is a single file (eg a zipped bag or DSpace transfer), it moves it into an identically named folder. This is not required for processing, but allows other pre-transfer scripts to run.
 * `00_unbag.py`: Repackages a bag as a standard transfer, writing md5 hashes from bag manifest into metadata/checksum.md5 file. This enables use of scripts such as add_metadata.py with bags, which would otherwise cause failure at the bag validation job.
 * `add_metadata.py`: Creates a metadata.json file, by parsing data out of the transfer folder name.  This ends up as Dublin Dore in a dmdSec of the final METS file.
+* `add_metadata_dspace.py`: Creates a metadata.csv file, by parsing data out of the dspace export name. This ends up as Dublin Dore in a dmdSec of the final METS file. 
 * `archivesspace_ids.py`: Creates an archivesspaceids.csv by parsing ArchivesSpace reference IDs from filenames.  This will automate the matching GUI if a DIP is uploaded to ArchivesSpace.
 * `default_config.py`: Copies the included `defaultProcessingMCP.xml` into the transfer directory. This file overrides any configuration set in the Archivematica dashboard, so that user choices are guaranteed and avoided as desired.
 
@@ -235,6 +239,27 @@ cd /usr/lib/archivematica/automation-tools/
   --transfer-source <transfer_source_uuid> \
   --config-file <config_file>
 ```
+
+### Tips for ingesting DSpace exports
+
+* At the transfer source location, put the DSpace item to be ingested in a subdirectory (e.g., `ITEM@123-4567/ITEM@123-4567.zip`)  . The scripts [here](https://github.com/artefactual-labs/transfer-source-helpers/) can be used for this purpose 
+
+* Use the add_metadata_dspace.py pre-transfer script (described in [pre-transfer hooks](#pre-transfer-hooks))
+
+* Create a base `defaultProcessingMCP.xml` as described in [Getting Correct UUIDs and Setting Processing Rules](#getting-correct-uuids-and-setting-processing-rules), then append the following preconfigured choice to the xml:
+```
+    <!-- DSpace skips quarantine -->
+    <preconfiguredChoice>
+      <appliesTo>05f99ffd-abf2-4f5a-9ec8-f80a59967b89</appliesTo>
+      <goToChain>d4404ab1-dc7f-4e9e-b1f8-aa861e766b8e</goToChain>
+    </preconfiguredChoice>
+```
+
+* When invoking the transfers.py script, add the `--transfer-type dspace` parameter, for example: 
+```
+/usr/share/python/automation-tools/bin/python -m transfers.transfer --transfer-type dspace --user <user> --api-key <apikey> --ss-user <user> --ss-api-key <apikey> --transfer-source <transfer_source_uuid> --config-file <config_file>
+```
+
 
 DIP creation
 ------------
