@@ -31,6 +31,9 @@ from transfers import loggingconfig, defaults, amclientargs, errors, utils
 
 LOGGER = logging.getLogger('transfers')
 
+# Transfer types for Approve Transfer workflows
+TT_STANDARD = "standard"
+
 
 def b64decode_ts_location_browse(result):
     """Base64-decode the results of a call to SS GET
@@ -132,16 +135,32 @@ class AMClient(object):
             raise AttributeError('AMClient has no method {0}'.format(name))
 
     def _am_auth(self):
+        """Create JSON parameters for authentication in the request body to
+           the Archivematica API.
+        """
         return {
             'username': self.am_user_name,
             'api_key': self.am_api_key,
         }
 
     def _ss_auth(self):
+        """Create JSON parameters for authentication in the request body to
+           the Storage Service API.
+        """
         return {
             'username': self.ss_user_name,
             'api_key': self.ss_api_key
         }
+
+    def _am_auth_headers(self):
+        """Generate a HTTP request header for the Archivematica API."""
+        return {"Authorization": "ApiKey {0}:{1}".format(self.am_user_name,
+                                                         self.am_api_key)}
+
+    def _ss_auth_headers(self):
+        """Generate a HTTP request header for Storage Service API."""
+        return {"Authorization": "ApiKey {0}:{1}".format(self.ss_user_name,
+                                                         self.ss_api_key)}
 
     def hide_unit(self, unit_uuid, unit_type):
         """GET <unit_type>/<unit_uuid>/delete/."""
@@ -335,6 +354,80 @@ class AMClient(object):
             return local_filename
         else:
             LOGGER.warning('Unable to download package %s', uuid)
+
+    def get_pipelines(self):
+        """GET Archivematica Pipelines (dashboard instances from the storage
+        service.
+        """
+        return utils._call_url_json('{0}/api/v2/pipeline/'.format(self.ss_url),
+                                    params=None,
+                                    headers=self._ss_auth_headers())
+
+    def get_transfer_status(self, transfer_uuid):
+        """GET transfer status if there is a transfer in progress in the
+        Archivematica pipeline. If there aren't an transfers then the
+        response from the server will look as follows:
+
+       ``{"message": "Cannot fetch unitTransfer with UUID
+          ebc8a35c-6742-4264-bc30-22e263966d69", "type": "transfer",
+          "error": true}``
+
+        The response suggesting non-existence is an error, which the caller
+        will have to handle appropriately.
+        """
+        return utils._call_url_json(
+            '{0}/api/transfer/status/{1}/'.format(self.am_url, transfer_uuid),
+            headers=self._am_auth_headers(),
+            params=None)
+
+    def get_processing_config(self, processing_name):
+        """GET a processing configuration file from an Archivematica instance.
+        if the request is succesful an application/xml response is returned
+        to the caller. If the request is unsuccessful then an error code is
+        returned which needs to be handled via error_lookup.
+        """
+        return utils._call_url_json(
+            '{0}/api/processing-configuration/{1}'
+            .format(self.am_url,
+                    processing_name),
+            params=None,
+            headers=self._am_auth_headers())
+
+    def approve_transfer(self, directory, transfer_type=TT_STANDARD):
+        """Approve a transfer in the Archivematica Pipeline. The transfer_type
+        informs Archivematica how to continue processing. Options are:
+          * standard
+          * unzipped bag
+          * zipped bag
+          * dspace
+        Directory is the location where the transfer is to be picked up
+        from. The directory can be found via the get_transfer_status API
+        call.
+        """
+        url = '{0}/api/transfer/approve/'.format(self.am_url)
+        params = {"type": transfer_type, "directory": directory}
+        return utils._call_url_json(url,
+                                    headers=self._am_auth_headers(),
+                                    params=params,
+                                    method="POST")
+
+    def reingest_aip(self, pipeline_uuid, aip_uuid, reingest_type="full",
+                     processing_config="default"):
+        """Initiate the reingest of an AIP via the Storage Service given the
+        API UUID and Archivematica Pipeline. Reingest default is set to
+        ``full``. Alternatives are:
+            * METADATA_ONLY (metadata only re-ingest)
+            * OBJECTS (partial re-ingest)
+            * FULL (full re-ingest)
+        """
+        params = {'pipeline': pipeline_uuid,
+                  'reingest_type': reingest_type,
+                  'processing_config': processing_config}
+        url = "{0}/api/v2/file/{1}/reingest/".format(self.ss_url, aip_uuid)
+        return utils._call_url_json(url,
+                                    headers=self._ss_auth_headers(),
+                                    params=json.dumps(params),
+                                    method=utils.METHOD_POST)
 
     def download_dip(self):
         return self.download_package(self.dip_uuid)

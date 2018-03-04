@@ -11,10 +11,14 @@ from six import binary_type, text_type
 
 from transfers import errors
 
+
 LOGGER = logging.getLogger('transfers')
 
+METHOD_GET = "GET"
+METHOD_POST = "POST"
 
-def _call_url_json(url, params, method='GET'):
+
+def _call_url_json(url, params, method=METHOD_GET, headers=None):
     """Helper to GET a URL where the expected response is 200 with JSON.
 
     :param str url: URL to call
@@ -26,7 +30,14 @@ def _call_url_json(url, params, method='GET'):
     LOGGER.debug('URL: %s; params: %s; method: %s', url, params, method)
 
     try:
-        response = requests.request(method, url=url, params=params)
+        if headers is None:
+            response = requests.request(method, url=url, params=params)
+        else:
+            response = requests.request(method,
+                                        url=url,
+                                        data=params,
+                                        headers=headers)
+
         LOGGER.debug('Response: %s', response)
         LOGGER.debug('type(response.text): %s ', type(response.text))
         LOGGER.debug('Response content-type: %s',
@@ -42,7 +53,12 @@ def _call_url_json(url, params, method='GET'):
         except ValueError:  # JSON could not be decoded
             LOGGER.warning('Could not parse JSON from response: %s',
                            response.text)
-            return errors.ERR_PARSE_JSON
+            if not response.ok:
+                return errors.ERR_PARSE_JSON
+            pass
+        LOGGER.warning("Response code %s is okay. Returning something other "
+                       "than JSON", response.status_code)
+        return response.text
 
     except (urllib3.exceptions.NewConnectionError,
             requests.exceptions.ConnectionError) as err:

@@ -436,6 +436,156 @@ class TestAMClient(unittest.TestCase):
         assert isinstance(close_succeeded, list)
         assert len(close_succeeded) == 0
 
+    @vcr.use_cassette('fixtures/vcr_cassettes/pipeline.yaml')
+    def test_get_pipelines(self):
+        """Test getting the pipelines available to the storage service where
+        there is at least one pipeline available to the service.
+        """
+        response = amclient.AMClient(ss_api_key=SS_API_KEY,
+                                     ss_user_name=SS_USER_NAME,
+                                     ss_url=SS_URL).get_pipelines()
+
+        objects = response['objects']
+        pipelines = objects[0]['uuid']
+        resource_uri = objects[0]['resource_uri']
+        assert amclient.is_uuid(pipelines)
+        assert resource_uri == ('/api/v2/pipeline/f914af05-c7d2'
+                                '-4611-b2eb-61cd3426d9d2/')
+        assert isinstance(objects, list)
+        assert len(objects) > 0
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/pipeline_none.yaml')
+    def test_get_pipelines_none(self):
+        """Test getting the pipelines available to the storage service where
+        there is at least one pipeline available to the service.
+        """
+        response = amclient.AMClient(ss_api_key=SS_API_KEY,
+                                     ss_user_name=SS_USER_NAME,
+                                     ss_url=SS_URL).get_pipelines()
+
+        objects = response['objects']
+        assert objects == []
+        assert isinstance(objects, list)
+        assert len(objects) == 0
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/transfer_status.yaml')
+    def test_get_transfer_status(self):
+        """Test the successful return of the status of a transfer for a
+        valid transfer UUID.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL).get_transfer_status("63fcc1b0-f83d-47e6-"
+                                               "ac9d-a8f8d1fc2ab9")
+
+        status = response['status']
+        message = response['message']
+        assert status == 'COMPLETE'
+        assert message == ('Fetched status for 63fcc1b0-f83d-47e6'
+                           '-ac9d-a8f8d1fc2ab9 successfully.')
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/transfer_status_invalid_uuid.yaml')
+    def test_get_transfer_status_invalid_uuid(self):
+        """Test the successful return of the status for a non-existant
+        transfer in Archivematica.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL).get_transfer_status("7bffc8f7-baad-f00d"
+                                               "-8120-b1c51c2ab5db")
+        message = response['message']
+        message_type = response['type']
+        assert message == ("Cannot fetch unitTransfer with UUID 7bffc8f7-"
+                           "baad-f00d-8120-b1c51c2ab5db")
+        assert message_type == 'transfer'
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_get_existing_processing_config.yaml')
+    def test_get_processing_config(self):
+        """Test retrieval of the default Processing MCP Config file from the
+        Archivematica instance.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL).get_processing_config("default")
+        processing_mcp_file = response
+        assert "<processingMCP>" and "</processingMCP>" in processing_mcp_file
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_get_non_existing_processing_config.yaml')
+    def test_get_non_existing_processing_config(self):
+        """Test retrieval of a Processing MCP Config file that does not exist
+        in the Archivematica instance. Archivematica returns a 404 error and
+        a HTML result. This test is volatile to both changes in AM's handling
+        of this request failure in future, and changes to the error handling
+        in AMClient.py.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL).get_processing_config("badf00d")
+        assert errors.error_lookup(response) == \
+            errors.error_codes[errors.ERR_INVALID_RESPONSE]
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/approve_existing_transfer.yaml')
+    def test_approve_transfer(self):
+        """Test the approval of a transfer waiting in the Archivematica
+        pipeline."""
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL).approve_transfer("approve_1")
+        message = response['message']
+        uuid = response['uuid']
+        assert message == 'Approval successful.'
+        assert amclient.is_uuid(uuid)
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/approve_non_existing_transfer.yaml')
+    def test_approve_non_existing_transfer(self):
+        """If a transfer isn't available for us to approve, test the response
+        from AMClient.py. The respons is a 404 and this is handled
+        specifically by utils.py and the return is an error code.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL).approve_transfer("approve_2")
+        assert errors.error_lookup(response) == \
+            errors.error_codes[errors.ERR_INVALID_RESPONSE]
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/reingest_exsting_aip.yaml')
+    def test_reingest_aip(self):
+        pipeline_uuid = '65aaac5d-b4fd-478e-967b-6cdfee02f2c5'
+        aip_uuid = 'df8e0c68-3bda-4d1d-8493-789f7dec47f5'
+        response = amclient.AMClient(ss_api_key=SS_API_KEY,
+                                     ss_user_name=SS_USER_NAME,
+                                     ss_url=SS_URL).reingest_aip(pipeline_uuid,
+                                                                 aip_uuid)
+        error = response['error']
+        message = response['message']
+        assert error is False
+        assert message == ('Package {aip_uuid} sent '
+                           'to pipeline Archivematica on 4e2f66a7a29f '
+                           '({pipeline_uuid}) for re-ingest'
+                           .format(aip_uuid=aip_uuid,
+                                   pipeline_uuid=pipeline_uuid))
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/reingest_non_existing_aip.yaml')
+    def test_reingest_non_aip(self):
+        pipeline_uuid = 'bb033eff-131e-48d5-980f-c4edab0cb038'
+        aip_uuid = 'bb033eff-131e-48d5-980f-c4edab0cb038'
+        response = amclient.AMClient(
+            ss_api_key=SS_API_KEY,
+            ss_user_name=SS_USER_NAME,
+            ss_url=SS_URL).reingest_aip(pipeline_uuid, aip_uuid)
+        assert errors.error_lookup(response) == \
+            errors.error_codes[errors.ERR_INVALID_RESPONSE]
+
 
 if __name__ == '__main__':
     unittest.main()
