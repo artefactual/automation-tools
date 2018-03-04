@@ -1,0 +1,24 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.7.0 CPython/2.7.6 Linux/3.13.0-87-generic]
+      Authorization: ['ApiKey test:test']
+    method: GET
+    uri: http://192.168.168.192/api/transfer/status/7bffc8f7-baad-f00d-8120-b1c51c2ab5db/
+  response:
+    body: {string: !!python/unicode '{"message": 
+        "Cannot fetch unitTransfer with UUID 7bffc8f7-baad-f00d-8120-b1c51c2ab5db", 
+        "type": "transfer", "error": true}'}
+    headers:
+      connection: [Keep-Alive]
+      content-type: [application/json]
+      date: ['Sat, 07 Apr 2018 16:59:25 GMT']
+      keep-alive: ['timeout=5, max=100']
+      server: [Apache/2.4.7 (Ubuntu)]
+      vary: [Cookie]
+    status: {code: 200, message: OK}
+version: 1

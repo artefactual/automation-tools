@@ -1,0 +1,26 @@
+interactions:
+- request:
+    body: !!python/unicode '{"pipeline": "bb033eff-131e-48d5-980f-c4edab0cb038", "reingest_type":
+      "full", "processing_config": "default"}'
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [!!python/unicode 'ApiKey test:test']
+      Connection: [keep-alive]
+      Content-Length: ['109']
+      User-Agent: [python-requests/2.18.4]
+    method: POST
+    uri: http://192.168.168.192:8000/api/v2/file/bb033eff-131e-48d5-980f-c4edab0cb038/reingest/
+  response:
+    body: {string: !!python/unicode Resource with UUID bb033eff-131e-48d5-980f-c4edab0cb038
+        does not exist}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [text/html; charset=utf-8]
+      date: ['Sun, 08 Apr 2018 07:17:17 GMT']
+      server: [nginx/1.12.2]
+      vary: ['Accept, Accept-Language, Cookie']
+      x-frame-options: [SAMEORIGIN]
+    status: {code: 404, message: NOT FOUND}
+version: 1

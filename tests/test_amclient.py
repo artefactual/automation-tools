@@ -3,6 +3,7 @@
     $ python -m unittest tests.test_amclient
 
 """
+import collections
 import os
 import shutil
 import unittest
@@ -69,9 +70,9 @@ class TestAMClient(unittest.TestCase):
         """Test closing completed transfers when there are completed transfers
         to close.
         """
-        response = amclient.AMClient(
-            am_api_key=AM_API_KEY, am_user_name=AM_USER_NAME,
-            am_url=AM_URL).close_completed_transfers()
+        response = amclient.AMClient(am_api_key=AM_API_KEY,
+                                     am_user_name=AM_USER_NAME,
+                                     am_url=AM_URL).close_completed_transfers()
         close_succeeded = response['close_succeeded']
         completed_transfers = response['completed_transfers']
         assert close_succeeded == completed_transfers
@@ -406,6 +407,38 @@ class TestAMClient(unittest.TestCase):
         for item in close_succeeded:
             assert amclient.is_uuid(item)
 
+    @vcr.use_cassette('fixtures/vcr_cassettes/test_hide_units.yaml')
+    def test_hide_units(self):
+        """Test the hiding of a unit type (transfer or ingest) via the
+        Archivematica API.
+        """
+        Result = collections.namedtuple('Result',
+                                        'uuid unit_type expected data_type')
+        hide_tests = [Result(uuid="fdf1f7d4-7b0e-46d7-a1cc-e1851f8b92ed",
+                             unit_type='transfer',
+                             expected={'removed': True},
+                             data_type=dict),
+                      Result(uuid="777a9d9e-baad-f00d-8c7e-00b75773672d",
+                             unit_type='transfer',
+                             expected=errors.ERR_INVALID_RESPONSE,
+                             data_type=int),
+                      Result(uuid="b72afa68-9e82-410d-9235-02fa10512e14",
+                             unit_type='ingest',
+                             expected={'removed': True},
+                             data_type=dict),
+                      Result(uuid="777a9d9e-baad-f00d-8c7e-00b75773672d",
+                             unit_type='ingest',
+                             expected=errors.ERR_INVALID_RESPONSE,
+                             data_type=int),
+                      ]
+        for test in hide_tests:
+            response = amclient.AMClient(
+                am_api_key=AM_API_KEY,
+                am_user_name=AM_USER_NAME,
+                am_url=AM_URL).hide_unit(test.uuid, test.unit_type)
+            assert isinstance(response, test.data_type)
+            assert response == test.expected
+
     @vcr.use_cassette(
         'fixtures/vcr_cassettes/completed_ingests_no_ingests.yaml')
     def test_completed_ingests_no_ingests(self):
@@ -435,6 +468,243 @@ class TestAMClient(unittest.TestCase):
         assert close_succeeded == completed_ingests
         assert isinstance(close_succeeded, list)
         assert len(close_succeeded) == 0
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/pipeline.yaml')
+    def test_get_pipelines(self):
+        """Test getting the pipelines available to the storage service where
+        there is at least one pipeline available to the service.
+        """
+        response = amclient.AMClient(ss_api_key=SS_API_KEY,
+                                     ss_user_name=SS_USER_NAME,
+                                     ss_url=SS_URL).get_pipelines()
+
+        objects = response['objects']
+        pipelines = objects[0]['uuid']
+        resource_uri = objects[0]['resource_uri']
+        assert amclient.is_uuid(pipelines)
+        assert resource_uri == '/api/v2/pipeline/f914af05-c7d2' \
+                               '-4611-b2eb-61cd3426d9d2/'
+        assert isinstance(objects, list)
+        assert len(objects) > 0
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/pipeline_none.yaml')
+    def test_get_pipelines_none(self):
+        """Test getting the pipelines available to the storage service where
+        there is at least one pipeline available to the service.
+        """
+        response = amclient.AMClient(ss_api_key=SS_API_KEY,
+                                     ss_user_name=SS_USER_NAME,
+                                     ss_url=SS_URL).get_pipelines()
+
+        objects = response['objects']
+        assert objects == []
+        assert isinstance(objects, list)
+        assert len(objects) == 0
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/transfer_status.yaml')
+    def test_get_transfer_status(self):
+        """Test the successful return of the status of a transfer for a
+        valid transfer UUID.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL,
+            transfer_uuid="63fcc1b0-f83d-47e6"
+                          "-ac9d-a8f8d1fc2ab9").get_transfer_status()
+
+        status = response['status']
+        message = response['message']
+        assert status == 'COMPLETE'
+        assert message == ('Fetched status for 63fcc1b0-f83d-47e6'
+                           '-ac9d-a8f8d1fc2ab9 successfully.')
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/transfer_status_invalid_uuid.yaml')
+    def test_get_transfer_status_invalid_uuid(self):
+        """Test the successful return of the status for a non-existant
+        transfer in Archivematica.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL,
+            transfer_uuid="7bffc8f7-baad-f00d"
+                          "-8120-b1c51c2ab5db").get_transfer_status()
+        message = response['message']
+        message_type = response['type']
+        assert message == ("Cannot fetch unitTransfer with UUID 7bffc8f7-"
+                           "baad-f00d-8120-b1c51c2ab5db")
+        assert message_type == 'transfer'
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/ingest_status.yaml')
+    def test_get_ingest_status(self):
+        """Test the successful return of the status of an ingest for a
+        valid SIP UUID.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL,
+            sip_uuid="23129471-09e3-467e-"
+                     "88b6-eb4714afb5ac").get_ingest_status()
+        message = response['message']
+        message_type = response["type"]
+        assert message == ("Fetched status for 23129471-09e3-467e-"
+                           "88b6-eb4714afb5ac successfully.")
+        assert message_type == "SIP"
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/ingest_status_invalid_uuid.yaml')
+    def test_get_ingest_status_invalid_uuid(self):
+        """Test the response from the server for a request to find the status
+        of an ingest uuid that doesn't exist.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL,
+            sip_uuid="63fcc1b0-f83d-47e6-"
+                     "ac9d-a8f8d1fc2ab9").get_ingest_status()
+        assert errors.error_lookup(response) == \
+            errors.error_codes[errors.ERR_INVALID_RESPONSE]
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_get_existing_processing_config.yaml')
+    def test_get_processing_config(self):
+        """Test retrieval of the default Processing MCP Config file from the
+        Archivematica instance.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL,
+            processing_config="default").get_processing_config()
+        processing_mcp_file = response
+        assert "<processingMCP>" and "</processingMCP>" in processing_mcp_file
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_get_non_existing_processing_config.yaml')
+    def test_get_non_existing_processing_config(self):
+        """Test retrieval of a Processing MCP Config file that does not exist
+        in the Archivematica instance. Archivematica returns a 404 error and
+        a HTML result. This test is volatile to both changes in AM's handling
+        of this request failure in future, and changes to the error handling
+        in AMClient.py.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL,
+            processing_config="badf00d").get_processing_config()
+        assert errors.error_lookup(response) == \
+            errors.error_codes[errors.ERR_INVALID_RESPONSE]
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/approve_existing_transfer.yaml')
+    def test_approve_transfer(self):
+        """Test the approval of a transfer waiting in the Archivematica
+        pipeline."""
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL,
+            transfer_directory="approve_1",
+            transfer_type="standard").approve_transfer()
+        message = response['message']
+        uuid = response['uuid']
+        assert message == 'Approval successful.'
+        assert amclient.is_uuid(uuid)
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/approve_non_existing_transfer.yaml')
+    def test_approve_non_existing_transfer(self):
+        """If a transfer isn't available for us to approve, test the response
+        from AMClient.py. The respons is a 404 and this is handled
+        specifically by utils.py and the return is an error code.
+        """
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL,
+            transfer_directory="approve_2",
+            transfer_type="standard").approve_transfer()
+        assert errors.error_lookup(response) == \
+            errors.error_codes[errors.ERR_INVALID_RESPONSE]
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/reingest_exsting_aip.yaml')
+    def test_reingest_aip(self):
+        pipeline_uuid = '65aaac5d-b4fd-478e-967b-6cdfee02f2c5'
+        aip_uuid = 'df8e0c68-3bda-4d1d-8493-789f7dec47f5'
+        response = amclient.AMClient(
+            ss_api_key=SS_API_KEY,
+            ss_user_name=SS_USER_NAME,
+            ss_url=SS_URL,
+            pipeline_uuid=pipeline_uuid,
+            aip_uuid=aip_uuid,
+            reingest_type="standard",
+            processing_config="default").reingest_aip()
+        error = response['error']
+        message = response['message']
+        assert error is False
+        assert message == ('Package {aip_uuid} sent '
+                           'to pipeline Archivematica on 4e2f66a7a29f '
+                           '({pipeline_uuid}) for re-ingest'
+                           .format(aip_uuid=aip_uuid,
+                                   pipeline_uuid=pipeline_uuid))
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/reingest_non_existing_aip.yaml')
+    def test_reingest_non_aip(self):
+        pipeline_uuid = 'bb033eff-131e-48d5-980f-c4edab0cb038'
+        aip_uuid = 'bb033eff-131e-48d5-980f-c4edab0cb038'
+        response = amclient.AMClient(
+            ss_api_key=SS_API_KEY,
+            ss_user_name=SS_USER_NAME,
+            ss_url=SS_URL,
+            pipeline_uuid=pipeline_uuid,
+            aip_uuid=aip_uuid,
+            reingest_type="standard",
+            processing_config="default").reingest_aip()
+        assert errors.error_lookup(response) == \
+            errors.error_codes[errors.ERR_INVALID_RESPONSE]
+
+    @vcr.use_cassette('fixtures/vcr_cassettes/get_package_details.yaml')
+    def test_get_package_details(self):
+        package_uuid = "23129471-09e3-467e-88b6-eb4714afb5ac"
+        response = amclient.AMClient(
+            ss_api_key=SS_API_KEY,
+            ss_user_name=SS_USER_NAME,
+            ss_url=SS_URL,
+            package_uuid=package_uuid).get_package_details()
+        status = response["status"]
+        package_type = response["package_type"]
+        assert status == "UPLOADED"
+        assert package_type == "AIP"
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/get_package_details_invalid_uuid.yaml')
+    def test_get_package_details_invalid_uuid(self):
+        package_uuid = "23129471-baad-f00d-88b6-eb4714afb5ac"
+        response = amclient.AMClient(
+            ss_api_key=SS_API_KEY,
+            ss_user_name=SS_USER_NAME,
+            ss_url=SS_URL,
+            package_uuid=package_uuid).get_package_details()
+        assert errors.error_lookup(response) == \
+            errors.error_codes[errors.ERR_INVALID_RESPONSE]
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/get_all_compressed_aips.yaml')
+    def test_get_all_compressed_aips(self):
+        response = amclient.AMClient(
+            ss_api_key=SS_API_KEY,
+            ss_user_name=SS_USER_NAME,
+            ss_url=SS_URL).get_all_compressed_aips()
+
+        expected_list = ["6d32a85f-6715-43af-947c-83c9d7f0deac",
+                         "6f198696-e3b6-4f45-8ab3-b4cd4afd921a",
+                         "9c5edcdc-3e3f-499d-a016-a43b9db875b1"]
+        assert set(response.keys()) == set(expected_list)
+        for aip in response.values():
+            assert aip['uuid'] in expected_list
 
 
 if __name__ == '__main__':

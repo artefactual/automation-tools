@@ -25,3 +25,12 @@ TRANSFER_LOG_FILE = os.path.join(THIS_DIR, 'automate-transfer.log')
 
 # Default log level.
 DEFAULT_LOG_LEVEL = "INFO"
+
+# Default Processing Configuration
+DEFAULT_PROCESSING_CONFIG = "default"
+
+# Default reingest type
+DEFAULT_REINGEST_TYPE = "full"
+
+# Default transfer type
+DEFAULT_TRANSFER_TYPE = "standard"

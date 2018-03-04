@@ -25,6 +25,7 @@ from six.moves import configparser
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from transfers import defaults, errors, loggingconfig, models, utils
+from transfers.amclient import AMClient
 from transfers.transferargs import get_parser
 from transfers.utils import fsencode, fsdecode
 
@@ -353,39 +354,41 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
     return new_transfer
 
 
-def approve_transfer(directory_name, url, am_api_key, am_user):
+def approve_transfer(dirname, url, am_api_key, am_user):
     """
-    Approve transfer with directory_name.
+    Approve transfer with dirname.
 
     :returns: UUID of the approved transfer or None.
     """
-    LOGGER.info("Approving %s", directory_name)
+    LOGGER.info("Approving %s", dirname)
     time.sleep(6)
-    # List available transfers
-    get_url = url + "/api/transfer/unapproved"
-    params = {'username': am_user, 'api_key': am_api_key}
-    waiting_transfers = utils._call_url_json(get_url, params)
-    if waiting_transfers is None:
-        LOGGER.warning('No waiting transfer ')
-        return waiting_transfers
-    for a in waiting_transfers['results']:
-        LOGGER.debug("Found waiting transfer: %s", a['directory'])
-        if fsencode(a['directory']) == directory_name:
-            # Post to approve transfer
-            post_url = url + "/api/transfer/approve/"
-            params = {'username': am_user, 'api_key': am_api_key,
-                      'type': a['type'], 'directory': directory_name}
-            LOGGER.debug('URL: %s; Params: %s;', post_url, params)
-            r = requests.post(post_url, data=params)
-            LOGGER.debug('Response: %s', r)
-            LOGGER.debug('Response text: %s', r.text)
-            if r.status_code != 200:
-                return None
-            return a['uuid']
-        else:
-            LOGGER.debug("%s is not what we are looking for", a['directory'])
-    else:
+    am = AMClient(am_url=url, am_user_name=am_user, am_api_key=am_api_key)
+    try:
+        # Find the waiting transfers available to be approved via the am client
+        # interface.
+        waiting_transfers = am.unapproved_transfers()['results']
+    except (KeyError, TypeError):
+        LOGGER.warning("Request to unapproved transfers did not return the "
+                       "expected response, see the request log")
         return None
+    if not waiting_transfers:
+        LOGGER.warning("There are no waiting transfers.")
+        return None
+    res = list(filter(lambda waiting: fsencode(waiting['directory']) ==
+                      fsencode(dirname), waiting_transfers))
+    if not res:
+        LOGGER.warning("Requested directory %s not found in the waiting "
+                       "transfers list", dirname)
+        return None
+    LOGGER.info("Found waiting transfer: %s", res[0]['directory'])
+    # We can reuse the existing AM Client but we didn't know all the kwargs
+    # at the outset so we need to set its attributes here.
+    am.transfer_type = res[0]['type']
+    am.transfer_directory = dirname
+    # Approve the transfer and return the UUID of the transfer approved.
+    approved = am.approve_transfer()
+    if approved is not None:
+        return approved['uuid']
 
 
 def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,

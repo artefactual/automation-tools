@@ -1,0 +1,26 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [!!python/unicode 'ApiKey test:test']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.18.4]
+    method: GET
+    uri: http://192.168.168.192/api/ingest/status/23129471-09e3-467e-88b6-eb4714afb5ac/
+  response:
+    body: {string: !!python/unicode '{"status": "COMPLETE", "name": "five", "microservice":
+        "Remove the processing directory", "directory": "five-23129471-09e3-467e-88b6-eb4714afb5ac",
+        "path": "/var/archivematica/sharedDirectory/currentlyProcessing/five-23129471-09e3-467e-88b6-eb4714afb5ac/",
+        "message": "Fetched status for 23129471-09e3-467e-88b6-eb4714afb5ac successfully.",
+        "type": "SIP", "uuid": "23129471-09e3-467e-88b6-eb4714afb5ac"}'}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [application/json]
+      date: ['Sun, 15 Apr 2018 13:41:55 GMT']
+      server: [nginx/1.12.2]
+      vary: ['Accept-Language, Cookie']
+    status: {code: 200, message: OK}
+version: 1

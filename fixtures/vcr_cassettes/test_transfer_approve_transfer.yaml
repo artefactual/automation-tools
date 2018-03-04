@@ -1,0 +1,149 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.18.4]
+    method: GET
+    uri: http://127.0.0.1/api/transfer/unapproved?username=demo&api_key=1c34274c0df0bca7edf9831dd838b4a6345ac2ef
+  response:
+    body: {string: !!python/unicode '{"message": "Fetched unapproved transfers successfully.",
+        "results": [{"directory": "unzipped_bag_1", "type": "unzipped bag", "uuid": "8779909c-20e8-4471-beb2-c45591b7abb0"},
+        {"directory": "dspace_1", "type": "dspace", "uuid": "f25c71e6-1f1e-4e69-bf57-580a64d4e051"},
+        {"directory": "standard_1", "type": "standard", "uuid": "0d16e57f-df1b-4a66-a93c-989f0dc9f16f"}]}'}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [application/json]
+      date: ['Mon, 30 Apr 2018 14:07:23 GMT']
+      server: [nginx/1.12.2]
+      vary: ['Accept-Language, Cookie']
+    status: {code: 200, message: OK}
+- request:
+    body: !!python/unicode username=demo&directory=unzipped_bag_1&api_key=1c34274c0df0bca7edf9831dd838b4a6345ac2ef&type=unzipped+bag
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Length: ['69']
+      Content-Type: [application/x-www-form-urlencoded]
+      User-Agent: [python-requests/2.18.4]
+    method: POST
+    uri: http://127.0.0.1/api/transfer/approve/
+  response:
+    body: {string: !!python/unicode '{"message": "Approval successful.", "uuid": "8779909c-20e8-4471-beb2-c45591b7abb0"}'}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [application/json]
+      date: ['Mon, 30 Apr 2018 14:07:24 GMT']
+      server: [nginx/1.12.2]
+      vary: ['Accept-Language, Cookie']
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.18.4]
+    method: GET
+    uri: http://127.0.0.1/api/transfer/unapproved?username=demo&api_key=1c34274c0df0bca7edf9831dd838b4a6345ac2ef
+  response:
+    body: {string: !!python/unicode '{"message": "Fetched unapproved transfers successfully.",
+        "results": [{"directory": "dspace_1", "type": "dspace", "uuid": "f25c71e6-1f1e-4e69-bf57-580a64d4e051"},
+        {"directory": "standard_1", "type": "standard", "uuid": "0d16e57f-df1b-4a66-a93c-989f0dc9f16f"}]}'}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [application/json]
+      date: ['Mon, 30 Apr 2018 14:07:30 GMT']
+      server: [nginx/1.12.2]
+      vary: ['Accept-Language, Cookie']
+    status: {code: 200, message: OK}
+- request:
+    body: !!python/unicode username=demo&directory=dspace_1&api_key=1c34274c0df0bca7edf9831dd838b4a6345ac2ef&type=dspace
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Length: ['57']
+      Content-Type: [application/x-www-form-urlencoded]
+      User-Agent: [python-requests/2.18.4]
+    method: POST
+    uri: http://127.0.0.1/api/transfer/approve/
+  response:
+    body: {string: !!python/unicode '{"message": "Approval successful.", "uuid": "f25c71e6-1f1e-4e69-bf57-580a64d4e051"}'}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [application/json]
+      date: ['Mon, 30 Apr 2018 14:07:31 GMT']
+      server: [nginx/1.12.2]
+      vary: ['Accept-Language, Cookie']
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.18.4]
+    method: GET
+    uri: http://127.0.0.1/api/transfer/unapproved?username=demo&api_key=1c34274c0df0bca7edf9831dd838b4a6345ac2ef
+  response:
+    body: {string: !!python/unicode '{"message": "Fetched unapproved transfers successfully.",
+        "results": [{"directory": "standard_1", "type": "standard", "uuid": "0d16e57f-df1b-4a66-a93c-989f0dc9f16f"},
+        {"directory": "2", "type": "dspace", "uuid": "47908337-3134-4871-8f41-a9d7d500c2e0"}]}'}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [application/json]
+      date: ['Mon, 30 Apr 2018 14:07:37 GMT']
+      server: [nginx/1.12.2]
+      vary: ['Accept-Language, Cookie']
+    status: {code: 200, message: OK}
+- request:
+    body: !!python/unicode username=demo&directory=standard_1&api_key=1c34274c0df0bca7edf9831dd838b4a6345ac2ef&type=standard
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Length: ['61']
+      Content-Type: [application/x-www-form-urlencoded]
+      User-Agent: [python-requests/2.18.4]
+    method: POST
+    uri: http://127.0.0.1/api/transfer/approve/
+  response:
+    body: {string: !!python/unicode '{"message": "Approval successful.", "uuid": "0d16e57f-df1b-4a66-a93c-989f0dc9f16f"}'}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [application/json]
+      date: ['Mon, 30 Apr 2018 14:07:38 GMT']
+      server: [nginx/1.12.2]
+      vary: ['Accept-Language, Cookie']
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.18.4]
+    method: GET
+    uri: http://127.0.0.1/api/transfer/unapproved?username=demo&api_key=1c34274c0df0bca7edf9831dd838b4a6345ac2ef
+  response:
+    body: {string: !!python/unicode '{"message": "Fetched unapproved transfers successfully.",
+        "results": [{"directory": "transfer_1", "type": "dspace", "uuid": "47908337-3134-4871-8f41-a9d7d500c2e0"}]}'}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [application/json]
+      date: ['Mon, 30 Apr 2018 14:07:44 GMT']
+      server: [nginx/1.12.2]
+      vary: ['Accept-Language, Cookie']
+    status: {code: 200, message: OK}
+version: 1

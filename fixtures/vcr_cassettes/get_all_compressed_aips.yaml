@@ -1,0 +1,60 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.18.1]
+    method: GET
+    uri: http://192.168.168.192:8000/api/v2/file/?username=test&api_key=5de62f6f4817f903dcfac47fa5cffd44685a2cf2&package_type=AIP
+  response:
+    body: {string: '{"meta": {"limit": 20, "next": null, "offset": 0, "previous":
+        null, "total_count": 5}, "objects": [{"current_full_path": "/var/archivematica/sharedDirectory/watchedDirectories/storeAIP/5843/53f3/c402/4ff5/a00c/59d0/e133/4683/deleted_1-584353f3-c402-4ff5-a00c-59d0e1334683.7z",
+        "current_location": "/api/v2/location/022713c0-f298-4d74-90fb-eb17da38d44f/",
+        "current_path": "5843/53f3/c402/4ff5/a00c/59d0/e133/4683/deleted_1-584353f3-c402-4ff5-a00c-59d0e1334683.7z",
+        "encrypted": false, "misc_attributes": {"reingest_pipeline": null}, "origin_pipeline":
+        "/api/v2/pipeline/79120a48-974a-46eb-ac01-eee496e0f57f/", "package_type":
+        "AIP", "related_packages": [], "replicas": [], "replicated_package": null,
+        "resource_uri": "/api/v2/file/584353f3-c402-4ff5-a00c-59d0e1334683/", "size":
+        13284, "status": "DELETED", "uuid": "584353f3-c402-4ff5-a00c-59d0e1334683"},
+        {"current_full_path": "/var/archivematica/sharedDirectory/watchedDirectories/storeAIP/6f54/7b25/aea0/4161/9f68/316f/c246/5fd9/deleted_2-6f547b25-aea0-4161-9f68-316fc2465fd9.7z",
+        "current_location": "/api/v2/location/022713c0-f298-4d74-90fb-eb17da38d44f/",
+        "current_path": "6f54/7b25/aea0/4161/9f68/316f/c246/5fd9/deleted_2-6f547b25-aea0-4161-9f68-316fc2465fd9.7z",
+        "encrypted": false, "misc_attributes": {"reingest_pipeline": null}, "origin_pipeline":
+        "/api/v2/pipeline/79120a48-974a-46eb-ac01-eee496e0f57f/", "package_type":
+        "AIP", "related_packages": [], "replicas": [], "replicated_package": null,
+        "resource_uri": "/api/v2/file/6f547b25-aea0-4161-9f68-316fc2465fd9/", "size":
+        13277, "status": "DELETED", "uuid": "6f547b25-aea0-4161-9f68-316fc2465fd9"},
+        {"current_full_path": "/var/archivematica/sharedDirectory/watchedDirectories/storeAIP/6d32/a85f/6715/43af/947c/83c9/d7f0/deac/transfer_1-6d32a85f-6715-43af-947c-83c9d7f0deac.7z",
+        "current_location": "/api/v2/location/022713c0-f298-4d74-90fb-eb17da38d44f/",
+        "current_path": "6d32/a85f/6715/43af/947c/83c9/d7f0/deac/transfer_1-6d32a85f-6715-43af-947c-83c9d7f0deac.7z",
+        "encrypted": false, "misc_attributes": {}, "origin_pipeline": "/api/v2/pipeline/79120a48-974a-46eb-ac01-eee496e0f57f/",
+        "package_type": "AIP", "related_packages": [], "replicas": [], "replicated_package":
+        null, "resource_uri": "/api/v2/file/6d32a85f-6715-43af-947c-83c9d7f0deac/",
+        "size": 13230, "status": "UPLOADED", "uuid": "6d32a85f-6715-43af-947c-83c9d7f0deac"},
+        {"current_full_path": "/var/archivematica/sharedDirectory/watchedDirectories/storeAIP/6f19/8696/e3b6/4f45/8ab3/b4cd/4afd/921a/transfer_2-6f198696-e3b6-4f45-8ab3-b4cd4afd921a.7z",
+        "current_location": "/api/v2/location/022713c0-f298-4d74-90fb-eb17da38d44f/",
+        "current_path": "6f19/8696/e3b6/4f45/8ab3/b4cd/4afd/921a/transfer_2-6f198696-e3b6-4f45-8ab3-b4cd4afd921a.7z",
+        "encrypted": false, "misc_attributes": {}, "origin_pipeline": "/api/v2/pipeline/79120a48-974a-46eb-ac01-eee496e0f57f/",
+        "package_type": "AIP", "related_packages": [], "replicas": [], "replicated_package":
+        null, "resource_uri": "/api/v2/file/6f198696-e3b6-4f45-8ab3-b4cd4afd921a/",
+        "size": 13269, "status": "UPLOADED", "uuid": "6f198696-e3b6-4f45-8ab3-b4cd4afd921a"},
+        {"current_full_path": "/var/archivematica/sharedDirectory/watchedDirectories/storeAIP/9c5e/dcdc/3e3f/499d/a016/a43b/9db8/75b1/transfer_3-9c5edcdc-3e3f-499d-a016-a43b9db875b1.7z",
+        "current_location": "/api/v2/location/022713c0-f298-4d74-90fb-eb17da38d44f/",
+        "current_path": "9c5e/dcdc/3e3f/499d/a016/a43b/9db8/75b1/transfer_3-9c5edcdc-3e3f-499d-a016-a43b9db875b1.7z",
+        "encrypted": false, "misc_attributes": {}, "origin_pipeline": "/api/v2/pipeline/79120a48-974a-46eb-ac01-eee496e0f57f/",
+        "package_type": "AIP", "related_packages": [], "replicas": [], "replicated_package":
+        null, "resource_uri": "/api/v2/file/9c5edcdc-3e3f-499d-a016-a43b9db875b1/",
+        "size": 13236, "status": "UPLOADED", "uuid": "9c5edcdc-3e3f-499d-a016-a43b9db875b1"}]}'}
+    headers:
+      Cache-Control: [no-cache]
+      Connection: [keep-alive]
+      Content-Language: [en]
+      Content-Type: [application/json]
+      Date: ['Thu, 03 May 2018 12:51:32 GMT']
+      Server: [nginx/1.12.2]
+      Vary: ['Accept, Accept-Language, Cookie']
+      X-Frame-Options: [SAMEORIGIN]
+    status: {code: 200, message: OK}
+version: 1

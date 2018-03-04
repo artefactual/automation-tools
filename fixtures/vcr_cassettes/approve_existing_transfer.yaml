@@ -1,0 +1,25 @@
+interactions:
+- request:
+    body: !!python/unicode directory=approve_1&type=standard
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [!!python/unicode 'ApiKey test:test']
+      Connection: [keep-alive]
+      Content-Length: ['33']
+      Content-Type: [application/x-www-form-urlencoded]
+      User-Agent: [python-requests/2.18.4]
+    method: POST
+    uri: http://192.168.168.192/api/transfer/approve/
+  response:
+    body: {string: !!python/unicode '{"message": "Approval successful.", 
+        "uuid": "5ad38ce3-27e5-4211-a0b5-eb70f13d28fa"}'}
+    headers:
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [application/json]
+      date: ['Sun, 08 Apr 2018 17:13:06 GMT']
+      server: [nginx/1.12.2]
+      vary: ['Accept-Language, Cookie']
+    status: {code: 200, message: OK}
+version: 1

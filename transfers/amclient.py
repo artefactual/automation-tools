@@ -125,30 +125,48 @@ class AMClient(object):
                                 .get(res,
                                      err_lookup(errors.ERR_CLIENT_UNKNOWN)))
                 else:
-                    self.stdout(getattr(self, method)())
+                    self.stdout(res)
+            except requests.exceptions.InvalidURL:
+                self.stdout(errors.error_lookup(errors.ERR_INVALID_URL))
             except BaseException:
                 self.stdout(errors.error_lookup(errors.ERR_CLIENT_UNKNOWN))
         else:
             raise AttributeError('AMClient has no method {0}'.format(name))
 
     def _am_auth(self):
+        """Create JSON parameters for authentication in the request body to
+        the Archivematica API.
+        """
         return {
             'username': self.am_user_name,
             'api_key': self.am_api_key,
         }
 
     def _ss_auth(self):
+        """Create JSON parameters for authentication in the request body to
+        the Storage Service API.
+        """
         return {
             'username': self.ss_user_name,
             'api_key': self.ss_api_key
         }
+
+    def _am_auth_headers(self):
+        """Generate a HTTP request header for the Archivematica API."""
+        return {"Authorization": "ApiKey {0}:{1}".format(self.am_user_name,
+                                                         self.am_api_key)}
+
+    def _ss_auth_headers(self):
+        """Generate a HTTP request header for Storage Service API."""
+        return {"Authorization": "ApiKey {0}:{1}".format(self.ss_user_name,
+                                                         self.ss_api_key)}
 
     def hide_unit(self, unit_uuid, unit_type):
         """GET <unit_type>/<unit_uuid>/delete/."""
         return utils._call_url_json(
             '{}/api/{}/{}/delete/'.format(self.am_url, unit_type, unit_uuid),
             params=self._am_auth(),
-            method='DELETE'
+            method=utils.METHOD_DELETE
         )
 
     def close_completed_transfers(self):
@@ -185,13 +203,13 @@ class AMClient(object):
             for unit_uuid in _completed_units:
                 ret['completed_{0}s'.format(unit_type)].append(unit_uuid)
                 response = self.hide_unit(unit_uuid, unit_type)
-                if response:
-                    ret['close_succeeded'].append(unit_uuid)
-                    LOGGER.info('Closed %s %s.', unit_type, unit_uuid)
-                else:
+                if isinstance(response, int):
                     ret['close_failed'].append(unit_uuid)
                     LOGGER.warning('FAILED to close %s %s.',
                                    unit_type, unit_uuid)
+                else:
+                    ret['close_succeeded'].append(unit_uuid)
+                    LOGGER.info('Closed %s %s.', unit_type, unit_uuid)
         return ret
 
     def completed_transfers(self):
@@ -226,6 +244,7 @@ class AMClient(object):
 
     def transferables(self, b64decode=True):
         """Return all transferable entities in the Storage Service.
+
         GET location/<TS_LOC_UUID>/browse/::
 
             $ ./amclient.py transferables \
@@ -244,12 +263,20 @@ class AMClient(object):
             return b64decode_ts_location_browse(result)
         return result
 
-    def get_package(self, params):
-        """SS GET  /api/v2/file/?<GET_PARAMS>."""
+    def get_package(self, params=None):
+        """SS GET /api/v2/file/?<GET_PARAMS>."""
         payload = self._ss_auth()
         payload.update(params)
         return utils._call_url_json(
             '{}/api/v2/file/'.format(self.ss_url), payload)
+
+    def get_package_details(self):
+        """SS GET /api/v2/file/<uuid>. Retrieve the details of a specific
+        package given a package uuid.
+        """
+        return utils._call_url_json(
+            '{0}/api/v2/file/{1}'.format(self.ss_url, self.package_uuid),
+            headers=self._ss_auth_headers())
 
     def get_next_package_page(self, next_path):
         """SS GET  /api/v2/file/?<GET_PARAMS> using the next URL from
@@ -258,12 +285,14 @@ class AMClient(object):
         return utils._call_url_json('{}{}'.format(self.ss_url, next_path), {})
 
     def aips(self, params=None):
+        """Retrieve the details of a specific AIP."""
         final_params = {'package_type': 'AIP'}
         if params:
             final_params.update(params)
         return self.get_all_packages(final_params)
 
     def dips(self, params=None):
+        """Retrieve the details of a specific DIP."""
         final_params = {'package_type': 'DIP'}
         if params:
             final_params.update(params)
@@ -286,6 +315,39 @@ class AMClient(object):
             packages = self.get_all_packages(
                 params, packages, response['meta']['next'])
         return packages
+
+    def get_all_compressed_aips(self):
+        """Retrieve a dict of compressed AIPs in the Storage Service.
+
+        The dict is indexed by the AIP UUIDs. To retrieve a list of UUIDs only,
+        access the dict using aips.keys(). To access the aip metadata, call
+        aips.values().
+        """
+        compressed_aips = {}
+        for aip in self.aips():
+            if aip['status'] == u"UPLOADED":
+                path = aip["current_full_path"]
+                compressed = self.find_compressed(path)
+                if compressed:
+                    compressed_aips[aip['uuid']] = aip
+        return compressed_aips
+
+    def find_compressed(self, path):
+        """A .7z file extension might indicate if a file is compressed. We try
+        to identify that here.
+        """
+        compressed_file_ext = [".7z"]
+        uncompressed_file_ext = ""
+        file_name, file_extension = os.path.splitext(path)
+        LOGGER.debug("Found filename %s with extension %s", file_name,
+                     file_extension)
+        file_extension = file_extension.strip()
+        if file_extension in compressed_file_ext:
+            return True
+        elif file_extension == uncompressed_file_ext:
+            return False
+        LOGGER.warning("Status of AIP compression is unconfirmed")
+        return None
 
     def aip2dips(self):
         """Get all DIPS created from AIP with UUID ``self.aip_uuid``.
@@ -335,6 +397,95 @@ class AMClient(object):
             return local_filename
         else:
             LOGGER.warning('Unable to download package %s', uuid)
+
+    def get_pipelines(self):
+        """GET Archivematica Pipelines (dashboard instances from the storage
+        service.
+        """
+        return utils._call_url_json('{0}/api/v2/pipeline/'.format(self.ss_url),
+                                    headers=self._ss_auth_headers())
+
+    def get_transfer_status(self):
+        """Given a Transfer UUID, GET the transfer status.
+
+        If there isn't a transfer with this UUID in the pipeline then the
+        response from the server will look as follows::
+
+            {"message": "Cannot fetch unitTransfer with UUID"
+                        " ebc8a35c-6742-4264-bc30-22e263966d69",
+             "type": "transfer",
+             "error": true}
+        The response suggesting non-existence is an error, "error": true, is
+        something the caller will have to handle appropriately for their
+        application.
+        """
+        return utils._call_url_json(
+            '{0}/api/transfer/status/{1}/'.format(self.am_url,
+                                                  self.transfer_uuid),
+            headers=self._am_auth_headers())
+
+    def get_ingest_status(self):
+        """GET ingest status if there is an ingest in progress in the
+        Archivematica pipeline.
+        """
+        return utils._call_url_json(
+            '{0}/api/ingest/status/{1}/'.format(self.am_url, self.sip_uuid),
+            headers=self._am_auth_headers())
+
+    def get_processing_config(self, assume_json=False):
+        """GET a processing configuration file from an Archivematica instance.
+
+        if the request is successful an application/xml response is returned
+        to the caller. If the request is unsuccessful then an error code is
+        returned which needs to be handled via error_lookup. The default is to
+        return the default processing config from the AM server.
+        """
+        return utils._call_url_json(
+            '{0}/api/processing-configuration/{1}'
+            .format(self.am_url,
+                    self.processing_config),
+            headers=self._am_auth_headers(),
+            assume_json=assume_json)
+
+    def approve_transfer(self):
+        """Approve a transfer in the Archivematica Pipeline.
+
+        The transfer_type informs Archivematica how to continue processing.
+        Options are:
+          * standard
+          * unzipped bag
+          * zipped bag
+          * dspace
+        Directory is the location where the transfer is to be picked up
+        from. The directory can be found via the get_transfer_status API
+        call.
+        """
+        url = '{0}/api/transfer/approve/'.format(self.am_url)
+        params = {"type": self.transfer_type,
+                  "directory": utils.fsencode(self.transfer_directory)}
+        return utils._call_url_json(url,
+                                    headers=self._am_auth_headers(),
+                                    params=params,
+                                    method=utils.METHOD_POST)
+
+    def reingest_aip(self):
+        """Initiate the reingest of an AIP via the Storage Service given the
+        API UUID and Archivematica Pipeline.
+
+        Reingest default is set to
+        ``full``. Alternatives are:
+            * METADATA_ONLY (metadata only re-ingest)
+            * OBJECTS (partial re-ingest)
+            * FULL (full re-ingest)
+        """
+        params = {'pipeline': self.pipeline_uuid,
+                  'reingest_type': self.reingest_type,
+                  'processing_config': self.processing_config}
+        url = "{0}/api/v2/file/{1}/reingest/".format(self.ss_url, self.aip_uuid)
+        return utils._call_url_json(url,
+                                    headers=self._ss_auth_headers(),
+                                    params=json.dumps(params),
+                                    method=utils.METHOD_POST)
 
     def download_dip(self):
         return self.download_package(self.dip_uuid)

@@ -24,13 +24,21 @@ AIP_UUID = Arg(
     name='aip_uuid',
     help='UUID of the target AIP',
     type=None)
-AM_API_KEY = Arg(
-    name='am_api_key',
-    help='Archivematica API key',
-    type=None)
 DIP_UUID = Arg(
     name='dip_uuid',
     help='UUID of the target DIP',
+    type=None)
+SIP_UUID = Arg(
+    name='sip_uuid',
+    help='UUID of the target SIP',
+    type=None)
+TRANSFER_UUID = Arg(
+    name='transfer_uuid',
+    help='UUID of the target Transfer',
+    type=None)
+AM_API_KEY = Arg(
+    name='am_api_key',
+    help='Archivematica API key',
     type=None)
 SS_API_KEY = Arg(
     name='ss_api_key',
@@ -39,6 +47,18 @@ SS_API_KEY = Arg(
 TRANSFER_SOURCE = Arg(
     name='transfer_source',
     help='Transfer source UUID',
+    type=None)
+PACKAGE_UUID = Arg(
+    name="package_uuid",
+    help="UUID of the package in the storage service",
+    type=None)
+PIPELINE_UUID = Arg(
+    name="pipeline_uuid",
+    help="UUID of the pipeline to use",
+    type=None)
+TRANSFER_DIRECTORY = Arg(
+    name="transfer_directory",
+    help="Directory of a potential Archivematica transfer",
     type=None)
 
 # Reusable option constants (for CLI).
@@ -86,7 +106,27 @@ TRANSFER_PATH = Opt(
     help='Relative path within the Transfer Source. Default: ""',
     default=b'',
     type=fsencode)
-
+PROCESSING_CONFIG = Opt(
+    name='processing-config',
+    metavar='PROCESSING',
+    help='Processing configuration. Default: {0}'.format(
+        defaults.DEFAULT_PROCESSING_CONFIG),
+    default=defaults.DEFAULT_PROCESSING_CONFIG,
+    type=None)
+REINGEST_TYPE = Opt(
+    name='reingest-type',
+    metavar='REINGEST',
+    help='Reingest type. Default: {0}'.format(
+        defaults.DEFAULT_REINGEST_TYPE),
+    default=defaults.DEFAULT_REINGEST_TYPE,
+    type=None)
+TRANSFER_TYPE = Opt(
+    name='transfer-type',
+    metavar='TRANSFER',
+    help='Reingest type. Default: {0}'.format(
+        defaults.DEFAULT_TRANSFER_TYPE),
+    default=defaults.DEFAULT_TRANSFER_TYPE,
+    type=None)
 
 # Sub-command configuration: give them a name, help text, a tuple of ``Arg``
 # instances and a tuple of ``Opts`` instances.
@@ -141,6 +181,12 @@ SUBCOMMANDS = (
         opts=(SS_USER_NAME, SS_URL, OUTPUT_MODE)
     ),
     SubCommand(
+        name='get-all-compressed-aips',
+        help='Print all compressed AIPs in the Storage Service.',
+        args=(SS_API_KEY,),
+        opts=(SS_USER_NAME, SS_URL, OUTPUT_MODE)
+    ),
+    SubCommand(
         name='aips2dips',
         help='Print all AIPs in the Storage Service along with their '
              'corresponding DIPs.',
@@ -159,6 +205,48 @@ SUBCOMMANDS = (
         help='Download the DIP with DIP_UUID.',
         args=(DIP_UUID, SS_API_KEY),
         opts=(SS_USER_NAME, SS_URL, DIRECTORY, OUTPUT_MODE)
+    ),
+    SubCommand(
+        name='get-pipelines',
+        help='List (enabled) Pipelines known to the Storage Service.',
+        args=(SS_API_KEY,),
+        opts=(SS_USER_NAME, SS_URL, OUTPUT_MODE)
+    ),
+    SubCommand(
+        name='get-transfer-status',
+        help='Print the status of a transfer if it exists in a transfer workflow.',
+        args=(TRANSFER_UUID, AM_API_KEY),
+        opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
+    ),
+    SubCommand(
+        name='get-ingest-status',
+        help='Print the status of an ingest if it exists in an ingest workflow.',
+        args=(SIP_UUID, AM_API_KEY),
+        opts=(AM_USER_NAME, AM_URL, OUTPUT_MODE)
+    ),
+    SubCommand(
+        name='get-processing-config',
+        help='Print a processing configuration file given its name in Archivematica.',
+        args=(AM_API_KEY,),
+        opts=(PROCESSING_CONFIG, AM_USER_NAME, AM_URL, OUTPUT_MODE)
+    ),
+    SubCommand(
+        name='approve-transfer',
+        help='Approve a transfer in the Archivematica pipeline with a given UUID.',
+        args=(TRANSFER_DIRECTORY, AM_API_KEY),
+        opts=(TRANSFER_TYPE, AM_USER_NAME, AM_URL, OUTPUT_MODE)
+    ),
+    SubCommand(
+        name='reingest-aip',
+        help='Initiate the reingest of an AIP from the storage service with a given UUID.',
+        args=(PIPELINE_UUID, AIP_UUID, SS_API_KEY),
+        opts=(REINGEST_TYPE, PROCESSING_CONFIG, SS_USER_NAME, SS_URL, OUTPUT_MODE)
+    ),
+    SubCommand(
+        name='get-package-details',
+        help='Retrieve details about a package in the storage service with a given UUID.',
+        args=(PACKAGE_UUID, SS_API_KEY),
+        opts=(SS_USER_NAME, SS_URL, OUTPUT_MODE)
     )
 )
 

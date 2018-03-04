@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import collections
 import os
 import unittest
 
@@ -206,7 +207,7 @@ class TestAutomateTransfers(unittest.TestCase):
         self.assertEqual(path, b'SampleTransfers/BagTransfer.zip')
 
     @vcr.use_cassette('fixtures/vcr_cassettes/'
-                      'Sget_next_transfer_failed_auth.yaml')
+                      'get_next_transfer_failed_auth.yaml')
     def test_get_next_transfer_failed_auth(self):
         # All default values
         ss_user = 'demo'
@@ -217,4 +218,28 @@ class TestAutomateTransfers(unittest.TestCase):
                                           DEPTH, COMPLETED, FILES)
         # Verify
         self.assertEqual(path,
-                         errors.error_lookup(errors.ERR_SERVER_CONN))
+                         errors.error_lookup(errors.ERR_INVALID_RESPONSE))
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_transfer_approve_transfer.yaml')
+    def test_approve_transfer(self):
+        """Test the process of approving transfers and make sure that the
+        outcome is as expected.
+        """
+        Result = collections.namedtuple('Result', 'dirname expected')
+        approve_tests = [
+            Result(dirname="unzipped_bag_1",
+                   expected='8779909c-20e8-4471-beb2-c45591b7abb0'),
+            Result(dirname="dspace_1",
+                   expected='f25c71e6-1f1e-4e69-bf57-580a64d4e051'),
+            Result(dirname="standard_1",
+                   expected='0d16e57f-df1b-4a66-a93c-989f0dc9f16f'),
+            Result(dirname="dirname_four",
+                   expected=None)
+        ]
+        for test in approve_tests:
+            res = transfer.approve_transfer(test.dirname,
+                                            AM_URL,
+                                            API_KEY,
+                                            USER)
+            assert(res == test.expected)
