@@ -1,18 +1,16 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import logging
 import logging.config  # Has to be imported separately
 
 
-def setup(log_level, log_file_name, log_name):
-
+def setup(log_level, log_file_name):
+    """Configure the logging system."""
     # Log format string for flake8 compliance
-    log_fmt = ('%(levelname)-8s  %(asctime)s%(filename)s:%(lineno)-4s '
-               '%(message)s')
+    log_fmt = ('%(levelname)-8s  %(asctime)s '
+               '%(filename)s:%(lineno)-4s %(message)s')
 
-    # Configure logging
-    CONFIG = {
+    dict_config = {
         'version': 1,
         'disable_existing_loggers': False,
         'formatters': {
@@ -32,16 +30,13 @@ def setup(log_level, log_file_name, log_name):
                 'filename': log_file_name,
                 'backupCount': 2,
                 'maxBytes': 10 * 1024,
+                'delay': True,  # Ony write to file on first byte emitted.
             },
         },
         'loggers': {
-            'transfer': {
+            'transfers': {
                 'level': log_level,
                 'handlers': ['console', 'file'],
-            },
-            'amclient': {
-                'level': log_level,
-                'handlers': ['file'],
             },
             'requests.packages.urllib3': {
                 'level': log_level,
@@ -50,9 +45,7 @@ def setup(log_level, log_file_name, log_name):
         },
     }
 
-    LOGGER = logging.getLogger(log_name)
-    logging.config.dictConfig(CONFIG)
-    return LOGGER
+    logging.config.dictConfig(dict_config)
 
 
 def set_log_level(log_level, quiet, verbose):

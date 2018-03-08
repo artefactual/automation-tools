@@ -13,6 +13,7 @@ import binascii
 import base64
 from collections import defaultdict
 import json
+import logging
 import os
 import pprint
 import re
@@ -32,13 +33,7 @@ from transfers import amclientargs
 from transfers import errors
 from transfers import utils
 
-
-def get_logger(log_file_name, log_level):
-    return loggingconfig.setup(log_level, log_file_name, "amclient")
-
-
-# Default logging if no other logging is provided in the class.
-LOGGER = get_logger(defaults.AMCLIENT_LOG_FILE, defaults.DEFAULT_LOG_LEVEL)
+LOGGER = logging.getLogger('transfers')
 
 
 def b64decode_ts_location_browse(result):
@@ -91,7 +86,7 @@ def is_uuid(thing):
     return defaults.UUID_PATT.search(thing) is not None
 
 
-class AMClient:
+class AMClient(object):
 
     def __init__(self, **kwargs):
         """Construct an Archivematica client. Provide any of the following
@@ -130,12 +125,13 @@ class AMClient:
                 # Shortening variable for PEP8 conformance.
                 err_lookup = errors.error_lookup
                 if isinstance(res, int):
-                    self.stdout(err_lookup.get(res,
-                                err_lookup(errors.ERR_AMCLIENT_UNKNOWN)))
+                    self.stdout(err_lookup
+                                .get(res,
+                                     err_lookup(errors.ERR_CLIENT_UNKNOWN)))
                 else:
                     self.stdout(getattr(self, method)())
             except:
-                self.stdout(errors.error_lookup(errors.ERR_AMCLIENT_UNKNOWN))
+                self.stdout(errors.error_lookup(errors.ERR_CLIENT_UNKNOWN))
         else:
             raise AttributeError('AMClient has no method {0}'.format(name))
 
@@ -362,11 +358,9 @@ def main():
         sys.exit(0)
 
     args = argparser.parse_args()
-    am_client = AMClient(**vars(args))
+    loggingconfig.setup(args.log_level, args.log_file)
 
-    # Re-configure global LOGGER based on user provided parameters.
-    global LOGGER
-    LOGGER = get_logger(args.log_file, args.log_level)
+    am_client = AMClient(**vars(args))
 
     try:
         getattr(am_client, 'print_{0}'.format(args.subcommand.replace('-',

@@ -1,20 +1,12 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
 import requests
 import urllib3
 
-from transfers import defaults
-from transfers import loggingconfig
 from transfers import errors
 
-
-def get_logger(log_file_name, log_level):
-    return loggingconfig.setup(log_level, log_file_name, "amclient")
-
-
-# Default logging if no other logging is provided in the class.
-LOGGER = get_logger(defaults.AMCLIENT_LOG_FILE, defaults.DEFAULT_LOG_LEVEL)
+LOGGER = logging.getLogger('transfers')
 
 
 def _call_url_json(url, params, method='GET'):
@@ -47,6 +39,6 @@ def _call_url_json(url, params, method='GET'):
             return errors.ERR_PARSE_JSON
 
     except (urllib3.exceptions.NewConnectionError,
-            requests.exceptions.ConnectionError) as e:
-        LOGGER.error("Connection error %s", e)
+            requests.exceptions.ConnectionError) as err:
+        LOGGER.error("Connection error %s", err)
         return errors.ERR_SERVER_CONN

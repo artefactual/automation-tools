@@ -12,6 +12,7 @@ from __future__ import print_function, unicode_literals
 import argparse
 import ast
 import base64
+import logging
 import os
 import sys
 import subprocess
@@ -34,6 +35,8 @@ from transfers import utils
 # Directory for various processing decisions, below.
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
+LOGGER = logging.getLogger('transfers')
+
 
 def get_setting(config_file, setting, default=None):
     config = configparser.SafeConfigParser()
@@ -42,14 +45,6 @@ def get_setting(config_file, setting, default=None):
         return config.get('transfers', setting)
     except Exception:
         return default
-
-
-def get_logger(log_file_name, log_level):
-    return loggingconfig.setup(log_level, log_file_name, "transfer")
-
-
-# Default logging if no other logging is provided via main().
-LOGGER = get_logger(defaults.TRANSFER_LOG_FILE, "INFO")
 
 
 try:
@@ -425,16 +420,15 @@ def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
          am_url, ss_url, transfer_type, see_files, hide_on_complete=False,
          config_file=None, log_level='INFO'):
 
-    global LOGGER
-    LOGGER = get_logger(
-        get_setting(config_file, 'logfile',
-                    defaults.TRANSFER_LOG_FILE), log_level)
+    loggingconfig.setup(
+        log_level,
+        get_setting(config_file, 'logfile', defaults.TRANSFER_LOG_FILE))
 
     LOGGER.info("Waking up")
 
     models.init(
-        get_setting(config_file, 'databasefile', os.path.join(THIS_DIR,
-                    'transfers.db')))
+        get_setting(config_file, 'databasefile',
+                    os.path.join(THIS_DIR, 'transfers.db')))
 
     session = models.Session()
 
@@ -526,7 +520,7 @@ if __name__ == '__main__':
                                      formatter_class=rawformatter)
     parser.add_argument('-u', '--user', metavar='USERNAME', required=True,
                         help='Username of the Archivematica dashboard user '
-                              'to authenticate as.')
+                             'to authenticate as.')
     parser.add_argument('-k', '--api-key', metavar='KEY',
                         required=True, help='API key of the Archivematica '
                                             'dashboard user.')
@@ -542,9 +536,11 @@ if __name__ == '__main__':
     parser.add_argument(
         # default=b'' to convert to bytes from unicode str provided by
         # command line.
-        '--transfer-path', metavar='PATH', help='Relative path within the '
-                                                'Transfer Source. Default: ""',
-                                                type=fsencode, default=b'')
+        '--transfer-path',
+        metavar='PATH',
+        help='Relative path within the Transfer Source. Default: ""',
+        type=fsencode,
+        default=b'')
     parser.add_argument(
         '--depth', '-d', help='Depth to create the transfers from relative '
                               'to the transfer source location and path. '
