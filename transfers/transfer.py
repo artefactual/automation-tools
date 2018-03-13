@@ -169,7 +169,7 @@ def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session,
                 shutil.rmtree(db_unit.path)
                 LOGGER.info('Source files deleted for SIP %s deleted', db_unit.uuid)
             except OSError as e:
-                LOGGER.info('Error deleting source files: %s', e)
+                LOGGER.warning('Error deleting source files: %s', e)
 
     return unit_info
 
