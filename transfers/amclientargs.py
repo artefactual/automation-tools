@@ -8,8 +8,6 @@ from collections import namedtuple
 import os
 import sys
 
-from six import binary_type, text_type
-
 # AM Client Module Configuration.
 
 # Allow execution as an executable and the script to be run at package level
@@ -17,20 +15,8 @@ from six import binary_type, text_type
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from transfers import defaults
+from transfers.utils import fsencode
 
-try:
-    from os import fsencode
-except ImportError:
-    def fsencode(filename):
-        """Cribbed & modified from Python3's OS module to support Python2."""
-        encoding = sys.getfilesystemencoding()
-        if isinstance(filename, binary_type):
-            return filename
-        elif isinstance(filename, text_type):
-            return filename.encode(encoding)
-        else:
-            raise TypeError("expect bytes or str, not %s" %
-                            type(filename).__name__)
 
 # Reusable argument constants (for CLI).
 Arg = namedtuple('Arg', ['name', 'help', 'type'])
