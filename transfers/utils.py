@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 
+"""Where you put stuff when you can't think of a good name for a module."""
+
 import logging
+import sys
+
 import requests
 import urllib3
+from six import binary_type, text_type
 
 from transfers import errors
 
@@ -11,6 +16,7 @@ LOGGER = logging.getLogger('transfers')
 
 def _call_url_json(url, params, method='GET'):
     """Helper to GET a URL where the expected response is 200 with JSON.
+
     :param str url: URL to call
     :param dict params: Params to pass to requests.get
     :returns: Dict of the returned JSON or an integer error
@@ -42,3 +48,38 @@ def _call_url_json(url, params, method='GET'):
             requests.exceptions.ConnectionError) as err:
         LOGGER.error("Connection error %s", err)
         return errors.ERR_SERVER_CONN
+
+
+try:
+    from os import fsencode, fsdecode
+except ImportError:
+    # Cribbed & modified from Python3's OS module to support Python2
+    def fsencode(filename):
+        """Encode path-like filename to the filesystem encoding.
+
+        See https://docs.python.org/3/library/os.html#os.fsencode for more
+        details.
+        """
+        encoding = sys.getfilesystemencoding()
+        if isinstance(filename, binary_type):
+            return filename
+        elif isinstance(filename, text_type):
+            return filename.encode(encoding)
+        else:
+            raise TypeError("expect bytes or str, not %s" %
+                            type(filename).__name__)
+
+    def fsdecode(filename):
+        """Decode the path-like filename from the filesystem encoding.
+
+        See https://docs.python.org/3/library/os.html#os.fsdecode for more
+        details.
+        """
+        encoding = sys.getfilesystemencoding()
+        if isinstance(filename, text_type):
+            return filename
+        elif isinstance(filename, binary_type):
+            return filename.decode(encoding)
+        else:
+            raise TypeError("expect bytes or str, not %s" %
+                            type(filename).__name__)

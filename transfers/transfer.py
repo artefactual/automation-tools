@@ -2,24 +2,22 @@
 # -*- coding: utf-8 -*-
 
 """
-Automate Transfers
+Automate Transfers.
 
 Helper script to automate running transfers through Archivematica.
 """
 
 from __future__ import print_function, unicode_literals
 
-import argparse
 import ast
 import base64
 import logging
 import os
-import sys
 import subprocess
+import sys
 import time
 
 import requests
-from six import binary_type, text_type
 from six.moves import configparser
 
 # Allow execution as an executable and the script to be run at package level
@@ -31,6 +29,8 @@ from transfers import errors
 from transfers import loggingconfig
 from transfers import models
 from transfers import utils
+from transfers.transferargs import get_parser
+from transfers.utils import fsencode, fsdecode
 
 # Directory for various processing decisions, below.
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -39,37 +39,13 @@ LOGGER = logging.getLogger('transfers')
 
 
 def get_setting(config_file, setting, default=None):
+    """Get an option value from the configuration file."""
     config = configparser.SafeConfigParser()
     try:
         config.read(config_file)
         return config.get('transfers', setting)
     except Exception:
         return default
-
-
-try:
-    from os import fsencode, fsdecode
-except ImportError:
-    # Cribbed & modified from Python3's OS module to support Python2
-    def fsencode(filename):
-        encoding = sys.getfilesystemencoding()
-        if isinstance(filename, binary_type):
-            return filename
-        elif isinstance(filename, text_type):
-            return filename.encode(encoding)
-        else:
-            raise TypeError("expect bytes or str, not %s" %
-                            type(filename).__name__)
-
-    def fsdecode(filename):
-        encoding = sys.getfilesystemencoding()
-        if isinstance(filename, text_type):
-            return filename
-        elif isinstance(filename, binary_type):
-            return filename.decode(encoding)
-        else:
-            raise TypeError("expect bytes or str, not %s" %
-                            type(filename).__name__)
 
 
 def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session,
@@ -512,76 +488,7 @@ def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
 
 
 if __name__ == '__main__':
-
-    # Variable for conformance to flake8 line lenght below.
-    rawformatter = argparse.RawDescriptionHelpFormatter
-
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=rawformatter)
-    parser.add_argument('-u', '--user', metavar='USERNAME', required=True,
-                        help='Username of the Archivematica dashboard user '
-                             'to authenticate as.')
-    parser.add_argument('-k', '--api-key', metavar='KEY',
-                        required=True, help='API key of the Archivematica '
-                                            'dashboard user.')
-    parser.add_argument('--ss-user', metavar='USERNAME', required=True,
-                        help='Username of the Storage Service user to '
-                             'authenticate as.')
-    parser.add_argument('--ss-api-key', metavar='KEY',
-                        required=True, help='API key of the Storage Service '
-                                            'user.')
-    parser.add_argument(
-        '-t', '--transfer-source', metavar='UUID', required=True,
-        help='Transfer Source Location UUID to fetch transfers from.')
-    parser.add_argument(
-        # default=b'' to convert to bytes from unicode str provided by
-        # command line.
-        '--transfer-path',
-        metavar='PATH',
-        help='Relative path within the Transfer Source. Default: ""',
-        type=fsencode,
-        default=b'')
-    parser.add_argument(
-        '--depth', '-d', help='Depth to create the transfers from relative '
-                              'to the transfer source location and path. '
-                              'Default of 1 creates transfers from the '
-                              'children of transfer-path.', type=int,
-        default=1)
-    parser.add_argument('--am-url', '-a', metavar='URL',
-                        help='Archivematica URL. Default: %s' %
-                        defaults.DEF_AM_URL,
-                        default='%s' % defaults.DEF_AM_URL)
-    parser.add_argument('--ss-url', '-s', metavar='URL',
-                        help='Storage Service URL. Default: %s' %
-                        defaults.DEF_SS_URL,
-                        default='%s' % defaults.DEF_SS_URL)
-    parser.add_argument(
-        '--transfer-type', metavar='TYPE', help="Type of transfer to start. "
-                                                "One of: 'standard' "
-                                                "(default), 'unzipped bag', "
-                                                "'zipped bag', 'dspace'.",
-        default='standard', choices=['standard', 'unzipped bag',
-                                     'zipped bag', 'dspace'])
-    parser.add_argument('--files', action='store_true',
-                        help='If set, start transfers from files as well as '
-                             'folders.')
-    parser.add_argument('--hide', action='store_true',
-                        help='If set, hide the Transfers and SIPs in the '
-                             'dashboard once they complete.')
-    parser.add_argument('-c', '--config-file', metavar='FILE',
-                        help='Configuration file(log/db/PID files)',
-                        default=None)
-
-    # Logging
-    parser.add_argument('--verbose', '-v', action='count',
-                        default=0, help='Increase the debugging output.')
-    parser.add_argument('--quiet', '-q', action='count',
-                        default=0, help='Decrease the debugging output')
-    parser.add_argument(
-        '--log-level', choices=['ERROR', 'WARNING', 'INFO', 'DEBUG'],
-        default=None, help='Set the debugging output level. This will '
-                           'override -q and -v')
-
+    parser = get_parser(__doc__)
     args = parser.parse_args()
 
     log_level = loggingconfig.set_log_level(
