@@ -6,9 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import vcr
 
-from transfers import errors
-from transfers import transfer
-from transfers import models
+from transfers import errors, transfer, models
 
 AM_URL = 'http://127.0.0.1'
 SS_URL = 'http://127.0.0.1:8000'

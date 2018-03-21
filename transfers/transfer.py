@@ -24,11 +24,7 @@ from six.moves import configparser
 # by ensuring that it can see itself.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from transfers import defaults
-from transfers import errors
-from transfers import loggingconfig
-from transfers import models
-from transfers import utils
+from transfers import defaults, errors, loggingconfig, models, utils
 from transfers.transferargs import get_parser
 from transfers.utils import fsencode, fsdecode
 
@@ -415,7 +411,7 @@ def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
         # Open PID file only if it doesn't exist for read/write
         f = os.fdopen(
             os.open(pid_file, os.O_CREAT | os.O_EXCL | os.O_RDWR), 'r+')
-    except:
+    except BaseException:
         LOGGER.info('This script is already running. To override this '
                     'behaviour and start a new run, remove %s', pid_file)
         return 0

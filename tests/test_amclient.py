@@ -9,8 +9,7 @@ import unittest
 
 import vcr
 
-from transfers import amclient
-from transfers import errors
+from transfers import amclient, errors
 
 
 AM_URL = 'http://192.168.168.192'

@@ -27,11 +27,7 @@ import requests
 # by ensuring that it can see itself.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from transfers import loggingconfig
-from transfers import defaults
-from transfers import amclientargs
-from transfers import errors
-from transfers import utils
+from transfers import loggingconfig, defaults, amclientargs, errors, utils
 
 LOGGER = logging.getLogger('transfers')
 
@@ -130,7 +126,7 @@ class AMClient(object):
                                      err_lookup(errors.ERR_CLIENT_UNKNOWN)))
                 else:
                     self.stdout(getattr(self, method)())
-            except:
+            except BaseException:
                 self.stdout(errors.error_lookup(errors.ERR_CLIENT_UNKNOWN))
         else:
             raise AttributeError('AMClient has no method {0}'.format(name))
