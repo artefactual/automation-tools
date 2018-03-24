@@ -23,6 +23,7 @@ The Automation Tools project is a set of python scripts, that are designed to au
     - [user-input](#user-input)
   - [Logs](#logs)
   - [Multiple automated transfer instances](#multiple-automated-transfer-instances)
+  - [`transfer_async.py`](#transfer_asyncpy)
 - [DIP creation](#dip-creation)
   - [Configuration](#configuration-1)
     - [Parameters](#parameters-1)
@@ -218,6 +219,22 @@ You may need to set up multiple automated transfer instances, for example if req
 `<config_file_1>` and `<config_file_2>` should specify different file names for db/PID/log files. See transfers.conf and transfers-2.conf in etc/ for an example
 
 In case different hooks are required for each instance, a possible approach is to checkout a new instance of the automation tools, for example in `/usr/lib/archivematica/automation-tools-2`
+
+### `transfer_async.py`
+
+This is a new work-in-progress entry point similar to `transfers.transfer` that uses the new asynchronous endpoints of Archivematica being developed under the `/api/v2beta` API. It takes the same arguments, e.g.:
+
+```
+#!/usr/bin/env bash
+
+cd /usr/lib/archivematica/automation-tools/
+
+/usr/share/python/automation-tools/bin/python -m transfers.transfer_async \
+  --user <user> --api-key <apikey> \
+  --ss-user <user> --ss-api-key <apikey> \
+  --transfer-source <transfer_source_uuid> \
+  --config-file <config_file>
+```
 
 DIP creation
 ------------

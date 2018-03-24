@@ -37,7 +37,7 @@ class DashboardAPIError(Exception):
 
 
 def _api_create_package(am_url, am_user, am_api_key,
-                        name, type, accession,
+                        name, package_type, accession,
                         ts_location_uuid, ts_path):
     url = am_url + '/api/v2beta/package/'
     headers = {
@@ -45,7 +45,7 @@ def _api_create_package(am_url, am_user, am_api_key,
     }
     data = {
         'name': name,
-        'type': type,
+        'type': package_type,
         'accession': accession,
         'path': base64.b64encode(fsencode(ts_location_uuid) + b':' + ts_path),
     }
@@ -62,7 +62,7 @@ def _api_create_package(am_url, am_user, am_api_key,
 
 def _start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
                     depth, am_url, am_user, am_api_key, transfer_type,
-                    see_files, session, config_file):
+                    see_files, session):
     """
     Start a new transfer.
 
@@ -117,9 +117,6 @@ def _start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
         session.add(new_transfer)
         return None
 
-    # We don't run the scripts in the pre-transfer directory because the
-    # _api_create_package automatically starts the transfer.
-
     LOGGER.info('Package created: %s', result['id'])
     new_transfer = Unit(
         uuid=result['id'], path=target, unit_type='transfer', current=True)
@@ -149,6 +146,5 @@ if __name__ == '__main__':
         transfer_type=args.transfer_type,
         see_files=args.files,
         hide_on_complete=args.hide,
-        config_file=args.config_file,
         log_level=set_log_level(args.log_level, args.quiet, args.verbose),
     ))

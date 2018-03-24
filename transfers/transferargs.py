@@ -1,3 +1,5 @@
+"""Command-line argument parser for automated transfer scripts."""
+
 import argparse
 
 from transfers.defaults import DEF_AM_URL, DEF_SS_URL
@@ -5,6 +7,7 @@ from transfers.utils import fsencode
 
 
 def get_parser(doc):
+    """Parser comand-line arguments for automated transfer scripts."""
     # Variable for conformance to flake8 line lenght below.
     rawformatter = argparse.RawDescriptionHelpFormatter
 
@@ -12,7 +15,7 @@ def get_parser(doc):
                                      formatter_class=rawformatter)
     parser.add_argument('-u', '--user', metavar='USERNAME', required=True,
                         help='Username of the Archivematica dashboard user '
-                              'to authenticate as.')
+                             'to authenticate as.')
     parser.add_argument('-k', '--api-key', metavar='KEY',
                         required=True, help='API key of the Archivematica '
                                             'dashboard user.')
@@ -28,9 +31,10 @@ def get_parser(doc):
     parser.add_argument(
         # default=b'' to convert to bytes from unicode str provided by
         # command line.
-        '--transfer-path', metavar='PATH', help='Relative path within the '
-                                                'Transfer Source. Default: ""',
-                                                type=fsencode, default=b'')
+        '--transfer-path',
+        metavar='PATH', help='Relative path within the '
+                             'Transfer Source. Default: ""',
+        type=fsencode, default=b'')
     parser.add_argument(
         '--depth', '-d', help='Depth to create the transfers from relative '
                               'to the transfer source location and path. '
