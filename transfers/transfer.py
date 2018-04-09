@@ -437,8 +437,8 @@ def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
     try:
         # Open PID file only if it doesn't exist for read/write
         f = os.fdopen(
-            os.open(pid_file, os.O_CREAT | os.O_EXCL | os.O_RDWR), 'r+')
-    except BaseException:
+            os.open(pid_file, os.O_CREAT | os.O_EXCL | os.O_RDWR), 'w')
+    except OSError:
         LOGGER.info('This script is already running. To override this '
                     'behaviour and start a new run, remove %s', pid_file)
         return 0

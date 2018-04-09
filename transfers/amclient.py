@@ -84,6 +84,9 @@ def is_uuid(thing):
 
 class AMClient(object):
 
+    reingest_type = "FULL"
+    transfer_type = "standard"
+
     def __init__(self, **kwargs):
         """Construct an Archivematica client. Provide any of the following
         arguments, depending on what you want the client to do.

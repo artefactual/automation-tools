@@ -1,0 +1,1 @@
+*/5 * * * * /home/user/git/artefactual/automation-tools/transfers/examples/reingest/run-reingest.sh 1> /dev/null 2>> /home/user/git/artefactual/automation-tools/cron.err

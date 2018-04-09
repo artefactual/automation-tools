@@ -567,7 +567,8 @@ Basic usage: `amclient.py <subcommand> [optional arguments]
 
 * close-completed-transfers
   * purpose: close all completed transfers (those not failed or rejected)
-  * positional argument: am_api_key - API key for Archivematica dashboard user
+  * positional argument:
+    * am_api_key - API key for Archivematica dashboard user
   * optional arguments:
     * `--am-user-name <username>` - username for Archivematica dashboard user
       (default: test)
@@ -575,7 +576,8 @@ Basic usage: `amclient.py <subcommand> [optional arguments]
 
 * close-completed-ingests
   * purpose: close all completed ingests (those not failed or rejected)
-  * positional argument: am_api_key - API key for Archivematica dashboard user
+  * positional argument:
+    * am_api_key - API key for Archivematica dashboard user
   * optional arguments:
     * `--am-user-name <username>` - username for Archivematica dashboard user
       (default: test)
@@ -583,7 +585,8 @@ Basic usage: `amclient.py <subcommand> [optional arguments]
 
 * completed-transfers
   * purpose: print all completed transfers
-  * positional argument: am_api_key - API key for Archivematica dashboard user
+  * positional argument:
+    * am_api_key - API key for Archivematica dashboard user
   * optional arguments:
     * `--am-user-name <username>` - username for Archivematica dashboard user
       (default: test)
@@ -591,7 +594,8 @@ Basic usage: `amclient.py <subcommand> [optional arguments]
 
 * completed-ingests
   * purpose: print all completed ingests
-  * positional argument: am_api_key - API key for Archivematica dashboard user
+  * positional argument:
+    * am_api_key - API key for Archivematica dashboard user
   * optional arguments:
     * `--am-user-name <username>` - username for Archivematica dashboard user
       (default: test)
@@ -599,7 +603,8 @@ Basic usage: `amclient.py <subcommand> [optional arguments]
 
 * unapproved-transfers
   * purpose: print all unapproved transfers
-  * positional argument: am_api_key - API key for Archivematica dashboard user
+  * positional argument:
+    * am_api_key - API key for Archivematica dashboard user
   * optional arguments:
     * `--am-user-name <username>` - username for Archivematica dashboard user
       (default: test)
@@ -618,14 +623,16 @@ Basic usage: `amclient.py <subcommand> [optional arguments]
 
 * aips
   * purpose: print all AIPs in the Storage Service
-  * positional argument: ss_api_key - Storage Service API key
+  * positional argument:
+    * ss_api_key - Storage Service API key
   * optional arguments:
     * `--ss-user-name <username>` - Storage Service username (default: `test`)
     * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
 
 * dips
   * purpose: print all DIPs in the Storage Service
-  * positional argument: ss_api_key - Storage Service API key
+  * positional argument:
+    * ss_api_key - Storage Service API key
   * optional arguments:
     * `--ss-user-name <username>` - Storage Service username (default: `test`)
     * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
@@ -633,7 +640,8 @@ Basic usage: `amclient.py <subcommand> [optional arguments]
 * aips2dips
   * purpose: print all AIPs in the Storage Service along with their
   corresponding DIPs
-  * positional argument: ss_api_key - Storage Service API key
+  * positional argument:
+    * ss_api_key - Storage Service API key
   * optional arguments:
     * `--ss-user-name <username>` - Storage Service username (default: `test`)
     * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
@@ -657,11 +665,106 @@ Basic usage: `amclient.py <subcommand> [optional arguments]
     * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
     * `--directory <dir>` - directory path in which to save the DIP
 
+* get-pipelines
+  * purpose: list (enabled) Pipelines known to the Storage Service.
+  * positional arguments:
+      * ss_api_key - Storage Service API key
+  * optional arguments:
+    * `--ss-user-name <username>` - Storage Service username (default: `test`)
+    * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
+
+* get-transfer-status
+  * purpose: print the status of a transfer if it exists in a pipeline.
+  * positional arguments:
+      * transfer_uuid - identifier for the transfer in progress
+      * am_api_key - API key for Archivematica dashboard user
+  * optional arguments:
+    * `--am-user-name <username>` - username for Archivematica dashboard user
+    * `--am-url <url>` - Archivematica URL (default: `http://127.0.0.1`)
+
+* get-ingest-status
+  * purpose: print the status of an ingest if it exists in an pipeline.
+  * positional arguments
+    * sip-uuid - identifier for the ingest in progress
+    * am_api_key - API key for Archivematica dashboard user
+  * optional arguments
+    * `--am-user-name <username>` - username for Archivematica dashboard user
+    * `--am-url <url>` - Archivematica URL (default: `http://127.0.0.1`)
+
+* get-processing-config
+  * purpose: print a processing configuration file given its name in
+  Archivematica.
+  * positional arguments
+    * am_api_key - API key for Archivematica dashboard user
+  * optional arguments
+    * processing-config
+    * `--am-user-name <username>` - username for Archivematica dashboard user
+    * `--am-url <url>` - Archivematica URL (default: `http://127.0.0.1`)
+
+* approve-transfer
+  * purpose: approve a transfer in the Archivematica pipeline with a given
+  UUID.
+  * positional arguments
+    * transfer-directory <path> - relative path within the Transfer Source
+    * am_api_key - API key for Archivematica dashboard user
+  * optional arguments
+    * `--transfer-type` - type of transfer being initiated (default:
+    `standard`)
+    * `--am-user-name <username>` - username for Archivematica dashboard user
+    * `--am-url <url>` - Archivematica URL (default: `http://127.0.0.1`)
+
+* reingest-aip
+  * purpose: initiate the reingest of an AIP from the storage service with a
+  given UUID.
+  * positional arguments
+    * pipeline-uuid - identifier for the pipeline to reingest on
+    * aip-uuid - identifier for the AIP to reingest
+    * ss_api_key - Storage Service API key
+  * optional arguments
+    * `--reingest-type` - reingest pathway to use (default: `full`)
+    * `--processing-config` - named processing configuration to reingest with
+    (default: `default`)
+    * `--ss-user-name <username>` - Storage Service username (default: `test`)
+    * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
+
+* get-package-details
+  * purpose: retrieve details about a package in the storage service with a
+  given UUID.
+  * positional arguments
+    * package-uuid - identifier of the package to retrieve details about
+    * ss_api_key - Storage Service API key
+  * optional arguments
+    * `--ss-user-name <username>` - Storage Service username (default: `test`)
+    * `--ss-url <url>` - Storage Service URL (default: `http://127.0.0.1:8000`)
+
 In addition, these optional arguments are available for all subcommands:
 * `--help`, `--h` - show help message and exit
 * `--output-mode <mode>` - how to print output, JSON (default) or Python
 
 See notes above about finding the Archivematica and Storage Service API keys.
+
+Reingest
+--------
+
+The *transfers/reingest.py* script is a module and CLI that provides
+functionality for bulk-reingest of compressed AIPs. Given a user formatted
+list of AIP UUIDs it can complete the bulk-reingest of any AIP listed. An
+example list that could be stored in a text file might be:
+```
+   ["54369f6a-aa82-4b29-80c9-834d3625397d",
+    "b18801dd-30ec-46ba-ac6b-4cb561585ac9",
+    "b4d37c2c-df30-4a16-8f2f-4cb02a5d53cb"]
+```
+
+*Reingest.py* is best used via the shell script provided in the
+*transfers/examples/reingest* folder. As it is designed for bulk-reingest, it
+is best used in conjunction with a cronfile, an example of which is provided in
+the same folder.
+
+Configuration of reingest.py is done via *transfers/reingestconfig.json*. You
+will need to configure API parameters via `reingestconfig.json` as they will
+be used to make calls to the Archivematica Client module `amclient.py`
+documented above.
 
 Related Projects
 ----------------

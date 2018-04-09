@@ -1,0 +1,27 @@
+{
+  "connection": {
+    "ss_url": "http:\/\/127.0.0.1:62081",
+    "ss_user_name": "test",
+    "ss_api_key": "test",
+    "am_url": "http:\/\/127.0.0.1:62080",
+    "am_user_name": "test",
+    "am_api_key": "test",
+    "output_mode":"python"
+  },
+  "database": {
+    "path": "/home/user/git/artefactual/automation-tools/reingest.db"
+  },
+  "process": {
+    "pid": "/home/user/git/artefactual/automation-tools/reingest.pid.lck"
+  },
+  "reingest": {
+    "pipeline": "<pipeline_id>",
+    "processing_config": "default",
+    "throttle": 2,
+    "approval_retries": 2
+  },
+  "logging": {
+    "path": "/home/user/git/artefactual/automation-tools/reingest.log",
+    "default": "info"
+  }
+}
