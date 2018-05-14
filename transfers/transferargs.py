@@ -60,6 +60,9 @@ def get_parser(doc):
     parser.add_argument('--hide', action='store_true',
                         help='If set, hide the Transfers and SIPs in the '
                              'dashboard once they complete.')
+    parser.add_argument('--delete', action='store_true', 
+                        help='If set, delete transfer source files after '
+                            'ingest successfully completes.')
     parser.add_argument('-c', '--config-file', metavar='FILE',
                         help='Configuration file(log/db/PID files)',
                         default=None)

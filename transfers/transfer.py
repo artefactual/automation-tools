@@ -13,7 +13,6 @@ import ast
 import base64
 import logging
 import os
-import shutil
 import subprocess
 import sys
 import time
@@ -46,69 +45,9 @@ def get_setting(config_file, setting, default=None):
         return default
 
 
-def setup(config_file, log_level):
-    global CONFIG_FILE
-    CONFIG_FILE = config_file
-    models.init(get_setting('databasefile', os.path.join(THIS_DIR, 'transfers.db')))
-
-    # Configure logging
-    default_logfile = os.path.join(THIS_DIR, 'automate-transfer.log')
-    CONFIG = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'default': {
-                'format': '%(levelname)-8s  %(asctime)s  %(filename)s:%(lineno)-4s %(message)s',
-                'datefmt': '%Y-%m-%d %H:%M:%S',
-            },
-        },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'default',
-            },
-            'file': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'default',
-                'filename': get_setting('logfile', default_logfile),
-                'backupCount': 2,
-                'maxBytes': 10 * 1024,
-            },
-        },
-        'loggers': {
-            'transfer': {
-                'level': log_level,
-                'handlers': ['console', 'file'],
-            },
-        },
-    }
-    logging.config.dictConfig(CONFIG)
-
-
-def _call_url_json(url, params):
-    """
-    Helper to GET a URL where the expected response is 200 with JSON.
-
-    :param str url: URL to call
-    :param dict params: Params to pass to requests.get
-    :returns: Dict of the returned JSON or None
-    """
-    LOGGER.debug('URL: %s; params: %s;', url, params)
-    response = requests.get(url, params=params)
-    LOGGER.debug('Response: %s', response)
-    if not response.ok:
-        LOGGER.warning('Request to %s returned %s %s', url, response.status_code, response.reason)
-        LOGGER.debug('Response: %s', response.text)
-        return None
-    try:
-        return response.json()
-    except ValueError:  # JSON could not be decoded
-        LOGGER.warning('Could not parse JSON from response: %s', response.text)
-        return None
-
-
-def get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key, unit_uuid, 
-               unit_type, session, hide_on_complete=False, delete_on_complete=False):
+def get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key, 
+                unit_uuid, unit_type, session, hide_on_complete=False, 
+                delete_on_complete=False):
     """
     Get status of the SIP or Transfer with unit_uuid.
 
@@ -162,11 +101,12 @@ def get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key, unit_uu
             response = requests.delete(url, params=params)
             LOGGER.debug('Response: %s', response)
 
-        # If complete and SIP status is 'UPLOADED', delete Transfer source
-        if delete_on_complete and unit_info and unit_info['status'] == 'COMPLETE':
-            # Initialize AMClient and check SIP status
-            client = AMClient(ss_url=ss_url, ss_user_name=ss_user, ss_api_key=ss_api_key, aip_uuid=db_unit.uuid)
-            response = client.get_package_details()
+        # If complete and SIP status is 'UPLOADED', delete transfer source files
+        if delete_on_complete and unit_info and \
+                unit_info['status'] == 'COMPLETE':
+            am = AMClient(ss_url=ss_url, ss_user_name=ss_user, 
+                          ss_api_key=ss_api_key, aip_uuid=db_unit.uuid)
+            response = am.get_package_details()
             if response['status'] == 'UPLOADED':
                 LOGGER.info('Deleting source files for SIP %s from watched directory', db_unit.uuid)
                 try:
@@ -174,6 +114,7 @@ def get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key, unit_uu
                     LOGGER.info('Source files deleted for SIP %s deleted', db_unit.uuid)
                 except OSError as e:
                     LOGGER.warning('Error deleting source files: %s', e)
+
 
     return unit_info
 
@@ -512,14 +453,9 @@ def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
     else:
         LOGGER.info('Current unit: %s', current_unit)
         # Get status
-<<<<<<< HEAD
-        status_info = get_status(
-            am_url, am_user, am_api_key, unit_uuid, unit_type, session,
-            hide_on_complete, delete_on_complete)
-=======
-        status_info = get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key, 
-                                 unit_uuid, unit_type, session, hide_on_complete, delete_on_complete)
->>>>>>> Use AMClient to check SIP status
+        status_info = get_status(am_url, am_user, am_api_key, ss_url, ss_user, 
+                                 ss_api_key, unit_uuid, unit_type, session, 
+                                 hide_on_complete, delete_on_complete)
         LOGGER.info('Status info: %s', status_info)
         if not status_info:
             LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
