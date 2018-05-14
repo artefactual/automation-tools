@@ -107,8 +107,8 @@ def _call_url_json(url, params):
         return None
 
 
-def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session, 
-               hide_on_complete=False, delete_on_complete=False):
+def get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key, unit_uuid, 
+               unit_type, session, hide_on_complete=False, delete_on_complete=False):
     """
     Get status of the SIP or Transfer with unit_uuid.
 
@@ -162,14 +162,18 @@ def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session,
             response = requests.delete(url, params=params)
             LOGGER.debug('Response: %s', response)
 
-        # If complete, delete source files
+        # If complete and SIP status is 'UPLOADED', delete Transfer source
         if delete_on_complete and unit_info and unit_info['status'] == 'COMPLETE':
-            LOGGER.info('Deleting source files for SIP %s from watched directory', db_unit.uuid)
-            try:
-                shutil.rmtree(db_unit.path)
-                LOGGER.info('Source files deleted for SIP %s deleted', db_unit.uuid)
-            except OSError as e:
-                LOGGER.warning('Error deleting source files: %s', e)
+            # Initialize AMClient and check SIP status
+            client = AMClient(ss_url=ss_url, ss_user_name=ss_user, ss_api_key=ss_api_key, aip_uuid=db_unit.uuid)
+            response = client.get_package_details()
+            if response['status'] == 'UPLOADED':
+                LOGGER.info('Deleting source files for SIP %s from watched directory', db_unit.uuid)
+                try:
+                    shutil.rmtree(db_unit.path)
+                    LOGGER.info('Source files deleted for SIP %s deleted', db_unit.uuid)
+                except OSError as e:
+                    LOGGER.warning('Error deleting source files: %s', e)
 
     return unit_info
 
@@ -508,9 +512,14 @@ def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
     else:
         LOGGER.info('Current unit: %s', current_unit)
         # Get status
+<<<<<<< HEAD
         status_info = get_status(
             am_url, am_user, am_api_key, unit_uuid, unit_type, session,
             hide_on_complete, delete_on_complete)
+=======
+        status_info = get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key, 
+                                 unit_uuid, unit_type, session, hide_on_complete, delete_on_complete)
+>>>>>>> Use AMClient to check SIP status
         LOGGER.info('Status info: %s', status_info)
         if not status_info:
             LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
