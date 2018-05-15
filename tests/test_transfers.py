@@ -33,8 +33,8 @@ class TestAutomateTransfers(unittest.TestCase):
     def test_get_status_transfer(self):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
         transfer_name = 'test1'
-        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid,
-                                   'transfer', session)
+        info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER, 
+                                   SS_KEY, transfer_uuid, 'transfer', session)
         assert isinstance(info, dict)
         assert info['status'] == 'USER_INPUT'
         assert info['type'] == 'transfer'
@@ -62,8 +62,8 @@ class TestAutomateTransfers(unittest.TestCase):
         session.commit()
 
         # Run test
-        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid,
-                                   'transfer', session)
+        info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER, 
+                                   SS_KEY, transfer_uuid, 'transfer', session)
         # Verify
         assert isinstance(info, dict)
         assert info['status'] == 'USER_INPUT'
@@ -80,8 +80,8 @@ class TestAutomateTransfers(unittest.TestCase):
     def test_get_status_ingest(self):
         sip_uuid = 'f2248e2a-b593-43db-b60c-fa8513021785'
         sip_name = 'test1'
-        info = transfer.get_status(AM_URL, USER, API_KEY, sip_uuid,
-                                   'ingest', session)
+        info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER, 
+                                   SS_KEY, sip_uuid, 'ingest', session)
         assert isinstance(info, dict)
         assert info['status'] == 'USER_INPUT'
         assert info['type'] == 'SIP'
@@ -96,16 +96,16 @@ class TestAutomateTransfers(unittest.TestCase):
     @vcr.use_cassette('fixtures/vcr_cassettes/get_status_no_unit.yaml')
     def test_get_status_no_unit(self):
         transfer_uuid = 'deadc0de-c0de-c0de-c0de-deadc0dec0de'
-        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid,
-                                   'transfer', session)
+        info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER, 
+                                   SS_KEY, transfer_uuid, 'transfer', session)
         self.assertEqual(info,
                          errors.error_lookup(errors.ERR_INVALID_RESPONSE))
 
     @vcr.use_cassette('fixtures/vcr_cassettes/get_status_not_json.yaml')
     def test_get_status_not_json(self):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
-        info = transfer.get_status(AM_URL, USER, API_KEY, transfer_uuid,
-                                   'transfer', session)
+        info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER, 
+                                   SS_KEY, transfer_uuid, 'transfer', session)
         self.assertEqual(info,
                          errors.error_lookup(errors.ERR_INVALID_RESPONSE))
 
