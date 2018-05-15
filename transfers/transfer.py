@@ -13,6 +13,7 @@ import ast
 import base64
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -45,9 +46,9 @@ def get_setting(config_file, setting, default=None):
         return default
 
 
-def get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key, 
-                unit_uuid, unit_type, session, hide_on_complete=False, 
-                delete_on_complete=False):
+def get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key,
+               unit_uuid, unit_type, session, hide_on_complete=False,
+               delete_on_complete=False):
     """
     Get status of the SIP or Transfer with unit_uuid.
 
@@ -104,7 +105,7 @@ def get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key,
         # If complete and SIP status is 'UPLOADED', delete transfer source files
         if delete_on_complete and unit_info and \
                 unit_info['status'] == 'COMPLETE':
-            am = AMClient(ss_url=ss_url, ss_user_name=ss_user, 
+            am = AMClient(ss_url=ss_url, ss_user_name=ss_user,
                           ss_api_key=ss_api_key, aip_uuid=db_unit.uuid)
             response = am.get_package_details()
             if response['status'] == 'UPLOADED':
@@ -114,7 +115,6 @@ def get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key,
                     LOGGER.info('Source files deleted for SIP %s deleted', db_unit.uuid)
                 except OSError as e:
                     LOGGER.warning('Error deleting source files: %s', e)
-
 
     return unit_info
 
@@ -407,8 +407,8 @@ def approve_transfer(dirname, url, am_api_key, am_user):
         return approved['uuid']
 
 
-def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth, 
-         am_url, ss_url, transfer_type, see_files, hide_on_complete=False, 
+def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
+         am_url, ss_url, transfer_type, see_files, hide_on_complete=False,
          delete_on_complete=False, config_file=None, log_level='INFO'):
 
     loggingconfig.setup(
@@ -453,8 +453,8 @@ def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
     else:
         LOGGER.info('Current unit: %s', current_unit)
         # Get status
-        status_info = get_status(am_url, am_user, am_api_key, ss_url, ss_user, 
-                                 ss_api_key, unit_uuid, unit_type, session, 
+        status_info = get_status(am_url, am_user, am_api_key, ss_url, ss_user,
+                                 ss_api_key, unit_uuid, unit_type, session,
                                  hide_on_complete, delete_on_complete)
         LOGGER.info('Status info: %s', status_info)
         if not status_info:
