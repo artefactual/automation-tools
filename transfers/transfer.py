@@ -13,6 +13,7 @@ import ast
 import base64
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -45,8 +46,9 @@ def get_setting(config_file, setting, default=None):
         return default
 
 
-def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session,
-               hide_on_complete=False):
+def get_status(am_url, am_user, am_api_key, ss_url, ss_user, ss_api_key,
+               unit_uuid, unit_type, session, hide_on_complete=False,
+               delete_on_complete=False):
     """
     Get status of the SIP or Transfer with unit_uuid.
 
@@ -56,7 +58,7 @@ def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session,
     :returns: Dict with status of the unit from Archivematica or None.
     """
     # Get status
-    url = am_url + '/api/' + unit_type + '/status/' + unit_uuid + '/'
+    url = "{}/api/{}/status/{}/".format(am_url, unit_type, unit_uuid)
     params = {'username': am_user, 'api_key': am_api_key}
     unit_info = utils._call_url_json(url, params)
 
@@ -65,26 +67,28 @@ def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session,
             return errors.error_lookup(unit_info)
 
     # If complete, hide in dashboard
-    if hide_on_complete and unit_info and unit_info['status'] == 'COMPLETE':
+    if hide_on_complete and unit_info and \
+            unit_info.get('status') == 'COMPLETE':
         LOGGER.info('Hiding %s %s in dashboard', unit_type, unit_uuid)
-        url = am_url + '/api/' + unit_type + '/' + unit_uuid + '/delete/'
+        url = "{}/api/{}/{}/delete/".format(am_url, unit_type, unit_uuid)
         LOGGER.debug('Method: DELETE; URL: %s; params: %s;', url, params)
         response = requests.delete(url, params=params)
         LOGGER.debug('Response: %s', response)
 
     # If Transfer is complete, get the SIP's status
     if unit_info and unit_type == 'transfer' and \
-        unit_info['status'] == 'COMPLETE' and \
-            unit_info['sip_uuid'] != 'BACKLOG':
+        unit_info.get('status') == 'COMPLETE' and \
+            unit_info.get('sip_uuid') != 'BACKLOG':
         LOGGER.info('%s is a complete transfer, fetching SIP %s status.',
-                    unit_uuid, unit_info['sip_uuid'])
+                    unit_uuid, unit_info.get('sip_uuid'))
         # Update DB to refer to this one
         db_unit = session.query(models.Unit).filter_by(
             unit_type=unit_type, uuid=unit_uuid).one()
         db_unit.unit_type = 'ingest'
         db_unit.uuid = unit_info['sip_uuid']
         # Get SIP status
-        url = am_url + '/api/ingest/status/' + unit_info['sip_uuid'] + '/'
+        url = "{}/api/ingest/status/{}/".format(am_url,
+                                                unit_info.get('sip_uuid'))
         unit_info = utils._call_url_json(url, params)
 
         if isinstance(unit_info, int):
@@ -93,12 +97,32 @@ def get_status(am_url, am_user, am_api_key, unit_uuid, unit_type, session,
 
         # If complete, hide in dashboard
         if hide_on_complete and unit_info and \
-                unit_info['status'] == 'COMPLETE':
+                unit_info.get('status') == 'COMPLETE':
             LOGGER.info('Hiding SIP %s in dashboard', db_unit.uuid)
-            url = am_url + '/api/ingest/' + db_unit.uuid + '/delete/'
+            url = "{}/api/ingest/{}/delete/".format(am_url, db_unit.uuid)
             LOGGER.debug('Method: DELETE; URL: %s; params: %s;', url, params)
             response = requests.delete(url, params=params)
             LOGGER.debug('Response: %s', response)
+
+        # If complete and SIP status is 'UPLOADED', delete transfer source
+        # files
+        if delete_on_complete and unit_info and \
+                unit_info.get('status') == 'COMPLETE':
+            am = AMClient(ss_url=ss_url, ss_user_name=ss_user,
+                          ss_api_key=ss_api_key, package_uuid=db_unit.uuid)
+            response = am.get_package_details()
+            if response.get('status') == 'UPLOADED':
+                LOGGER.info('Deleting source files for SIP %s from watched '
+                            'directory', db_unit.uuid)
+                try:
+                    shutil.rmtree(db_unit.path)
+                    LOGGER.info('Source files deleted for SIP %s '
+                                'deleted', db_unit.uuid)
+                except OSError as e:
+                    LOGGER.warning('Error deleting source files: %s. If '
+                                   'running this module remotely the '
+                                   'script might not have access to the '
+                                   'transfer source', e)
 
     return unit_info
 
@@ -393,7 +417,7 @@ def approve_transfer(dirname, url, am_api_key, am_user):
 
 def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
          am_url, ss_url, transfer_type, see_files, hide_on_complete=False,
-         config_file=None, log_level='INFO'):
+         delete_on_complete=False, config_file=None, log_level='INFO'):
 
     loggingconfig.setup(
         log_level,
@@ -437,9 +461,9 @@ def main(am_user, am_api_key, ss_user, ss_api_key, ts_uuid, ts_path, depth,
     else:
         LOGGER.info('Current unit: %s', current_unit)
         # Get status
-        status_info = get_status(
-            am_url, am_user, am_api_key, unit_uuid, unit_type, session,
-            hide_on_complete)
+        status_info = get_status(am_url, am_user, am_api_key, ss_url, ss_user,
+                                 ss_api_key, unit_uuid, unit_type, session,
+                                 hide_on_complete, delete_on_complete)
         LOGGER.info('Status info: %s', status_info)
         if not status_info:
             LOGGER.error('Could not fetch status for %s. Exiting.', unit_uuid)
@@ -506,6 +530,7 @@ if __name__ == '__main__':
         transfer_type=args.transfer_type,
         see_files=args.files,
         hide_on_complete=args.hide,
+        delete_on_complete=args.delete_on_complete,
         config_file=args.config_file,
         log_level=log_level,
     ))
