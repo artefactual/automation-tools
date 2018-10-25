@@ -552,24 +552,167 @@ times, e.g. `-qq`
 Reingest
 --------
 
-The *transfers/reingest.py* script is a module and CLI that provides
-functionality for bulk-reingest of compressed AIPs. Given a user formatted
-list of AIP UUIDs it can complete the bulk-reingest of any AIP listed. An
-example list that could be stored in a text file might be:
+The *transfers/reingest.py* script is a module and CLI (command line interface)
+tool that provides functionality for bulk-reingest of compressed AIPs. Given a
+user formatted list of AIP UUIDs it can complete the bulk-reingest of any AIP
+listed.
+
+An example list that could be stored in a text file might be:
 ```
    ["54369f6a-aa82-4b29-80c9-834d3625397d",
     "b18801dd-30ec-46ba-ac6b-4cb561585ac9",
     "b4d37c2c-df30-4a16-8f2f-4cb02a5d53cb"]
 ```
 
-*Reingest.py* is best used via the shell script provided in the
-*transfers/examples/reingest* folder. As it is designed for bulk-reingest, it
-is best used in conjunction with a cronfile, an example of which is provided in
-the same folder.
+Alternatively the command can be configured using the `--processfromstorage`
+switch to identify compressed archives in the storage service and the transfer
+initiated that way.
+
+Command line switches can be seen by running the script without any other
+arguments:
+```
+archivematica@artefactual:~/git/mainline-archivematica/automation-tools$ python -m transfers.reingest
+usage: reingest.py [-h] --config CONFIG [--listcompressedaips]
+                   [--compareaiplist COMPAREAIPLIST]
+                   [--processfromlist PROCESSFROMLIST] [--processfromstorage]
+                   [--dbstatus] [--logging [LOGGING]]
+
+Reingest AIPs Automatically. Created for CCArch to reingest compressed AIPs
+using an alternative Archivematica ProcessingMCP.xml file. A work in progress,
+with some improvements that can be made to long-running processes like this
+over time.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --config CONFIG       REQUIRED: configure the script
+  --listcompressedaips  list compressed AIPs in storage
+  --compareaiplist COMPAREAIPLIST
+                        compare stored compressed aips with an existing list
+  --processfromlist PROCESSFROMLIST
+                        reingest from a list of UUIDs
+  --processfromstorage  reingest compressed AIPs from the Storage Service
+  --dbstatus            output log from the database
+  --logging [LOGGING]   logging level, INFO, DEBUG, WARNING, ERROR
+```
 
 Configuration of reingest.py is done via *transfers/reingestconfig.json*. You
 will need to configure API parameters via `reingestconfig.json`. See notes
-above about finding the Archivematica and Storage Service API keys.
+above about finding the Archivematica and Storage Service API keys. An example
+configuration with placeholder parameters is provided in
+[reingestconfig.json](transfers/reingestconfig.json)
+
+*Reingest.py* is best used via the shell script provided in the
+[*transfers/examples/reingest*](transfers/examples/reingest) folder. As it is
+designed for bulk-reingest, it is best used in conjunction with a cronfile, an
+example of which is provided in the same folder.
+
+State is recorded in an sqlite database. When the script is executed over and
+over the state is updated or read. Progress is then stored in a separate log
+file.
+
+The log file *reingest.log* will either be under *transfers/reingest.log* or
+somewhere else specified in your *reingestconfig.json* file.
+
+We can review *reingest.log* to see where in the process the reingest is:
+
+1. First time the code is run we can see reingest begin and its automatic
+   approval in the pipeline:
+```
+archivematica@artefactual:~/git/automation-tools/transfers$ ./run-reingest.sh
++ python /home/archivematica/git/automation-tools/transfers/reingest.py --processfromstorage --config /home/archivematica/git/automation-tools/transfers/reingestconfig.json
+INFO      2018-10-25 23:59:19 reingest.py:422  Processing throttle set to 1, approval retries set to 2
+INFO      2018-10-25 23:59:19 reingest.py:470  Reingesting from Storage Service list of AIPs
+INFO      2018-10-25 23:59:19 reingest.py:147  Reingest UUID to work with 7b0bef8e-ad64-4f74-967e-258299f38272
+INFO      2018-10-25 23:59:19 reingest.py:149  Checking status of 7b0bef8e-ad64-4f74-967e-258299f38272 once in transfer queue
+INFO      2018-10-25 23:59:21 reingest.py:162  Attempting to approve transfer following the initialization of reingest.
+INFO      2018-10-25 23:59:21 reingest.py:168  Approving reingest automatically. Directory to approve transfer-two
+INFO      2018-10-25 23:59:21 reingest.py:172  Approval successful, returning True
+INFO      2018-10-25 23:59:21 reingestmodel.py:146  Setting in progress 1dd914ad-520d-447f-8207-c49aaad5612d, transfer uuid 7b0bef8e-ad64-4f74-967e-258299f38272
+INFO      2018-10-25 23:59:21 reingestmodel.py:119  setting status StatusEnum.STATUS_IN_PROGRESS for AIP 1dd914ad-520d-447f-8207-c49aaad5612d
+INFO      2018-10-25 23:59:21 reingest.py:194  Removing PID for current process.
+```
+
+2. While the reingest progresses we can see that there isn't an ingest to
+   monitor, and the status doesn't need updating.
+```
+archivematica@artefactual:~/git/automation-tools/transfers$ ./run-reingest.sh
++ python /home/archivematica/git/automation-tools/transfers/reingest.py --processfromstorage --config /home/archivematica/git/automation-tools/transfers/reingestconfig.json
+INFO      2018-10-25 23:59:39 reingest.py:422  Processing throttle set to 1, approval retries set to 2
+INFO      2018-10-25 23:59:39 reingest.py:463  Database already contains AIPs, ignoring LOAD
+WARNING   2018-10-25 23:59:39 utils.py:58   GET Request to http://127.0.0.1:62080/api/ingest/status/1dd914ad-520d-447f-8207-c49aaad5612d/ returned 400 BAD REQUEST
+INFO      2018-10-25 23:59:39 reingest.py:304  Pool is less than one, exiting, until next run
+INFO      2018-10-25 23:59:39 reingest.py:194  Removing PID for current process.
+```
+
+3. Once the ingest stage of the workflow has started, the state is updated.
+```
+archivematica@artefactual:~/git/automation-tools/transfers$ ./run-reingest.sh
++ python /home/archivematica/git/automation-tools/transfers/reingest.py --processfromstorage --config /home/archivematica/git/automation-tools/transfers/reingestconfig.json
+INFO      2018-10-26 00:00:03 reingest.py:422  Processing throttle set to 1, approval retries set to 2
+INFO      2018-10-26 00:00:03 reingest.py:463  Database already contains AIPs, ignoring LOAD
+INFO      2018-10-26 00:00:03 reingest.py:276  AIP 1dd914ad-520d-447f-8207-c49aaad5612d processing is now in ingest
+INFO      2018-10-26 00:00:03 reingest.py:304  Pool is less than one, exiting, until next run
+INFO      2018-10-26 00:00:03 reingest.py:194  Removing PID for current process.
+```
+
+4. Following completion of the first reingest, a second is started and we can
+   see similar log entries to those in *1.*
+```
+archivematica@artefactual:~/git/automation-tools/transfers$ ./run-reingest.sh
++ python /home/archivematica/git/automation-tools/transfers/reingest.py --processfromstorage --config /home/archivematica/git/automation-tools/transfers/reingestconfig.json
+INFO      2018-10-26 00:00:26 reingest.py:422  Processing throttle set to 1, approval retries set to 2
+INFO      2018-10-26 00:00:26 reingest.py:463  Database already contains AIPs, ignoring LOAD
+INFO      2018-10-26 00:00:26 reingestmodel.py:119  setting status StatusEnum.STATUS_COMPLETE for AIP 1dd914ad-520d-447f-8207-c49aaad5612d
+INFO      2018-10-26 00:00:26 reingestmodel.py:160  AIP 1dd914ad-520d-447f-8207-c49aaad5612d processed in -65 seconds
+INFO      2018-10-26 00:00:27 reingest.py:147  Reingest UUID to work with 884f9d4d-a415-41ae-bd38-6958755e22ec
+INFO      2018-10-26 00:00:27 reingest.py:149  Checking status of 884f9d4d-a415-41ae-bd38-6958755e22ec once in transfer queue
+INFO      2018-10-26 00:00:28 reingest.py:162  Attempting to approve transfer following the initialization of reingest.
+INFO      2018-10-26 00:00:28 reingest.py:168  Approving reingest automatically. Directory to approve transfer-one
+INFO      2018-10-26 00:00:28 reingest.py:172  Approval successful, returning True
+INFO      2018-10-26 00:00:28 reingestmodel.py:146  Setting in progress 2bfe450f-d295-4d21-b3f2-7ca43320043e, transfer uuid 884f9d4d-a415-41ae-bd38-6958755e22ec
+INFO      2018-10-26 00:00:28 reingestmodel.py:119  setting status StatusEnum.STATUS_IN_PROGRESS for AIP 2bfe450f-d295-4d21-b3f2-7ca43320043e
+INFO      2018-10-26 00:00:28 reingest.py:194  Removing PID for current process.
+```
+
+The database file *reingest.db* will either be under *transfers/reingest.db* or
+somewhere else specified in your *reingestconfig.json* file.
+
+The database can be read using tools capable of reading an sqlite database,
+e.g. [sqlite3](https://packages.ubuntu.com/bionic/sqlite3). A snippet of the
+database might look as follows:
+```
+aip_uuid                              transfer_uuid                         status           message     start_time                  end_time
+------------------------------------  ------------------------------------  ---------------  ----------  --------------------------  --------------------------
+1dd914ad-520d-447f-8207-c49aaad5612d  7b0bef8e-ad64-4f74-967e-258299f38272  STATUS_COMPLETE              2018-10-25 21:59:21.304078  2018-10-25 22:00:26.772603
+2bfe450f-d295-4d21-b3f2-7ca43320043e  884f9d4d-a415-41ae-bd38-6958755e22ec  STATUS_IN_PROGR              2018-10-25 22:00:28.964030
+3c5bf34c-1001-4ea3-8d59-a7989e6f73ca                                        STATUS_NEW
+cca46884-eb6e-4a50-95b5-a99630e1bc4b                                        STATUS_NEW
+```
+
+Here we can see one transfer is complete (`STATUS_COMPLETE`). One is in
+progress (`STATUS_IN_PROGRESS`). Two are new (`STATUS_NEW`) and are
+yet to be processed.
+
+Once all AIPs selected to be reingested are done, the status will read
+`STATUS-COMPLETE`.
+
+`STATUS_ERROR` may also be shown. Archivematica does not provide detailed error
+information via its API as of yet, and so, if an error does occur, the user is
+expected to find the AIP in the pipeline and look at which jobs may have
+failed.
+
+If the transfer or ingest has already been removed from the dashboard then the
+information could be found by looking up the status of the microservices:
+
+Via the user interface:
+
+* *http://{archivematica-url}}/transfer/{UUID}/*
+* *http://{archivematica-url}}/ingest/{UUID}/*
+
+Via the API (users will need to filter on package UUID):
+
+* *http://{archivematica-url}}/transfer/status/*
+* *http://{archivematica-url}}/ingest/status/*
 
 Related Projects
 ----------------
