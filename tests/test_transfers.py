@@ -1,10 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import collections
 import os
 import unittest
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 import vcr
 
 from transfers import errors, transfer, models
@@ -22,19 +21,18 @@ DEPTH = 1
 COMPLETED = set()
 FILES = False
 
-engine = create_engine('sqlite:///:memory:')
-models.Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
-session = Session()
-
 
 class TestAutomateTransfers(unittest.TestCase):
+
+    def setUp(self):
+        models.init_session(databasefile=":memory:")
+
     @vcr.use_cassette('fixtures/vcr_cassettes/get_status_transfer.yaml')
     def test_get_status_transfer(self):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
         transfer_name = 'test1'
         info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER,
-                                   SS_KEY, transfer_uuid, 'transfer', session)
+                                   SS_KEY, transfer_uuid, 'transfer')
         assert isinstance(info, dict)
         assert info['status'] == 'USER_INPUT'
         assert info['type'] == 'transfer'
@@ -53,17 +51,12 @@ class TestAutomateTransfers(unittest.TestCase):
         unit_name = 'test1'
         sip_uuid = 'f2248e2a-b593-43db-b60c-fa8513021785'
         # Setup transfer in DB
-        new_transfer = models.Unit(uuid=transfer_uuid,
-                                   path=b'/foo',
-                                   unit_type='transfer',
-                                   status='PROCESSING',
-                                   current=True)
-        session.add(new_transfer)
-        session.commit()
-
+        models._update_unit(
+            uuid=transfer_uuid, path=b'/foo', unit_type="transfer",
+            status="PROCESSING", current=True)
         # Run test
         info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER,
-                                   SS_KEY, transfer_uuid, 'transfer', session)
+                                   SS_KEY, transfer_uuid, 'transfer')
         # Verify
         assert isinstance(info, dict)
         assert info['status'] == 'USER_INPUT'
@@ -81,7 +74,7 @@ class TestAutomateTransfers(unittest.TestCase):
         sip_uuid = 'f2248e2a-b593-43db-b60c-fa8513021785'
         sip_name = 'test1'
         info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER,
-                                   SS_KEY, sip_uuid, 'ingest', session)
+                                   SS_KEY, sip_uuid, 'ingest')
         assert isinstance(info, dict)
         assert info['status'] == 'USER_INPUT'
         assert info['type'] == 'SIP'
@@ -97,7 +90,7 @@ class TestAutomateTransfers(unittest.TestCase):
     def test_get_status_no_unit(self):
         transfer_uuid = 'deadc0de-c0de-c0de-c0de-deadc0dec0de'
         info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER,
-                                   SS_KEY, transfer_uuid, 'transfer', session)
+                                   SS_KEY, transfer_uuid, 'transfer')
         self.assertEqual(info,
                          errors.error_lookup(errors.ERR_INVALID_RESPONSE))
 
@@ -105,7 +98,7 @@ class TestAutomateTransfers(unittest.TestCase):
     def test_get_status_not_json(self):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
         info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER,
-                                   SS_KEY, transfer_uuid, 'transfer', session)
+                                   SS_KEY, transfer_uuid, 'transfer')
         self.assertEqual(info,
                          errors.error_lookup(errors.ERR_INVALID_RESPONSE))
 
@@ -181,8 +174,8 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, None)
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/'
-                      'get_next_transfer_bad_source.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/get_next_transfer_bad_source.yaml')
     def test_get_next_transfer_bad_source(self):
         # Set bad TS Location UUID
         ts_location_uuid = 'badd8d39-9cee-495e-b7ee-5e6292549bad'
@@ -191,8 +184,7 @@ class TestAutomateTransfers(unittest.TestCase):
                                           ts_location_uuid, PATH_PREFIX,
                                           DEPTH, COMPLETED, FILES)
         # Verify
-        self.assertEqual(path,
-                         errors.error_lookup(errors.ERR_INVALID_RESPONSE))
+        self.assertEqual(path, None)
 
     @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_files.yaml')
     def test_get_next_transfer_files(self):
@@ -206,8 +198,8 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, b'SampleTransfers/BagTransfer.zip')
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/'
-                      'get_next_transfer_failed_auth.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/get_next_transfer_failed_auth.yaml')
     def test_get_next_transfer_failed_auth(self):
         # All default values
         ss_user = 'demo'
@@ -216,9 +208,8 @@ class TestAutomateTransfers(unittest.TestCase):
         path = transfer.get_next_transfer(SS_URL, ss_user, ss_key,
                                           TS_LOCATION_UUID, PATH_PREFIX,
                                           DEPTH, COMPLETED, FILES)
-        # Verify
-        self.assertEqual(path,
-                         errors.error_lookup(errors.ERR_INVALID_RESPONSE))
+        # Verify.
+        self.assertEqual(path, None)
 
     @vcr.use_cassette(
         'fixtures/vcr_cassettes/test_transfer_approve_transfer.yaml')
@@ -242,4 +233,33 @@ class TestAutomateTransfers(unittest.TestCase):
                                             AM_URL,
                                             API_KEY,
                                             USER)
-            assert(res == test.expected)
+            assert res == test.expected
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_call_start_transfer_endpoint.yaml')
+    def test_call_start_transfer_endpoint(self):
+        """Archivematica will rename a transfer if it is already trying to
+        start one with an identical name. In the tests below, we observe (and
+        test) this behavior when there is an identical name for a transfer
+        twice, across two transfer types.
+        """
+        Result = collections.namedtuple(
+            'Result', 'transfer_type transfer_name expected_dir')
+        start_tests = [
+            Result(transfer_type="standard", transfer_name="standard_1",
+                   expected_dir='standard_1'),
+            Result(transfer_type="standard", transfer_name="standard_1",
+                   expected_dir='standard_1_1'),
+            Result(transfer_type="dspace", transfer_name="dspace_1.zip",
+                   expected_dir='dspace_1.zip'),
+            Result(transfer_type="dspace", transfer_name="dspace_1.zip",
+                   expected_dir="dspace_1_1.zip")
+        ]
+        for test in start_tests:
+            res = transfer.call_start_transfer_endpoint(
+                am_url=AM_URL, am_user=USER,
+                am_api_key=API_KEY, target=test.transfer_name.encode(),
+                transfer_type=test.transfer_type.encode(),
+                accession=test.transfer_name.encode(),
+                ts_location_uuid=TS_LOCATION_UUID)
+            assert res == test.expected_dir
