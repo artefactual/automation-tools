@@ -185,6 +185,25 @@ def get_accession_id(dirname):
         return None
 
 
+def run_pre_transfer_scripts(config_file, transfer_path, transfer_type):
+    """Wrapper for the run_scripts function. Pre-transfer functions want to
+    modify the transfer itself, therefore the transfer path sent by the
+    calling function function should at least be a valid one. If run_scripts
+    results in an OSError exception then the calling function should take
+    responsibility for working with that.
+    """
+    if not os.path.isdir(transfer_path):
+        LOGGER.error(
+            "Invalid transfer path for the pre-transfer scripts to work with")
+    else:
+        run_scripts(
+            'pre-transfer',
+            config_file,
+            transfer_path,
+            transfer_type,
+        )
+
+
 def run_scripts(directory, config_file, *args):
     """
     Run all executable scripts in directory relative to this file.
@@ -309,7 +328,7 @@ def call_start_transfer_endpoint(
         am_url, am_user, am_api_key, target, transfer_type, accession,
         ts_location_uuid):
     """Make the call to the start_transfer endpoint and return the unapproved
-    directory name.
+    directory name, and current (absolute path), of the transfer as a tuple.
     """
     url = '{}/api/transfer/start_transfer/'.format(am_url)
     params = {'username': am_user, 'api_key': am_api_key}
@@ -327,7 +346,11 @@ def call_start_transfer_endpoint(
     LOGGER.debug('Response: %s', response)
     try:
         resp_json = response.json()
-        return os.path.basename(resp_json.get("path").strip(os.sep))
+        # Retrieve transfer_name, and the absolute path to the transfer for the
+        # calling function.
+        transfer_abs_path = resp_json.get("path")
+        return os.path.basename(
+            transfer_abs_path.strip(os.sep)), transfer_abs_path
     except ValueError:
         LOGGER.error(
             "Could not parse JSON from response Response: %s: %s, %s",
@@ -335,11 +358,11 @@ def call_start_transfer_endpoint(
         # Debug log, rather than Warning as the response from the server is
         # likely to be HTML and likely to be too verbose to be useful.
         LOGGER.debug('Could not parse JSON from response: %s', response.text)
-        return None
+        return None, None
     if not response.ok or resp_json.get('error'):
         LOGGER.error('Unable to start transfer.')
         LOGGER.error('Response: %s', resp_json)
-        return None
+        return None, None
 
 
 def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
@@ -383,22 +406,21 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
     LOGGER.info("Accession ID: %s", accession)
     # Call the start transfer endpoint.
     # Retrieve the directory name for Archivematica.
-    target_name = call_start_transfer_endpoint(
+    transfer_name, transfer_abs_path = call_start_transfer_endpoint(
         am_url=am_url, am_user=am_user, am_api_key=am_api_key, target=target,
         transfer_type=transfer_type, accession=accession,
         ts_location_uuid=ts_location_uuid)
-    if not target_name:
-        LOGGER.info("Cannot begin transfer with target_name: %s", target_name)
-        models.transfer_failed_to_start(target_name)
+    if not transfer_name:
+        LOGGER.info("Cannot begin transfer with target_name: %s", transfer_name)
+        models.transfer_failed_to_start(transfer_abs_path)
         return None
     # Run all pre-transfer scripts on the unapproved transfer directory.
-    LOGGER.info("Attempting to run pre-transfer scripts on: %s", target_name)
+    LOGGER.info("Attempting to run pre-transfer scripts on: %s", transfer_name)
     try:
-        run_scripts(
-            'pre-transfer',
-            config_file,
-            target_name,    # Absolute path
-            'standard',     # Transfer type
+        run_pre_transfer_scripts(
+            config_file=config_file,
+            transfer_path=transfer_abs_path,
+            transfer_type=transfer_type,
         )
     except OSError as err:
         LOGGER.error("Failed to run pre-transfer scripts: %s", err)
@@ -407,20 +429,22 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
     LOGGER.info("Ready to approve transfer")
     retry_count = 3
     for i in range(retry_count):
-        result = approve_transfer(target_name, am_url, am_api_key, am_user)
+        result = approve_transfer(transfer_name, am_url, am_api_key, am_user)
         # Mark as started
         if result:
             LOGGER.info('Approved %s', result)
+            # Store the absolute path to help users to determine what type
+            # the transfer is, and where something it is.
             new_transfer = models.add_new_transfer(
-                uuid=result, path=target_name)
+                uuid=result, path=transfer_abs_path)
             LOGGER.info('New transfer: %s', new_transfer)
             break
         LOGGER.info(
             'Failed transfer approval, try %s of %s', i + 1, retry_count)
     else:
         new_transfer = models.failed_to_approve(
-            path=target_name)
-        LOGGER.warning('Transfer not approved: %s', target_name)
+            path=transfer_abs_path)
+        LOGGER.warning('Transfer not approved: %s', transfer_name)
         return None
     # Start transfer completed successfully.
     LOGGER.info('Finished %s', target)

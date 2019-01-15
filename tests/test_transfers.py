@@ -241,25 +241,42 @@ class TestAutomateTransfers(unittest.TestCase):
         """Archivematica will rename a transfer if it is already trying to
         start one with an identical name. In the tests below, we observe (and
         test) this behavior when there is an identical name for a transfer
-        twice, across two transfer types.
+        twice, across two transfer types. We also make sure that the transfer
+        path is preserved. This path is used in pre-transfer scripts to enable
+        the automation tools to create manifests, perform arrangement tasks, or
+        manipulate content prior to the transfer being approved.
         """
+        transfers_dir = (
+            "/var/archivematica/sharedDirectory/watchedDirectories/"
+            "activeTransfers"
+        )
         Result = collections.namedtuple(
-            'Result', 'transfer_type transfer_name expected_dir')
+            'Result', 'transfer_type transfer_name target_name '
+            'transfer_abs_path')
         start_tests = [
             Result(transfer_type="standard", transfer_name="standard_1",
-                   expected_dir='standard_1'),
+                   target_name='standard_1',
+                   transfer_abs_path="{}/standardTransfer/standard_1/"
+                   .format(transfers_dir)),
             Result(transfer_type="standard", transfer_name="standard_1",
-                   expected_dir='standard_1_1'),
+                   target_name='standard_1_1',
+                   transfer_abs_path="{}/standardTransfer/standard_1_1/"
+                   .format(transfers_dir)),
             Result(transfer_type="dspace", transfer_name="dspace_1.zip",
-                   expected_dir='dspace_1.zip'),
+                   target_name='dspace_1.zip',
+                   transfer_abs_path="{}/Dspace/dspace_1.zip"
+                   .format(transfers_dir)),
             Result(transfer_type="dspace", transfer_name="dspace_1.zip",
-                   expected_dir="dspace_1_1.zip")
+                   target_name='dspace_1_1.zip',
+                   transfer_abs_path="{}/Dspace/dspace_1_1.zip"
+                   .format(transfers_dir)),
         ]
         for test in start_tests:
-            res = transfer.call_start_transfer_endpoint(
+            target_name, transfer_abs_path = transfer.call_start_transfer_endpoint(
                 am_url=AM_URL, am_user=USER,
                 am_api_key=API_KEY, target=test.transfer_name.encode(),
                 transfer_type=test.transfer_type.encode(),
                 accession=test.transfer_name.encode(),
                 ts_location_uuid=TS_LOCATION_UUID)
-            assert res == test.expected_dir
+            assert target_name == test.target_name
+            assert transfer_abs_path == test.transfer_abs_path
