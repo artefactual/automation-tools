@@ -4,6 +4,7 @@ import collections
 import os
 import unittest
 
+import mock
 import vcr
 
 from transfers import errors, transfer, models
@@ -26,6 +27,38 @@ class TestAutomateTransfers(unittest.TestCase):
 
     def setUp(self):
         models.init_session(databasefile=":memory:")
+
+        # Setup some data to be used for test_call_start_transfer_endpoint(..)
+        # and def test_call_start_transfer(..).
+        transfers_dir = (
+            "/var/archivematica/sharedDirectory/watchedDirectories/"
+            "activeTransfers"
+        )
+        Result = collections.namedtuple(
+            'Result', 'transfer_type target transfer_name '
+            'transfer_abs_path')
+        self.start_tests = [
+            Result(transfer_type="standard", target="standard_1",
+                   transfer_name='standard_1',
+                   transfer_abs_path="{}/standardTransfer/standard_1/"
+                   .format(transfers_dir),
+                   ),
+            Result(transfer_type="standard", target="standard_1",
+                   transfer_name='standard_1_1',
+                   transfer_abs_path="{}/standardTransfer/standard_1_1/"
+                   .format(transfers_dir),
+                   ),
+            Result(transfer_type="dspace", target="dspace_1.zip",
+                   transfer_name='dspace_1.zip',
+                   transfer_abs_path="{}/Dspace/dspace_1.zip"
+                   .format(transfers_dir),
+                   ),
+            Result(transfer_type="dspace", target="dspace_1.zip",
+                   transfer_name='dspace_1_1.zip',
+                   transfer_abs_path="{}/Dspace/dspace_1_1.zip"
+                   .format(transfers_dir),
+                   ),
+        ]
 
     @vcr.use_cassette('fixtures/vcr_cassettes/get_status_transfer.yaml')
     def test_get_status_transfer(self):
@@ -246,37 +279,72 @@ class TestAutomateTransfers(unittest.TestCase):
         the automation tools to create manifests, perform arrangement tasks, or
         manipulate content prior to the transfer being approved.
         """
-        transfers_dir = (
-            "/var/archivematica/sharedDirectory/watchedDirectories/"
-            "activeTransfers"
-        )
-        Result = collections.namedtuple(
-            'Result', 'transfer_type transfer_name target_name '
-            'transfer_abs_path')
-        start_tests = [
-            Result(transfer_type="standard", transfer_name="standard_1",
-                   target_name='standard_1',
-                   transfer_abs_path="{}/standardTransfer/standard_1/"
-                   .format(transfers_dir)),
-            Result(transfer_type="standard", transfer_name="standard_1",
-                   target_name='standard_1_1',
-                   transfer_abs_path="{}/standardTransfer/standard_1_1/"
-                   .format(transfers_dir)),
-            Result(transfer_type="dspace", transfer_name="dspace_1.zip",
-                   target_name='dspace_1.zip',
-                   transfer_abs_path="{}/Dspace/dspace_1.zip"
-                   .format(transfers_dir)),
-            Result(transfer_type="dspace", transfer_name="dspace_1.zip",
-                   target_name='dspace_1_1.zip',
-                   transfer_abs_path="{}/Dspace/dspace_1_1.zip"
-                   .format(transfers_dir)),
-        ]
-        for test in start_tests:
-            target_name, transfer_abs_path = transfer.call_start_transfer_endpoint(
+        for test in self.start_tests:
+            transfer_name, transfer_abs_path = transfer.call_start_transfer_endpoint(
                 am_url=AM_URL, am_user=USER,
-                am_api_key=API_KEY, target=test.transfer_name.encode(),
+                am_api_key=API_KEY, target=test.target.encode(),
                 transfer_type=test.transfer_type.encode(),
                 accession=test.transfer_name.encode(),
                 ts_location_uuid=TS_LOCATION_UUID)
-            assert target_name == test.target_name
+            assert transfer_name == test.transfer_name
             assert transfer_abs_path == test.transfer_abs_path
+
+    @mock.patch(
+        "transfers.transfer.approve_transfer",
+        return_value="4bd2006a-1178-4695-9463-5c72eec6257a")
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_call_start_transfer_endpoint.yaml')
+    def test_call_start_transfer(self, mock_approve_transfer):
+        """Provide an integration test as best as we can for the
+        transfer.start_transfer function where the returned values are crucial
+        to the automation of Archivematica work-flows. The test reuses the
+        test_call_start_transfer_endpoint.yaml fixtures as this function is
+        crucial to what eventual gets stored in the model and we can test this
+        more realistically by using it instead of mocking it.
+        """
+        returned_uuid = "4bd2006a-1178-4695-9463-5c72eec6257a"
+        for test in self.start_tests:
+            models.init_session(databasefile=":memory:")
+            with mock.patch("transfers.transfer.get_next_transfer") \
+                    as mock_get_next_transfer:
+                mock_get_next_transfer.return_value = \
+                    test.target.encode()
+                res = transfer.call_start_transfer_endpoint(
+                    am_url=AM_URL, am_user=USER,
+                    am_api_key=API_KEY, target=test.target.encode(),
+                    transfer_type=test.transfer_type.encode(),
+                    accession=test.transfer_name.encode(),
+                    ts_location_uuid=TS_LOCATION_UUID
+                )
+                result_encoded = (res[0], res[1].encode())
+                with mock.patch(
+                        "transfers.transfer.call_start_transfer_endpoint") \
+                        as mock_call_start_transfer_endpoint:
+                    mock_call_start_transfer_endpoint.return_value \
+                        = result_encoded
+                    new_transfer = transfer.start_transfer(
+                        ss_url="http://127.0.0.1:62081",
+                        ss_user="test",
+                        ss_api_key="test",
+                        ts_location_uuid=None,
+                        ts_path="",
+                        depth="test",
+                        am_url="http://127.0.0.1:62090",
+                        am_user="test",
+                        am_api_key="test",
+                        transfer_type="standard",
+                        see_files=False,
+                        config_file="config.cfg",
+                    )
+                    assert new_transfer.path.decode() == test.target
+                    assert new_transfer.uuid == returned_uuid
+                    assert new_transfer.current is True
+                    assert new_transfer.unit_type == 'transfer'
+                    # Make a secondary call to the database to see if we can
+                    # retrieve our information. Obviously this should not have
+                    # changed since we wrote it to memory.
+                    unit = models.retrieve_unit_by_type_and_uuid(
+                        returned_uuid, 'transfer')
+                    assert unit.uuid == returned_uuid
+                    assert unit.current is True
+                    assert unit.unit_type == 'transfer'

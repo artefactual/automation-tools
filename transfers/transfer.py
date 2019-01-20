@@ -411,8 +411,9 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
         transfer_type=transfer_type, accession=accession,
         ts_location_uuid=ts_location_uuid)
     if not transfer_name:
-        LOGGER.info("Cannot begin transfer with target_name: %s", transfer_name)
-        models.transfer_failed_to_start(transfer_abs_path)
+        LOGGER.info(
+            "Cannot begin transfer with target name: %s", target)
+        models.transfer_failed_to_start(target)
         return None
     # Run all pre-transfer scripts on the unapproved transfer directory.
     LOGGER.info("Attempting to run pre-transfer scripts on: %s", transfer_name)
@@ -436,14 +437,14 @@ def start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
             # Store the absolute path to help users to determine what type
             # the transfer is, and where something it is.
             new_transfer = models.add_new_transfer(
-                uuid=result, path=transfer_abs_path)
+                uuid=result, path=target)
             LOGGER.info('New transfer: %s', new_transfer)
             break
         LOGGER.info(
             'Failed transfer approval, try %s of %s', i + 1, retry_count)
     else:
         new_transfer = models.failed_to_approve(
-            path=transfer_abs_path)
+            path=target)
         LOGGER.warning('Transfer not approved: %s', transfer_name)
         return None
     # Start transfer completed successfully.
