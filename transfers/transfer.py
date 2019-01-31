@@ -192,7 +192,7 @@ def run_pre_transfer_scripts(config_file, transfer_path, transfer_type):
     results in an OSError exception then the calling function should take
     responsibility for working with that.
     """
-    if not os.path.isdir(transfer_path):
+    if not os.path.exists(transfer_path):
         LOGGER.error(
             "Invalid transfer path for the pre-transfer scripts to work with")
     else:
