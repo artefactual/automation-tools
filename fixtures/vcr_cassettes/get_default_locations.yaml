@@ -1,0 +1,64 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [!!python/unicode 'ApiKey test:5de62f6f4817f903dcfac47fa5cffd44685a2cf2']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.20.0]
+    method: GET
+    uri: http://192.168.168.192:8000/api/v2/location/?%7B%7D
+  response:
+    body: {string: !!python/unicode '{"meta": {"limit": 20, "next": null, "offset":
+        0, "previous": null, "total_count": 7}, "objects": [{"description": "", "enabled":
+        true, "path": "/home", "pipeline": ["/api/v2/pipeline/1ffc9650-4862-4e53-a4f1-9c7e2a26ab72/"],
+        "purpose": "TS", "quota": null, "relative_path": "home", "resource_uri": "/api/v2/location/d1184f7f-d755-4c8d-831a-a3793b88f760/",
+        "space": "/api/v2/space/f18ad8dd-9082-4f5c-bc67-b976e370fa90/", "used": "0",
+        "uuid": "d1184f7f-d755-4c8d-831a-a3793b88f760"}, {"description": "Store AIP
+        in standard Archivematica Directory", "enabled": true, "path": "/var/archivematica/sharedDirectory/www/AIPsStore",
+        "pipeline": ["/api/v2/pipeline/1ffc9650-4862-4e53-a4f1-9c7e2a26ab72/"], "purpose":
+        "AS", "quota": null, "relative_path": "var/archivematica/sharedDirectory/www/AIPsStore",
+        "resource_uri": "/api/v2/location/471ff191-2c03-441d-b1d6-0c39d27a6b66/",
+        "space": "/api/v2/space/f18ad8dd-9082-4f5c-bc67-b976e370fa90/", "used": "0",
+        "uuid": "471ff191-2c03-441d-b1d6-0c39d27a6b66"}, {"description": "Store DIP
+        in standard Archivematica Directory", "enabled": true, "path": "/var/archivematica/sharedDirectory/www/DIPsStore",
+        "pipeline": ["/api/v2/pipeline/1ffc9650-4862-4e53-a4f1-9c7e2a26ab72/"], "purpose":
+        "DS", "quota": null, "relative_path": "var/archivematica/sharedDirectory/www/DIPsStore",
+        "resource_uri": "/api/v2/location/b7783482-a2ca-4dc8-9f3e-6305c7569268/",
+        "space": "/api/v2/space/f18ad8dd-9082-4f5c-bc67-b976e370fa90/", "used": "0",
+        "uuid": "b7783482-a2ca-4dc8-9f3e-6305c7569268"}, {"description": "Default
+        transfer backlog", "enabled": true, "path": "/var/archivematica/sharedDirectory/www/AIPsStore/transferBacklog",
+        "pipeline": ["/api/v2/pipeline/1ffc9650-4862-4e53-a4f1-9c7e2a26ab72/"], "purpose":
+        "BL", "quota": null, "relative_path": "var/archivematica/sharedDirectory/www/AIPsStore/transferBacklog",
+        "resource_uri": "/api/v2/location/77dd226a-39b2-4217-b2a4-e17dad1beaae/",
+        "space": "/api/v2/space/f18ad8dd-9082-4f5c-bc67-b976e370fa90/", "used": "0",
+        "uuid": "77dd226a-39b2-4217-b2a4-e17dad1beaae"}, {"description": "For storage
+        service internal usage.", "enabled": true, "path": "/var/archivematica/storage_service",
+        "pipeline": [], "purpose": "SS", "quota": null, "relative_path": "var/archivematica/storage_service",
+        "resource_uri": "/api/v2/location/e8f346b7-0090-44b5-8b31-bff7f9d74e98/",
+        "space": "/api/v2/space/f18ad8dd-9082-4f5c-bc67-b976e370fa90/", "used": "0",
+        "uuid": "e8f346b7-0090-44b5-8b31-bff7f9d74e98"}, {"description": "Default
+        AIP recovery", "enabled": true, "path": "/var/archivematica/storage_service/recover",
+        "pipeline": ["/api/v2/pipeline/1ffc9650-4862-4e53-a4f1-9c7e2a26ab72/"], "purpose":
+        "AR", "quota": null, "relative_path": "var/archivematica/storage_service/recover",
+        "resource_uri": "/api/v2/location/52bea1a4-0853-4082-8a63-3540b79d1772/",
+        "space": "/api/v2/space/f18ad8dd-9082-4f5c-bc67-b976e370fa90/", "used": "0",
+        "uuid": "52bea1a4-0853-4082-8a63-3540b79d1772"}, {"description": null, "enabled":
+        true, "path": "/var/archivematica/sharedDirectory", "pipeline": ["/api/v2/pipeline/1ffc9650-4862-4e53-a4f1-9c7e2a26ab72/"],
+        "purpose": "CP", "quota": null, "relative_path": "var/archivematica/sharedDirectory/",
+        "resource_uri": "/api/v2/location/4fdc5235-40cd-4b73-b63a-8df54e037061/",
+        "space": "/api/v2/space/f18ad8dd-9082-4f5c-bc67-b976e370fa90/", "used": "0",
+        "uuid": "4fdc5235-40cd-4b73-b63a-8df54e037061"}]}'}
+    headers:
+      cache-control: [no-cache]
+      connection: [keep-alive]
+      content-language: [en]
+      content-type: [application/json]
+      date: ['Tue, 26 Feb 2019 10:39:44 GMT']
+      server: [nginx/1.14.2]
+      transfer-encoding: [chunked]
+      vary: ['Accept, Accept-Language, Cookie']
+      x-frame-options: [SAMEORIGIN]
+    status: {code: 200, message: OK}
+version: 1

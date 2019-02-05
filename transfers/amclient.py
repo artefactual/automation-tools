@@ -8,7 +8,6 @@ Archivematica APIs.
 """
 
 from __future__ import print_function, unicode_literals
-
 import binascii
 import base64
 from collections import defaultdict
@@ -260,7 +259,8 @@ class AMClient(object):
             self.ss_url, self.transfer_source)
         params = self._ss_auth()
         if self.transfer_path:
-            params['path'] = base64.b64encode(self.transfer_path)
+            params['path'] = \
+                base64.b64encode(utils.fsencode(self.transfer_path))
         result = utils._call_url_json(url, params)
         if b64decode:
             return b64decode_ts_location_browse(result)
@@ -496,25 +496,78 @@ class AMClient(object):
     def download_aip(self):
         return self.download_package(self.aip_uuid)
 
+    def list_storage_locations(self):
+        """List all Storage Service locations."""
+        params = {}
+        url = "{0}/api/v2/location/".format(self.ss_url)
+        return utils._call_url_json(url,
+                                    headers=self._ss_auth_headers(),
+                                    params=json.dumps(params),
+                                    method=utils.METHOD_GET)
+
+    def create_package(self):
+        """Create a transfer using the new API v2 package endpoint."""
+        url = "{}/api/v2beta/package/".format(self.am_url)
+        transfer_source = getattr(self, 'transfer_source', None)
+        if not transfer_source:
+            path = self.transfer_directory
+        else:
+            path = "{}:{}".format(self.transfer_source, self.transfer_directory)
+        b64path = base64.b64encode(utils.fsencode(path))
+        params = {
+            'name': self.transfer_name,
+            'path': b64path.decode(),
+            "processing_config": self.processing_config,
+        }
+        return utils._call_url_json(url,
+                                    headers=self._am_auth_headers(),
+                                    params=json.dumps(params),
+                                    method=utils.METHOD_POST)
+
+    def extract_file(self):
+        """Extract a file, relative to an AIP's path. If a filename and
+        directory are provided use that information, otherwise download the
+        file relative to the directory the script is invoked from.
+        """
+        self.output_mode = "".format(None)
+        url = "{0}/api/v2/file/{1}/extract_file/?relative_path_to_file={2}"\
+            .format(self.ss_url, self.package_uuid, self.relative_path)
+        response = requests.get(url, params=self._ss_auth(), stream=True)
+        if response.status_code == 200:
+            local_filename = getattr(self, 'saveas_filename', None)
+            if not local_filename:
+                local_filename = re.findall(
+                    'filename="(.+)"',
+                    response.headers['content-disposition'])[0]
+            if getattr(self, 'directory', None):
+                dir_ = self.directory
+                if os.path.isdir(dir_):
+                    local_filename = os.path.join(dir_, local_filename)
+                else:
+                    LOGGER.warning(
+                        'There is no directory %s; saving %s to %s instead',
+                        dir_, local_filename, os.getcwd())
+            with open(local_filename, 'wb') as file_:
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        file_.write(chunk)
+            return response.headers
+
 
 def main():
-
+    """Primary entry point of amclient.py"""
     argparser = amclientargs.get_parser()
-
     # Python 2.x, ensures that help is printed consistently like we see in
     # Python 3.x.
     if len(sys.argv) < 2:
         argparser.print_help()
         sys.exit(0)
-
     args = argparser.parse_args()
     loggingconfig.setup(args.log_level, args.log_file)
-
     am_client = AMClient(**vars(args))
-
     try:
-        getattr(am_client, 'print_{0}'.format(args.subcommand.replace('-',
-                                                                      '_')))
+        getattr(
+            am_client, 'print_{0}'.format(args.subcommand.replace('-', '_')))
     except AttributeError:
         argparser.print_help()
         sys.exit(0)

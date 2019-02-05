@@ -15,7 +15,6 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from transfers import defaults
-from transfers.utils import fsencode
 
 
 # Reusable argument constants (for CLI).
@@ -60,6 +59,10 @@ TRANSFER_DIRECTORY = Arg(
     name="transfer_directory",
     help="Directory of a potential Archivematica transfer",
     type=None)
+RELATIVE_PATH = Arg(
+    name="relative_path",
+    help="Relative path to a file in an Archivematica package",
+    type=None)
 
 # Reusable option constants (for CLI).
 Opt = namedtuple('Opt', ['name', 'metavar', 'help', 'default', 'type'])
@@ -78,7 +81,7 @@ AM_USER_NAME = Opt(
 DIRECTORY = Opt(
     name='directory',
     metavar='DIR',
-    help='Directory path to save the DIP in',
+    help='Directory path to save the package in',
     default=None,
     type=None)
 OUTPUT_MODE = Opt(
@@ -104,8 +107,8 @@ TRANSFER_PATH = Opt(
     name='transfer-path',
     metavar='PATH',
     help='Relative path within the Transfer Source. Default: ""',
-    default=b'',
-    type=fsencode)
+    default="",
+    type=None)
 PROCESSING_CONFIG = Opt(
     name='processing-config',
     metavar='PROCESSING',
@@ -126,6 +129,24 @@ TRANSFER_TYPE = Opt(
     help='Reingest type. Default: {0}'.format(
         defaults.DEFAULT_TRANSFER_TYPE),
     default=defaults.DEFAULT_TRANSFER_TYPE,
+    type=None)
+TRANSFER_SOURCE_OPT = Opt(
+    name='transfer-source',
+    metavar='TRANSFERSOURCE',
+    help='Transfer source UUID',
+    default=None,
+    type=None)
+SAVEAS_FILENAME = Opt(
+    name="saveas-filename",
+    metavar='SAVEASFILENAME',
+    help="A filename to save an extracted file as",
+    default=None,
+    type=None)
+TRANSFER_NAME = Opt(
+    name="transfer-name",
+    metavar='TRANSFERNAME',
+    help="A name for the transfer",
+    default="amclient-transfer",
     type=None)
 
 # Sub-command configuration: give them a name, help text, a tuple of ``Arg``
@@ -207,6 +228,12 @@ SUBCOMMANDS = (
         opts=(SS_USER_NAME, SS_URL, DIRECTORY, OUTPUT_MODE)
     ),
     SubCommand(
+        name='download-aip',
+        help='Download the AIP with AIP_UUID.',
+        args=(AIP_UUID, SS_API_KEY),
+        opts=(SS_USER_NAME, SS_URL, DIRECTORY, OUTPUT_MODE)
+    ),
+    SubCommand(
         name='get-pipelines',
         help='List (enabled) Pipelines known to the Storage Service.',
         args=(SS_API_KEY,),
@@ -247,7 +274,25 @@ SUBCOMMANDS = (
         help='Retrieve details about a package in the storage service with a given UUID.',
         args=(PACKAGE_UUID, SS_API_KEY),
         opts=(SS_USER_NAME, SS_URL, OUTPUT_MODE)
-    )
+    ),
+    SubCommand(
+        name='list-storage-locations',
+        help='Retrieve a list of storage service locations.',
+        args=(SS_API_KEY,),
+        opts=(SS_USER_NAME, SS_URL, OUTPUT_MODE)
+    ),
+    SubCommand(
+        name='create-package',
+        help='Start and approve the processing of a transfer package.',
+        args=(AM_API_KEY, TRANSFER_DIRECTORY),
+        opts=(AM_USER_NAME, AM_URL, TRANSFER_SOURCE_OPT, TRANSFER_NAME, PROCESSING_CONFIG, OUTPUT_MODE)
+    ),
+    SubCommand(
+        name='extract-file',
+        help='Extract a file from a package in the storage service.',
+        args=(SS_API_KEY, PACKAGE_UUID, RELATIVE_PATH),
+        opts=(SS_USER_NAME, SS_URL, DIRECTORY, SAVEAS_FILENAME)
+    ),
 )
 
 

@@ -7,6 +7,7 @@ import collections
 import os
 import shutil
 import unittest
+import uuid
 
 import vcr
 
@@ -19,16 +20,14 @@ AM_USER_NAME = 'test'
 AM_API_KEY = '3c23b0361887ace72b9d42963d9acbdf06644673'
 SS_USER_NAME = 'test'
 SS_API_KEY = '5de62f6f4817f903dcfac47fa5cffd44685a2cf2'
-TMP_DIR = '.tmp-dip-downloads'
+TMP_DIR = '.tmp-downloads'
 TRANSFER_SOURCE_UUID = '7609101e-15b2-4f4f-a19d-7b23673ac93b'
 
 
 class TmpDir:
-
     """Context manager to clear and create a temporary directory and destroy it
     after usage.
     """
-
     def __init__(self, tmp_dir_path):
         self.tmp_dir_path = tmp_dir_path
 
@@ -46,6 +45,7 @@ class TmpDir:
 
 
 class TestAMClient(unittest.TestCase):
+    """Test runner for AMClient class."""
 
     @vcr.use_cassette(
         'fixtures/vcr_cassettes/completed_transfers_transfers.yaml')
@@ -632,6 +632,7 @@ class TestAMClient(unittest.TestCase):
 
     @vcr.use_cassette('fixtures/vcr_cassettes/reingest_exsting_aip.yaml')
     def test_reingest_aip(self):
+        """Test amclient's ability to initiate the reingest of an AIP."""
         pipeline_uuid = '65aaac5d-b4fd-478e-967b-6cdfee02f2c5'
         aip_uuid = 'df8e0c68-3bda-4d1d-8493-789f7dec47f5'
         response = amclient.AMClient(
@@ -653,6 +654,9 @@ class TestAMClient(unittest.TestCase):
 
     @vcr.use_cassette('fixtures/vcr_cassettes/reingest_non_existing_aip.yaml')
     def test_reingest_non_aip(self):
+        """Test amclient's response to the initiation of a reingest for an AIP
+        that does not exist.
+        """
         pipeline_uuid = 'bb033eff-131e-48d5-980f-c4edab0cb038'
         aip_uuid = 'bb033eff-131e-48d5-980f-c4edab0cb038'
         response = amclient.AMClient(
@@ -668,6 +672,7 @@ class TestAMClient(unittest.TestCase):
 
     @vcr.use_cassette('fixtures/vcr_cassettes/get_package_details.yaml')
     def test_get_package_details(self):
+        """Test that amclient can retrieve details about a package."""
         package_uuid = "23129471-09e3-467e-88b6-eb4714afb5ac"
         response = amclient.AMClient(
             ss_api_key=SS_API_KEY,
@@ -682,6 +687,9 @@ class TestAMClient(unittest.TestCase):
     @vcr.use_cassette(
         'fixtures/vcr_cassettes/get_package_details_invalid_uuid.yaml')
     def test_get_package_details_invalid_uuid(self):
+        """Test amlient's response when an invalid package uuid is provided to
+        the get package details endpoint.
+        """
         package_uuid = "23129471-baad-f00d-88b6-eb4714afb5ac"
         response = amclient.AMClient(
             ss_api_key=SS_API_KEY,
@@ -694,17 +702,112 @@ class TestAMClient(unittest.TestCase):
     @vcr.use_cassette(
         'fixtures/vcr_cassettes/get_all_compressed_aips.yaml')
     def test_get_all_compressed_aips(self):
+        """Test amclient's ability to report on all compressed AIPs in the
+        storage service.
+        """
         response = amclient.AMClient(
             ss_api_key=SS_API_KEY,
             ss_user_name=SS_USER_NAME,
             ss_url=SS_URL).get_all_compressed_aips()
-
         expected_list = ["6d32a85f-6715-43af-947c-83c9d7f0deac",
                          "6f198696-e3b6-4f45-8ab3-b4cd4afd921a",
                          "9c5edcdc-3e3f-499d-a016-a43b9db875b1"]
         assert set(response.keys()) == set(expected_list)
         for aip in response.values():
             assert aip['uuid'] in expected_list
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/get_default_locations.yaml')
+    def test_get_default_storage_locations(self):
+        """Test that amclient can successfully retrieve Archivematica's default
+        storage locations.
+        """
+        response = amclient.AMClient(
+            ss_api_key=SS_API_KEY,
+            ss_user_name=SS_USER_NAME,
+            ss_url=SS_URL).list_storage_locations()
+        count = response.get("meta").get("total_count")
+        if not count:
+            assert False, "Cannot retrieve storage location count"
+        assert len(response.get("objects", [])) == count, \
+            ("Failed to count the storage locations available and make the "
+             "comparison with metadata")
+        purposes = ["TS", "AS", "DS", "BL", "SS", "AR", "CP"]
+        listed_purposes = [p.get("purpose") for p in response.get("objects")]
+        assert set(listed_purposes) == set(purposes), \
+            ("Unable to retrieve and validate some basic information about "
+             "the storage locations returned")
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_package_endpoint.yaml')
+    def test_create_package_endpoint(self):
+        """Test the package endpoint to ensure that it returns a UUID that we
+        can then work with to monitor potential transfers. We don't get much
+        feedback from the v2/beta endpoint so we just check that we do receive
+        a UUID as anticipated.
+        """
+        path = \
+            ("/archivematica/archivematica-sampledata/SampleTransfers/"
+             "DemoTransfer")
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL,
+            transfer_source="d1184f7f-d755-4c8d-831a-a3793b88f760",
+            transfer_directory=path,
+            transfer_name="amclient-transfer",
+            processing_config="automated",
+        ).create_package()
+        uuid_ = response.get("id", "")
+        try:
+            uuid.UUID(uuid_, version=4)
+        except ValueError:
+            assert False
+        # Provide a test for an absolute path, over relative above.
+        path = \
+            ("/home/archivematica/archivematica-sampledata/SampleTransfers/"
+             "DemoTransfer")
+        response = amclient.AMClient(
+            am_api_key=AM_API_KEY,
+            am_user_name=AM_USER_NAME,
+            am_url=AM_URL,
+            transfer_directory=path,
+            transfer_name="amclient-transfer",
+            processing_config="automated",
+        ).create_package()
+        uuid_ = response.get("id", "")
+        try:
+            uuid.UUID(uuid_, version=4)
+        except ValueError:
+            assert False
+
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_extract_individual_file.yaml')
+    def test_extract_individual_file(self):
+        """Test the result of downloading an individual file from a package in
+        the storage service.
+        """
+        with TmpDir(TMP_DIR):
+            filename_to_test = "bird.mp3"
+            package_uuid = "2ad1bf0d-23fa-44e0-a128-9feadfe22c42"
+            path = \
+                ("amclient-transfer_1-{}/"
+                 "data/objects/{}".format(package_uuid, filename_to_test))
+            filename = "bird_download.mp3"
+            response = amclient.AMClient(
+                ss_api_key=SS_API_KEY,
+                ss_user_name=SS_USER_NAME,
+                ss_url=SS_URL,
+                package_uuid=package_uuid,
+                relative_path=path,
+                saveas_filename=filename,
+                directory=TMP_DIR,
+            ).extract_file()
+            file_ = os.path.join(TMP_DIR, filename)
+            assert os.path.isfile(file_)
+            assert os.path.getsize(file_) == \
+                int(response.get("Content-Length", 0))
+            assert filename_to_test in response.get("Content-Disposition", "")
 
 
 if __name__ == '__main__':

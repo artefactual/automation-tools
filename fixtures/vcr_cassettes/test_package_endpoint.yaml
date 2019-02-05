@@ -1,0 +1,48 @@
+interactions:
+- request:
+    body: '{"name": "amclient-transfer", "path": "ZDExODRmN2YtZDc1NS00YzhkLTgzMWEtYTM3OTNiODhmNzYwOi9hcmNoaXZlbWF0aWNhL2FyY2hpdmVtYXRpY2Etc2FtcGxlZGF0YS9TYW1wbGVUcmFuc2ZlcnMvRGVtb1RyYW5zZmVy",
+      "processing_config": "automated"}'
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: ['ApiKey test:3c23b0361887ace72b9d42963d9acbdf06644673']
+      Connection: [keep-alive]
+      Content-Length: ['215']
+      User-Agent: [python-requests/2.18.4]
+    method: POST
+    uri: http://192.168.168.192/api/v2beta/package/
+  response:
+    body: {string: '{"id": "8e6259a0-34c8-4514-be3c-18dc0d42ce1c"}'}
+    headers:
+      Connection: [keep-alive]
+      Content-Language: [en]
+      Content-Type: [application/json]
+      Date: ['Wed, 27 Feb 2019 13:15:30 GMT']
+      Server: [nginx/1.14.2]
+      Transfer-Encoding: [chunked]
+      Vary: ['Accept-Language, Cookie']
+    status: {code: 202, message: ACCEPTED}
+- request:
+    body: '{"name": "amclient-transfer", "path": "L2hvbWUvYXJjaGl2ZW1hdGljYS9hcmNoaXZlbWF0aWNhLXNhbXBsZWRhdGEvU2FtcGxlVHJhbnNmZXJzL0RlbW9UcmFuc2Zlcg==",
+      "processing_config": "automated"}'
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: ['ApiKey test:3c23b0361887ace72b9d42963d9acbdf06644673']
+      Connection: [keep-alive]
+      Content-Length: ['175']
+      User-Agent: [python-requests/2.18.4]
+    method: POST
+    uri: http://192.168.168.192/api/v2beta/package/
+  response:
+    body: {string: '{"id": "8b15874d-d411-4bb7-adb3-eba300a3ef1e"}'}
+    headers:
+      Connection: [keep-alive]
+      Content-Language: [en]
+      Content-Type: [application/json]
+      Date: ['Wed, 27 Feb 2019 13:15:30 GMT']
+      Server: [nginx/1.14.2]
+      Transfer-Encoding: [chunked]
+      Vary: ['Accept-Language, Cookie']
+    status: {code: 202, message: ACCEPTED}
+version: 1
