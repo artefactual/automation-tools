@@ -49,13 +49,21 @@ import shutil
 import sys
 from tempfile import mkdtemp
 
+
 logging_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
 from amclient import AMClient
+from parsemets import read_premis_data
 from transfers import loggingconfig
 
+
 logger = logging.getLogger("transfers")
+
+
+class ExtractError(Exception):
+    """Custom exception for handling extract errors."""
 
 
 def json_pretty_print(json_string):
@@ -63,15 +71,16 @@ def json_pretty_print(json_string):
     print(json.dumps(json_string, sort_keys=True, indent=4))
 
 
-def retrieve_file(am, save_as_loc, relative_path):
+def retrieve_file(am, package_uuid, save_as_loc, relative_path):
     """Test"""
     # Provide those arguments to amclient.
+    am.package_uuid = package_uuid
     am.saveas_filename = save_as_loc
     am.relative_path = relative_path
     # We can read the response headers if we like.
     resp = am.extract_file()
     if isinstance(resp, int) or resp is None:
-        return False
+        raise ExtractError("Unable to retrieve file from the Storage Service")
     return resp
 
 
@@ -99,18 +108,32 @@ def filter_aip_files(filename, package_name, package_uuid):
     return False
 
 
-def test_duplicates(am, manifest_data, temp_dir):
+def read_mets(mets_loc):
+    """test..."""
+    return read_premis_data(mets_loc)
+
+
+def retrieve_mets(am, manifest_data, temp_dir):
     """test..."""
     for checksums, values in manifest_data.items():
         if len(values) > 1:
             for entry in values:
                 entry = entry.split(":", 2)
-                relative_path = os.path.join(entry[1], entry[0])
-                filename = "{}-{}".format(entry[1], entry[0])
-                save_as_loc = os.path.join(temp_dir, filename.replace(os.path.sep, "-"))
-                am.package_uuid = entry[2]
-                resp = retrieve_file(am, save_as_loc, relative_path)
-                print(resp)
+                filename = entry[0]
+                print(filename)
+                transfer = entry[1]
+                package_uuid = entry[2]
+                mets = "{}/data/METS.{}.xml".format(transfer, package_uuid)
+                save_as_loc = os.path.join(temp_dir, mets.replace("/", "-"))
+                if not os.path.exists(save_as_loc):
+                    try:
+                        retrieve_file(am, package_uuid, save_as_loc, mets)
+                        data = read_mets(save_as_loc)
+                        for d_ in data:
+                            print(d_)
+                    except ExtractError as err:
+                        logger.info(err)
+                        continue
 
 
 def output_duplicates(manifest_data):
@@ -148,7 +171,6 @@ def main():
     # Get all AIPS that the storage service knows about.
     aips = am.aips()
     for aip in aips:
-        am.package_uuid = aip.get("uuid")
         package_name = os.path.basename(aip.get("current_path")).replace(".7z", "")
         for algorithm in checksum_algorithms:
             # Store our manifest somewhere.
@@ -159,7 +181,9 @@ def main():
 
             print(relative_path)
 
-            if not retrieve_file(am, save_as_loc, relative_path):
+            try:
+                retrieve_file(am, aip.get("uuid"), save_as_loc, relative_path)
+            except ExtractError:
                 logger.info("No result for algorithm: %s", algorithm)
                 continue
 
@@ -185,7 +209,7 @@ def main():
                             manifest_data[line_pair[0]].append(line_pair[1].strip())
 
     # Test duplicate response.
-    test_duplicates(am, manifest_data, temp_dir)
+    retrieve_mets(am, manifest_data, temp_dir)
 
     # Once we have collected all our objects, output the duplicates as JSON.
     # output_duplicates(manifest_data)
