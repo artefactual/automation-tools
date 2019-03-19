@@ -68,7 +68,7 @@ logging_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-from amclient import AMClient
+from appconfig import AppConfig
 from parsemets import read_premis_data
 from transfers import loggingconfig
 
@@ -179,10 +179,7 @@ def main():
     """Script's primary entry-point."""
     temp_dir = mkdtemp()
     loggingconfig.setup("INFO", os.path.join(logging_dir, "report.log"))
-    am = AMClient()
-    am.ss_url = "http://127.0.0.1:62081"
-    am.ss_user_name = "test"
-    am.ss_api_key = "test"
+    am = AppConfig().get_am_client()
     # Maintain state of all values across the aipstore.
     duplicate_report = {}
     manifest_data = {}
@@ -215,9 +212,12 @@ def main():
                         checksum, filepath = line.split(" ", 1)
                         if not filter_aip_files(filepath, package_uuid):
                             entry = {}
+                            filepath = filepath.strip()
                             entry["package_uuid"] = am.package_uuid.strip()
                             entry["package_name"] = package_name.strip()
-                            entry["filepath"] = filepath.strip()
+                            entry["filepath"] = filepath
+                            entry["basename"] = os.path.basename(filepath)
+                            entry["dirname"] = os.path.dirname(filepath)
                             manifest_data.setdefault(checksum.strip(), [])
                             manifest_data[checksum].append(entry)
             duplicate_report["manifest_data"] = manifest_data
