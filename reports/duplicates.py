@@ -10,26 +10,40 @@ $:~/git/archivematica/automation-tools$ python -m reports.duplicates 2> /dev/nul
 Duplicate entries, per algorithm found, will be output to stdout, e.g.:
 
     {
-        "63a3a1295b5175d6b726e78660da44d4bdc0049f39eb9b951e6ca67d26c99270": [
-            [
-                "data/README.html",
-                "1-523ee501-c61b-4bac-8364-efacde21f526"
+        "manifest_data": {
+            "078917a9ba3eb290ddb27f97d904cf6e24fec5f62a1986fdf760c07d6d4dd30e": [
+                {
+                    "date_modified": "2018-01-31",
+                    "filepath": "data/objects/sci-fi.jpg",
+                    "package_name": "1-588790bd-b9dd-4460-9705-d14f8700dba3",
+                    "package_uuid": "588790bd-b9dd-4460-9705-d14f8700dba3"
+                },
+                {
+                    "date_modified": "2018-01-31",
+                    "filepath": "data/objects/sci-fi.jpg",
+                    "package_name": "2-ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66",
+                    "package_uuid": "ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66"
+                }
             ],
-            [
-                "data/README.html",
-                "2-66330846-f41d-4615-adc0-bcb31f31c99e"
+            "233aa737752ffb64942ca18f03dd6d316957c5b7a0c439e07cdae9963794c315": [
+                {
+                    "date_modified": "2018-02-01",
+                    "filepath": "data/objects/garage.jpg",
+                    "package_name": "1-588790bd-b9dd-4460-9705-d14f8700dba3",
+                    "package_uuid": "588790bd-b9dd-4460-9705-d14f8700dba3"
+                },
+                {
+                    "date_modified": "2018-02-01",
+                    "filepath": "data/objects/garage.jpg",
+                    "package_name": "2-ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66",
+                    "package_uuid": "ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66"
+                }
             ]
-        ],
-        "9fd57a8c09e0443de485cf51b68ad8ef54486454434daed499d2f686b7efc2b4": [
-            [
-                "data/objects/one_file.txt",
-                "1-523ee501-c61b-4bac-8364-efacde21f526"
-            ],
-            [
-                "data/objects/one_file.txt",
-                "2-66330846-f41d-4615-adc0-bcb31f31c99e"
-            ]
-        ]
+        },
+        "packages": {
+            "588790bd-b9dd-4460-9705-d14f8700dba3": "1-588790bd-b9dd-4460-9705-d14f8700dba3",
+            "ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66": "2-ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66"
+        }
     }
 
 The script utilizes the AM Client module. The fulcrum is the extract_file
@@ -72,8 +86,7 @@ def json_pretty_print(json_string):
 
 
 def retrieve_file(am, package_uuid, save_as_loc, relative_path):
-    """Test"""
-    # Provide those arguments to amclient.
+    """Helper function to retrieve our files from the Storage Service."""
     am.package_uuid = package_uuid
     am.saveas_filename = save_as_loc
     am.relative_path = relative_path
@@ -84,28 +97,43 @@ def retrieve_file(am, package_uuid, save_as_loc, relative_path):
     return resp
 
 
-def filter_aip_files(filename, package_name, package_uuid):
+def filter_aip_files(filepath, package_uuid):
     """Don't return AIP special files as duplicates."""
-    name_replace = "{{transfer-name}}"
-    uuid_replace = "{{transfer-uuid}}"
+    filepath = filepath.strip()
+    uuid_replace = "{{package-uuid}}"
+    transfer_files = [
+        ["data/logs/transfers/", "/logs/filenameCleanup.log"],
+        ["data/objects/metadata/transfers/", "/directory_tree.txt"],
+        ["data/logs/transfers/", "/logs/fileFormatIdentification.log"],
+        ["data/objects/submissionDocumentation/", "/METS.xml"],
+    ]
     aip_files = [
         "data/logs/filenameCleanup.log",
         "data/README.html",
         "data/logs/fileFormatIdentification.log",
-        "data/logs/transfers/{{transfer-name}}/logs/filenameCleanup.log",
-        "data/METS.{{transfer-uuid}}.xml",
-        "data/objects/metadata/transfers/{{transfer-name}}/directory_tree.txt",
-        "data/logs/transfers/{{transfer-name}}/logs/fileFormatIdentification.log",
-        "data/objects/submissionDocumentation/transfer-{{transfer-name}}/METS.xml",
+        "data/METS.{{package-uuid}}.xml",
     ]
+    for file_ in transfer_files:
+        if file_[0] in filepath and file_[1] in filepath:
+            return True
     for file_ in aip_files:
-        if file_.replace(name_replace, package_name) == filename:
+        if file_.replace(uuid_replace, package_uuid) == filepath:
             return True
-        if file_.replace(uuid_replace, package_uuid) == filename:
-            return True
-        if file_ == filename:
+        if file_ == filepath:
             return True
     return False
+
+
+def augment_data(package_uuid, duplicate_report, date_info):
+    manifest_data = duplicate_report.get("manifest_data", {})
+    for key, value in manifest_data.items():
+        for package in value:
+            if package_uuid != package.get("package_uuid", ""):
+                continue
+            for dates in date_info:
+                path_ = package.get("filepath", "").strip(os.path.join("data", ""))
+                if path_ == dates.get("filepath", ""):
+                    package["date_modified"] = dates.get("date_modified", "")
 
 
 def read_mets(mets_loc):
@@ -113,80 +141,68 @@ def read_mets(mets_loc):
     return read_premis_data(mets_loc)
 
 
-def retrieve_mets(am, manifest_data, temp_dir):
-    """test..."""
-    for checksums, values in manifest_data.items():
-        if len(values) > 1:
-            for entry in values:
-                entry = entry.split(":", 2)
-                filename = entry[0]
-                print(filename)
-                transfer = entry[1]
-                package_uuid = entry[2]
-                mets = "{}/data/METS.{}.xml".format(transfer, package_uuid)
-                save_as_loc = os.path.join(temp_dir, mets.replace("/", "-"))
-                if not os.path.exists(save_as_loc):
-                    try:
-                        retrieve_file(am, package_uuid, save_as_loc, mets)
-                        data = read_mets(save_as_loc)
-                        for d_ in data:
-                            print(d_)
-                    except ExtractError as err:
-                        logger.info(err)
-                        continue
-
-
-def output_duplicates(manifest_data):
-    """Cycle through our AIP manifests and format the output before sending
-    to stdout as JSON. If any JSON object has an array length greater than one
-    then it represents duplicates that have been discovered. Output a list of
-    those files only.
+def retrieve_mets(am, duplicate_report, temp_dir):
+    """Retrieve METS from our packages with duplicate files and retrieve useful
+    information.
     """
-    json_out = {}
-    for checksums, values in manifest_data.items():
+    for key, value in duplicate_report.get("packages", {}).items():
+        """do nothing"""
+        package_uuid = key
+        package_name = value
+        mets = "{}/data/METS.{}.xml".format(package_name, package_uuid)
+        save_as_loc = os.path.join(temp_dir, mets.replace("/", "-"))
+        if not os.path.exists(save_as_loc):
+            try:
+                retrieve_file(am, package_uuid, save_as_loc, mets)
+                data = read_mets(save_as_loc)
+                augment_data(package_uuid, duplicate_report, data)
+            except ExtractError as err:
+                logger.info(err)
+                continue
+
+
+def filter_duplicates(duplicate_report):
+    """Filter our report for packages containing duplicates only."""
+    dupes = duplicate_report.get("manifest_data", {})
+    packages = {}
+    for key, values in dupes.items():
         if len(values) > 1:
             for entry in values:
-                entry = entry.split(":", 2)
-                json_out.setdefault(checksums, [])
-                json_out[checksums].append(entry)
-    json_pretty_print(json_out)
+                packages[entry.get("package_uuid")] = entry.get("package_name")
+        else:
+            del (duplicate_report["manifest_data"], key)
+    duplicate_report["packages"] = packages
+    return duplicate_report
 
 
 def main():
     """Script's primary entry-point."""
-
     temp_dir = mkdtemp()
-
     loggingconfig.setup("INFO", os.path.join(logging_dir, "report.log"))
     am = AMClient()
     am.ss_url = "http://127.0.0.1:62081"
     am.ss_user_name = "test"
     am.ss_api_key = "test"
-
-    # Maintain state of all values across the aipstore {"checksum": [paths]}
+    # Maintain state of all values across the aipstore.
+    duplicate_report = {}
     manifest_data = {}
-
+    # Checksum algorithms to test for.
     checksum_algorithms = ("md5", "sha1", "sha256")
-
     # Get all AIPS that the storage service knows about.
     aips = am.aips()
     for aip in aips:
         package_name = os.path.basename(aip.get("current_path")).replace(".7z", "")
+        package_uuid = aip.get("uuid")
         for algorithm in checksum_algorithms:
             # Store our manifest somewhere.
             relative_path = "{}/manifest-{}.txt".format(package_name, algorithm)
             save_path = "{}-manifest-{}.txt".format(package_name, algorithm)
-
             save_as_loc = os.path.join(temp_dir, save_path)
-
-            print(relative_path)
-
             try:
-                retrieve_file(am, aip.get("uuid"), save_as_loc, relative_path)
+                retrieve_file(am, package_uuid, save_as_loc, relative_path)
             except ExtractError:
                 logger.info("No result for algorithm: %s", algorithm)
                 continue
-
             # Our dictionary keys are checksums and all filename entries with
             # the same checksum are appended to create an array. If the array
             # at the end is greater than one, we have duplicate files.
@@ -196,24 +212,18 @@ def main():
                         # Attach our transfer name so we know where our duplicates
                         # are. Turn into an array to create or append to our dict
                         # entry.
-                        filename = line.split(" ", 1)[1].strip()
-                        if not filter_aip_files(
-                            filename, package_name, am.package_uuid
-                        ):
-                            line_pair = "{}:{}:{}".format(
-                                line.strip(),
-                                package_name.strip(),
-                                am.package_uuid.strip(),
-                            ).split(" ", 1)
-                            manifest_data.setdefault(line_pair[0], [])
-                            manifest_data[line_pair[0]].append(line_pair[1].strip())
-
-    # Test duplicate response.
-    retrieve_mets(am, manifest_data, temp_dir)
-
-    # Once we have collected all our objects, output the duplicates as JSON.
-    # output_duplicates(manifest_data)
-
+                        checksum, filepath = line.split(" ", 1)
+                        if not filter_aip_files(filepath, package_uuid):
+                            entry = {}
+                            entry["package_uuid"] = am.package_uuid.strip()
+                            entry["package_name"] = package_name.strip()
+                            entry["filepath"] = filepath.strip()
+                            manifest_data.setdefault(checksum.strip(), [])
+                            manifest_data[checksum].append(entry)
+            duplicate_report["manifest_data"] = manifest_data
+    duplicate_report = filter_duplicates(duplicate_report)
+    retrieve_mets(am, duplicate_report, temp_dir)
+    json_pretty_print(duplicate_report)
     # Cleanup our temporary folder.
     shutil.rmtree(temp_dir)
 

@@ -23,10 +23,11 @@ def read_premis_data(mets_file):
     mets = _load_mets(mets_file)
     info = []
     for entry in mets.all_files():
-        file_ = entry.path
+        filepath = entry.path
         objs = entry.get_premis_objects()
         for obj in objs:
-            date_ = obj.date_created_by_application
-            data = "{}: {}".format(date_, file_)
-            info.append(data)
+            entry = {}
+            entry["date_modified"] = obj.date_created_by_application
+            entry["filepath"] = filepath
+            info.append(entry)
     return info
