@@ -115,11 +115,14 @@ def filter_aip_files(filepath, package_uuid):
     ]
     for file_ in transfer_files:
         if file_[0] in filepath and file_[1] in filepath:
+            logger.info("Filtering: %s", filepath)
             return True
     for file_ in aip_files:
         if file_.replace(uuid_replace, package_uuid) == filepath:
+            logger.info("Filtering: %s", filepath)
             return True
         if file_ == filepath:
+            logger.info("Filtering: %s", filepath)
             return True
     return False
 
@@ -170,7 +173,11 @@ def filter_duplicates(duplicate_report):
             for entry in values:
                 packages[entry.get("package_uuid")] = entry.get("package_name")
         else:
-            del (duplicate_report["manifest_data"], key)
+            try:
+                duplicate_report.get("manifest_data", {}).pop(key)
+                logger.info("Popped checksum: %s", key)
+            except (AttributeError, KeyError):
+                raise ExtractError("Error filtering report for duplicates")
     duplicate_report["packages"] = packages
     return duplicate_report
 
