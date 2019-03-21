@@ -82,7 +82,7 @@ class ExtractError(Exception):
 
 def json_pretty_print(json_string):
     """Pretty print a JSON string."""
-    print(json.dumps(json_string, sort_keys=True, indent=4))
+    return json.dumps(json_string, sort_keys=True, indent=4)
 
 
 def retrieve_file(am, package_uuid, save_as_loc, relative_path):
@@ -182,7 +182,7 @@ def filter_duplicates(duplicate_report):
     return duplicate_report
 
 
-def csv_out(duplicate_report):
+def csv_out(duplicate_report, filename):
     """Output a CSV using Pandas and a bit of magic."""
     dupes = duplicate_report.get("manifest_data", {})
     cols = 0
@@ -228,7 +228,15 @@ def csv_out(duplicate_report):
     df = DataFrame(columns=headers)
     for entry in rows:
         df = df.append(entry, ignore_index=True)
-    df.to_csv(sys.stdout, index=None, header=True, encoding="utf8")
+    df.to_csv(filename, index=None, header=True, encoding="utf8")
+
+
+def output_report(duplicate_report):
+    """Provide mechanisms to output different serializations."""
+    with open("aipstore-duplicates.json", "w") as json_file:
+        json_file.write(json_pretty_print(duplicate_report))
+    print(json_pretty_print(duplicate_report))
+    csv_out(duplicate_report, "aipstore-duplicates.csv")
 
 
 def main():
@@ -279,11 +287,8 @@ def main():
             duplicate_report["manifest_data"] = manifest_data
     duplicate_report = filter_duplicates(duplicate_report)
     retrieve_mets(am, duplicate_report, temp_dir)
-
-    # json_pretty_print(duplicate_report)
-
-    csv_out(duplicate_report)
-
+    # Save to JSON and CSV.
+    output_report(duplicate_report)
     # Cleanup our temporary folder.
     shutil.rmtree(temp_dir)
 
