@@ -5,7 +5,7 @@
 
 Example usage:
 
-$:~/git/archivematica/automation-tools$ python -m reports.duplicates 2> /dev/null
+$:~/git/archivematica/automation-tools$ python -m reports.duplicates.duplicates 2> /dev/null
 
 Duplicate entries, per algorithm found, will be output to stdout, e.g.:
 
@@ -63,17 +63,18 @@ import shutil
 import sys
 from tempfile import mkdtemp
 
-from appconfig import AppConfig
-from parsemets import read_premis_data
-from transfers import loggingconfig
+from . import loggingconfig
+
+from .appconfig import AppConfig
+from .parsemets import read_premis_data
 
 from pandas import DataFrame
 
 logging_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-logger = logging.getLogger("transfers")
-logger.disabled = True
+
+logger = logging.getLogger("duplicates")
+logger.disabled = False
 
 
 class ExtractError(Exception):
@@ -166,7 +167,7 @@ def retrieve_mets(am, duplicate_report, temp_dir):
 
 def filter_duplicates(duplicate_report):
     """Filter our report for packages containing duplicates only."""
-    dupes = duplicate_report.get("manifest_data", {})
+    dupes = dict(duplicate_report.get("manifest_data", {}))
     packages = {}
     for key, values in dupes.items():
         if len(values) > 1:
