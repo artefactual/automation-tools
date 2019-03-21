@@ -63,17 +63,17 @@ import shutil
 import sys
 from tempfile import mkdtemp
 
-
-logging_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-
 from appconfig import AppConfig
 from parsemets import read_premis_data
 from transfers import loggingconfig
 
+from pandas import DataFrame
+
+logging_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logger = logging.getLogger("transfers")
+logger.disabled = True
 
 
 class ExtractError(Exception):
@@ -182,6 +182,55 @@ def filter_duplicates(duplicate_report):
     return duplicate_report
 
 
+def csv_out(duplicate_report):
+    """Output a CSV using Pandas and a bit of magic."""
+    dupes = duplicate_report.get("manifest_data", {})
+    cols = 0
+    arr = [
+        "file_path",
+        "date_modified",
+        "base_name",
+        "dir_name",
+        "package_name",
+        "package_uuid",
+    ]
+    rows = []
+    headers = None
+    for key, value in dupes.items():
+        cols = max(cols, len(value))
+    # Create headers for our spreadsheet.
+    headers = arr * cols
+    for i in range(len(headers)):
+        headers[i] = "{}_{}".format(headers[i], i)
+    # Make sure that checksum is the first and only non-duplicated value.
+    headers = ["Checksum"] + headers
+    for key, value in dupes.items():
+        records = []
+        for prop in value:
+            record = []
+            record.append(prop.get("filepath", "NaN"))
+            record.append(prop.get("date_modified", "NaN"))
+            record.append(prop.get("basename", "NaN"))
+            record.append(prop.get("dirname", "NaN"))
+            record.append(prop.get("package_name", "NaN"))
+            record.append(prop.get("package_uuid", "NaN"))
+            records = records + record
+        # Fill blank spaces in row. Might also be possible as a Pandas series.
+        space = cols * len(arr) - len(records)
+        if space:
+            filler = ["NaN"] * space
+            records = records + filler
+        # Create a checksum entry for our spreadsheet.
+        records = [key] + records
+        # Create a dict from two lists.
+        dictionary = dict(zip(headers, records))
+        rows.append(dictionary)
+    df = DataFrame(columns=headers)
+    for entry in rows:
+        df = df.append(entry, ignore_index=True)
+    df.to_csv(sys.stdout, index=None, header=True, encoding="utf8")
+
+
 def main():
     """Script's primary entry-point."""
     temp_dir = mkdtemp()
@@ -230,7 +279,11 @@ def main():
             duplicate_report["manifest_data"] = manifest_data
     duplicate_report = filter_duplicates(duplicate_report)
     retrieve_mets(am, duplicate_report, temp_dir)
-    json_pretty_print(duplicate_report)
+
+    # json_pretty_print(duplicate_report)
+
+    csv_out(duplicate_report)
+
     # Cleanup our temporary folder.
     shutil.rmtree(temp_dir)
 
