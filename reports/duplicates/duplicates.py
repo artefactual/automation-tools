@@ -202,7 +202,7 @@ def csv_out(duplicate_report, filename):
     # Create headers for our spreadsheet.
     headers = arr * cols
     for i in range(len(headers)):
-        headers[i] = "{}_{}".format(headers[i], i)
+        headers[i] = "{}_{}".format(headers[i], str(i).zfill(2))
     # Make sure that checksum is the first and only non-duplicated value.
     headers = ["Checksum"] + headers
     for key, value in dupes.items():
@@ -229,7 +229,11 @@ def csv_out(duplicate_report, filename):
     df = DataFrame(columns=headers)
     for entry in rows:
         df = df.append(entry, ignore_index=True)
-    df.to_csv(filename, index=None, header=True, encoding="utf8")
+        # Sort the columns in alphabetical order to pair similar headers.
+        cols = sorted(df.columns.tolist())
+        cols_no_suffix = [x.rsplit("_", 1)[0] for x in cols]
+        df = df[cols]
+    df.to_csv(filename, index=None, header=cols_no_suffix, encoding="utf8")
 
 
 def output_report(duplicate_report):
