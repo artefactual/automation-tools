@@ -26,10 +26,9 @@ def read_premis_data(mets_file):
     info = []
     for mets_entry in mets.all_files():
         filepath = mets_entry.path
-        try:
-            objs = mets_entry.get_premis_objects()
-        except IndexError:
+        if mets_entry.type != "Item":
             continue
+        objs = mets_entry.get_premis_objects()
         for obj in objs:
             entry = {}
             entry["date_modified"] = obj.date_created_by_application

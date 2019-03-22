@@ -12,12 +12,12 @@ class CSVOut:
         dupes = duplicate_report.get("manifest_data", {})
         cols = 0
         arr = [
-            "file_path",
-            "date_modified",
-            "base_name",
-            "dir_name",
-            "package_name",
-            "package_uuid",
+            "a_dir_name",
+            "b_base_name",
+            "c_file_path",
+            "e_date_modified",
+            "f_package_name",
+            "g_package_uuid",
         ]
         rows = []
         headers = None
@@ -33,10 +33,10 @@ class CSVOut:
             records = []
             for prop in value:
                 record = []
+                record.append(prop.get("dirname", "NaN"))
+                record.append(prop.get("basename", "NaN"))
                 record.append(prop.get("filepath", "NaN"))
                 record.append(prop.get("date_modified", "NaN"))
-                record.append(prop.get("basename", "NaN"))
-                record.append(prop.get("dirname", "NaN"))
                 record.append(prop.get("package_name", "NaN"))
                 record.append(prop.get("package_uuid", "NaN"))
                 records = records + record
@@ -56,5 +56,7 @@ class CSVOut:
             # Sort the columns in alphabetical order to pair similar headers.
             cols = sorted(df.columns.tolist())
             cols_no_suffix = [x.rsplit("_", 1)[0] for x in cols]
+            cols_no_prefix = [x.split("_", 1)[1] for x in cols_no_suffix if "_" in x]
+            cols_no_prefix = ["Checksum"] + cols_no_prefix
             df = df[cols]
-        df.to_csv(filename, index=None, header=cols_no_suffix, encoding="utf8")
+        df.to_csv(filename, index=None, header=cols_no_prefix, encoding="utf8")
