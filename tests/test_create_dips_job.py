@@ -5,8 +5,8 @@ import vcr
 
 from sqlalchemy import exc
 
-from tests.test_amclient import TmpDir
 from aips import create_dips_job
+from tests.tests_helpers import TmpDir
 
 try:
     import mock

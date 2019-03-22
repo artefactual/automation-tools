@@ -4,10 +4,15 @@ import collections
 import os
 import unittest
 
-import mock
 import vcr
 
 from transfers import errors, transfer, models
+
+try:
+    import mock
+except ImportError:
+    from unittest import mock
+
 
 AM_URL = 'http://127.0.0.1'
 SS_URL = 'http://127.0.0.1:8000'

@@ -22,12 +22,13 @@ import sys
 
 from six import string_types, text_type
 
+from amclient import AMClient
+
 # Allow execution as an executable and the script to be run at package level
 # by ensuring that it can see itself.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from transfers import errors, loggingconfig
-from transfers.amclient import AMClient
 from transfers import reingestmodel as reingestunit
 
 LOGGER = logging.getLogger('transfers')

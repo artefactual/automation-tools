@@ -21,9 +21,8 @@ import subprocess
 import shutil
 import uuid
 
+import amclient
 import metsrw
-
-from transfers import amclient
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 LOGGER = logging.getLogger('create_dip')

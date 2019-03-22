@@ -20,7 +20,6 @@ UNDEC_MSG = ('Unable to decode a transfer source component; giving up and'
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Global for logfile if not set.
-AMCLIENT_LOG_FILE = os.path.join(THIS_DIR, 'amclient.log')
 TRANSFER_LOG_FILE = os.path.join(THIS_DIR, 'automate-transfer.log')
 
 # Default log level.

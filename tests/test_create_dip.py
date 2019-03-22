@@ -5,9 +5,10 @@ import time
 import unittest
 import vcr
 
-from transfers import amclient
+import amclient
+
 from aips import create_dip
-from tests.test_amclient import TmpDir
+from tests.tests_helpers import TmpDir
 
 
 SS_URL = 'http://192.168.168.192:8000'

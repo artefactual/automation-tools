@@ -3,7 +3,7 @@ import os
 import unittest
 
 from aips import models
-from tests.test_amclient import TmpDir
+from tests.tests_helpers import TmpDir
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 TMP_DIR = os.path.join(THIS_DIR, '.tmp-aips-models')

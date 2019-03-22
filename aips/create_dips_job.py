@@ -20,7 +20,8 @@ import sys
 
 from sqlalchemy import exc
 
-from transfers import amclient
+import amclient
+
 from aips import create_dip
 from aips import models
 
