@@ -8,6 +8,7 @@ class TmpDir:
     """Context manager to clear and create a temporary directory and destroy it
     after usage.
     """
+
     def __init__(self, tmp_dir_path):
         self.tmp_dir_path = tmp_dir_path
 

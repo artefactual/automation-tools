@@ -26,26 +26,26 @@ def main(transfer_path):
     if len(files) != 1:
         return 2
     basename = os.path.basename(files[0])
-    regex = r'[\w]+@([\d]+)-([\d]+)\.zip$'
+    regex = r"[\w]+@([\d]+)-([\d]+)\.zip$"
     match = re.search(regex, basename)
     if not match:
         return 1
 
-    dc_id = '/'.join(match.groups())
-    print('Identifier: ', dc_id, end='')
-    header = ['parts', 'dc.identifier']
-    data = ['objects', dc_id]
-    metadata_path = os.path.join(transfer_path, 'metadata')
+    dc_id = "/".join(match.groups())
+    print("Identifier: ", dc_id, end="")
+    header = ["parts", "dc.identifier"]
+    data = ["objects", dc_id]
+    metadata_path = os.path.join(transfer_path, "metadata")
     if not os.path.exists(metadata_path):
         os.makedirs(metadata_path)
-    metadata_path = os.path.join(metadata_path, 'metadata.csv')
-    with open(metadata_path, 'w') as f:
+    metadata_path = os.path.join(metadata_path, "metadata.csv")
+    with open(metadata_path, "w") as f:
         w = csv.writer(f)
         w.writerow(header)
         w.writerow(data)
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     transfer_path = sys.argv[1]
     sys.exit(main(transfer_path))

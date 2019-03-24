@@ -30,7 +30,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from transfers import errors, loggingconfig
 from transfers import reingestmodel as reingestunit
 
-LOGGER = logging.getLogger('transfers')
+LOGGER = logging.getLogger("transfers")
 
 # Used early in the script to indicate failure with non-zero status, i.e.
 # something went wrong.
@@ -80,15 +80,16 @@ def get_am_client(config):
     """Return an AM Client Object to work with throughout the rest
     of the script.
     """
-    connection = config['connection']
+    connection = config["connection"]
     amclient = AMClient(
-        ss_url=connection['ss_url'],
-        ss_user_name=connection['ss_user_name'],
-        ss_api_key=connection['ss_api_key'],
-        am_url=connection['am_url'],
-        am_user_name=connection['am_user_name'],
-        am_api_key=connection['am_api_key'],
-        output_mode=connection['output_mode'])
+        ss_url=connection["ss_url"],
+        ss_user_name=connection["ss_user_name"],
+        ss_api_key=connection["ss_api_key"],
+        am_url=connection["am_url"],
+        am_user_name=connection["am_user_name"],
+        am_api_key=connection["am_api_key"],
+        output_mode=connection["output_mode"],
+    )
     return setup_amclient(amclient)
 
 
@@ -96,8 +97,10 @@ def pipeline_exists(amclient, pipeline_uuid):
     """Test whether a pipeline is known to the storage service."""
     try:
         pipelines = amclient.get_pipelines()["objects"]
-        return next((pipeline for pipeline in pipelines
-                     if pipeline["uuid"] == pipeline_uuid), False)
+        return next(
+            (pipeline for pipeline in pipelines if pipeline["uuid"] == pipeline_uuid),
+            False,
+        )
     except KeyError:
         return False
 
@@ -113,9 +116,14 @@ def processing_exists(amclient, processing_name):
     return False
 
 
-def reingest_full_and_approve(amclient, pipeline_uuid, aip_uuid,
-                              processing_config="default", latency=None,
-                              approval_retries=2):
+def reingest_full_and_approve(
+    amclient,
+    pipeline_uuid,
+    aip_uuid,
+    processing_config="default",
+    latency=None,
+    approval_retries=2,
+):
     """Reingest an archivematica AIP.
 
     This function will make three calls to the AM Client code:
@@ -139,8 +147,10 @@ def reingest_full_and_approve(amclient, pipeline_uuid, aip_uuid,
     # we can work with to monitor state. If we do not get a dict back we need
     # to look at what went wrong.
     if not isinstance(reingest_aip, dict):
-        LOGGER.error("Reingest failed with server error %s, returning.",
-                     errors.error_lookup(reingest_aip))
+        LOGGER.error(
+            "Reingest failed with server error %s, returning.",
+            errors.error_lookup(reingest_aip),
+        )
         return False, "Error calling reingest_aip."
 
     reingest_uuid = reingest_aip["reingest_uuid"]
@@ -155,22 +165,26 @@ def reingest_full_and_approve(amclient, pipeline_uuid, aip_uuid,
         transfer = None
         while not isinstance(transfer, dict):
             if latency:
-                time.sleep(latency)   # ~latency between call and AM actioning.
+                time.sleep(latency)  # ~latency between call and AM actioning.
             amclient.transfer_uuid = reingest_uuid
             transfer = amclient.get_transfer_status()
 
-        LOGGER.info("Attempting to approve transfer following the "
-                    "initialization of reingest.")
+        LOGGER.info(
+            "Attempting to approve transfer following the "
+            "initialization of reingest."
+        )
 
         if transfer.get("status") == "USER_INPUT":
             transfer_directory = transfer["directory"]
-            LOGGER.info("Approving reingest automatically. Directory to "
-                        "approve %s", transfer_directory)
+            LOGGER.info(
+                "Approving reingest automatically. Directory to " "approve %s",
+                transfer_directory,
+            )
             amclient.transfer_directory = transfer_directory
             message = amclient.approve_transfer()
-            if message.get('error') is None:
+            if message.get("error") is None:
                 LOGGER.info("Approval successful, returning True")
-                return True, message['uuid']
+                return True, message["uuid"]
             return False, "Error approving transfer."
 
     return False, "Error retrieving transfer status."
@@ -186,7 +200,7 @@ def manage_process(config_file, remove=False):
     then the default behavior is overridden and the script is allowed to exit
     without removing the LCK file.
     """
-    pid_file = config_file['process']['pid']
+    pid_file = config_file["process"]["pid"]
     global OVERRIDE_ATEXIT
     if OVERRIDE_ATEXIT:
         return
@@ -195,11 +209,13 @@ def manage_process(config_file, remove=False):
         os.remove(pid_file)
         return
     try:
-        pidf = os.fdopen(
-            os.open(pid_file, os.O_CREAT | os.O_EXCL | os.O_RDWR), 'w')
+        pidf = os.fdopen(os.open(pid_file, os.O_CREAT | os.O_EXCL | os.O_RDWR), "w")
     except OSError:
-        LOGGER.info('This script is already running. To override this '
-                    'behavior and start a new run, remove %s', pid_file)
+        LOGGER.info(
+            "This script is already running. To override this "
+            "behavior and start a new run, remove %s",
+            pid_file,
+        )
         # By default, do not remove the PID if the process is already running.
         OVERRIDE_ATEXIT = True
         sys.exit()
@@ -248,7 +264,7 @@ def get_status(status):
     in the workflow.
     """
     try:
-        return status['status']
+        return status["status"]
     except (KeyError, TypeError):
         return None
 
@@ -278,8 +294,9 @@ def update_reingest(session, amclient):
             reingestunit.set_status_complete(session, aip.aip_uuid)
 
 
-def start_reingest(session, amclient, pipeline_uuid, processing_config,
-                   throttle, approval_retries=2):
+def start_reingest(
+    session, amclient, pipeline_uuid, processing_config, throttle, approval_retries=2
+):
     """Begin the reingest of an AIP.
 
     start_reingest is called after update_reingest where update_reingest is
@@ -306,11 +323,15 @@ def start_reingest(session, amclient, pipeline_uuid, processing_config,
     for index in range(min(pool, len(new_aips))):
         aip = new_aips[index].aip_uuid
         error, message = reingest_full_and_approve(
-            amclient, pipeline_uuid, aip, processing_config, latency=LATENCY,
-            approval_retries=approval_retries)
+            amclient,
+            pipeline_uuid,
+            aip,
+            processing_config,
+            latency=LATENCY,
+            approval_retries=approval_retries,
+        )
         if error is not False:
-            reingestunit.set_status_in_progress(session, aip,
-                                                transfer_uuid=message)
+            reingestunit.set_status_in_progress(session, aip, transfer_uuid=message)
         else:
             LOGGER.error("Error initiating reingest %s, %s", aip, message)
             reingestunit.set_status_error(session, aip, message)
@@ -360,22 +381,36 @@ def main():
 
     # Setup command line arguments.
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--config', type=str,
-                        help='REQUIRED: configure the script', required=True)
-    parser.add_argument('--listcompressedaips', action='store_true',
-                        help='list compressed AIPs in storage')
-    parser.add_argument('--compareaiplist', type=str,
-                        help='compare stored compressed aips with an existing'
-                             ' list')
-    parser.add_argument('--processfromlist', type=str,
-                        help='reingest from a list of UUIDs')
-    parser.add_argument('--processfromstorage', action="store_true",
-                        help='reingest compressed AIPs from the '
-                             'Storage Service')
-    parser.add_argument('--dbstatus', action="store_true",
-                        help='output log from the database')
-    parser.add_argument('--logging', type=str, nargs="?",
-                        help='logging level, INFO, DEBUG, WARNING, ERROR')
+    parser.add_argument(
+        "--config", type=str, help="REQUIRED: configure the script", required=True
+    )
+    parser.add_argument(
+        "--listcompressedaips",
+        action="store_true",
+        help="list compressed AIPs in storage",
+    )
+    parser.add_argument(
+        "--compareaiplist",
+        type=str,
+        help="compare stored compressed aips with an existing" " list",
+    )
+    parser.add_argument(
+        "--processfromlist", type=str, help="reingest from a list of UUIDs"
+    )
+    parser.add_argument(
+        "--processfromstorage",
+        action="store_true",
+        help="reingest compressed AIPs from the " "Storage Service",
+    )
+    parser.add_argument(
+        "--dbstatus", action="store_true", help="output log from the database"
+    )
+    parser.add_argument(
+        "--logging",
+        type=str,
+        nargs="?",
+        help="logging level, INFO, DEBUG, WARNING, ERROR",
+    )
 
     if not len(sys.argv) > 2:
         parser.print_help()
@@ -386,12 +421,14 @@ def main():
     # Retrieve configuration details from our JSON file.
     config = setup_reingest(args.config)
 
-    logging_path = config['logging']['path']
-    logging_default = config['logging']['default'].upper()
-    if args.logging is None or args.logging not in ["INFO",
-                                                    "DEBUG",
-                                                    "WARNING",
-                                                    "ERROR"]:
+    logging_path = config["logging"]["path"]
+    logging_default = config["logging"]["default"].upper()
+    if args.logging is None or args.logging not in [
+        "INFO",
+        "DEBUG",
+        "WARNING",
+        "ERROR",
+    ]:
 
         loggingconfig.setup(logging_default, logging_path)
     else:
@@ -402,24 +439,26 @@ def main():
 
     # Perform some early checks to make sure this process will work. Check now,
     # exit early.
-    pipeline_uuid = config['reingest']['pipeline']
+    pipeline_uuid = config["reingest"]["pipeline"]
 
     if not pipeline_exists(amclient, pipeline_uuid):
         LOGGER.error("Pipeline does not exist to reingest on. Exiting.")
         sys.exit(ERR_PROCESSING)
 
-    processing_config = config['reingest']['processing_config']
+    processing_config = config["reingest"]["processing_config"]
     if not processing_exists(amclient, processing_config):
-        LOGGER.error("Processing config does not exist to reingest with. "
-                     "Exiting.")
+        LOGGER.error("Processing config does not exist to reingest with. " "Exiting.")
         sys.exit(ERR_PROCESSING)
 
     # Throttle  and approval retries are useful pieces of information to
     # grab early.
-    throttle = config['reingest']['throttle']
-    approval_retries = config['reingest']['approval_retries']
-    LOGGER.info("Processing throttle set to %s, "
-                "approval retries set to %s", throttle, approval_retries)
+    throttle = config["reingest"]["throttle"]
+    approval_retries = config["reingest"]["approval_retries"]
+    LOGGER.info(
+        "Processing throttle set to %s, " "approval retries set to %s",
+        throttle,
+        approval_retries,
+    )
 
     # Once our preliminary checks are out of the way we can start to probe
     # the Storage Service a little more for matching AIPs.
@@ -436,19 +475,22 @@ def main():
             list1 = comparelist  # user-list
             list2 = aips.keys()
             if set(list1) == set(list2):
-                LOGGER.info("Both lists of compressed AIPs are identical. "
-                            "Recommendation is to proceed with reingest")
+                LOGGER.info(
+                    "Both lists of compressed AIPs are identical. "
+                    "Recommendation is to proceed with reingest"
+                )
             else:
-                print("Difference in user set: %s",
-                      list(set(list1) - set(list2)))
-                print("Difference in Storage Service set: %s",
-                      list(set(list2) - set(list1)))
+                print("Difference in user set: %s", list(set(list1) - set(list2)))
+                print(
+                    "Difference in Storage Service set: %s",
+                    list(set(list2) - set(list1)),
+                )
         sys.exit()
 
     # At this stage we're going to start processing, so setup a PID to
     # work with.
     manage_process(config)
-    dbpath = config['database']['path']
+    dbpath = config["database"]["path"]
     reingestunit.init(dbpath)
     session = reingestunit.Session()
 
@@ -480,11 +522,14 @@ def main():
     update_reingest(session=session, amclient=amclient)
 
     # Start as many ingests from the pool as we can per throttle.
-    complete = start_reingest(session=session, amclient=amclient,
-                              pipeline_uuid=pipeline_uuid,
-                              processing_config=processing_config,
-                              throttle=throttle,
-                              approval_retries=approval_retries)
+    complete = start_reingest(
+        session=session,
+        amclient=amclient,
+        pipeline_uuid=pipeline_uuid,
+        processing_config=processing_config,
+        throttle=throttle,
+        approval_retries=approval_retries,
+    )
 
     # If there are no new AIPs and none in progress, then complete this work
     # by outputting some information about the process.
@@ -492,5 +537,5 @@ def main():
         get_completion_stats(session=session)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

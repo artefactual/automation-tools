@@ -13,9 +13,10 @@ transfer_session = None
 class Unit(Base):
     """Object that represents transfer units in the automation tools database.
     """
-    __tablename__ = 'unit'
 
-    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    __tablename__ = "unit"
+
+    id = Column(Integer, Sequence("user_id_seq"), primary_key=True)
     uuid = Column(String(36))
     path = Column(LargeBinary())
     unit_type = Column(String(10))  # ingest or transfer
@@ -24,16 +25,17 @@ class Unit(Base):
     current = Column(Boolean(create_constraint=False))
 
     def __repr__(self):
-        return ("<Unit(id={s.id}, uuid={s.uuid}, unit_type={s.unit_type}, "
-                "path={s.path}, status={s.status}, current={s.current})>"
-                .format(s=self))
+        return (
+            "<Unit(id={s.id}, uuid={s.uuid}, unit_type={s.unit_type}, "
+            "path={s.path}, status={s.status}, current={s.current})>".format(s=self)
+        )
 
 
 def init_session(databasefile):
     """Initialize the database given a database filename and initiate the
     database session to use throughout our transactions.
     """
-    engine = create_engine('sqlite:///{}'.format(databasefile), echo=False)
+    engine = create_engine("sqlite:///{}".format(databasefile), echo=False)
     global Session
     Session = scoped_session(sessionmaker())
     Session.configure(bind=engine)
@@ -65,8 +67,7 @@ def retrieve_unit_by_type_and_uuid(uuid, unit_type):
     """Given a unit_type and uuid for that unit, return the unit object that
     represents it.
     """
-    return transfer_session.query(Unit).\
-        filter_by(unit_type=unit_type, uuid=uuid).one()
+    return transfer_session.query(Unit).filter_by(unit_type=unit_type, uuid=uuid).one()
 
 
 def _update_unit(uuid, path, unit_type, status, current, microservice=""):
@@ -74,8 +75,13 @@ def _update_unit(uuid, path, unit_type, status, current, microservice=""):
     a single atomic transaction.
     """
     unit = Unit(
-        uuid=uuid, path=path, unit_type=unit_type, status=status,
-        current=current, microservice=microservice)
+        uuid=uuid,
+        path=path,
+        unit_type=unit_type,
+        status=status,
+        current=current,
+        microservice=microservice,
+    )
     transfer_session.add(unit)
     transfer_session.commit()
     return unit
@@ -84,15 +90,15 @@ def _update_unit(uuid, path, unit_type, status, current, microservice=""):
 def add_new_transfer(uuid, path):
     """Add a new transfer unit to the database."""
     return _update_unit(
-        uuid=uuid, path=path, unit_type="transfer", status="",
-        current=True)
+        uuid=uuid, path=path, unit_type="transfer", status="", current=True
+    )
 
 
 def transfer_failed_to_start(path):
     """Update a unit when its transfer has failed to start."""
     _update_unit(
-        uuid="", path=path, unit_type="transfer", status="FAILED",
-        current=False)
+        uuid="", path=path, unit_type="transfer", status="FAILED", current=False
+    )
 
 
 def failed_to_approve(path):
@@ -100,8 +106,8 @@ def failed_to_approve(path):
     tools.
     """
     return _update_unit(
-        uuid=None, path=path, unit_type="transfer", status="",
-        current=False)
+        uuid=None, path=path, unit_type="transfer", status="", current=False
+    )
 
 
 def update_unit_type_and_uuid(unit, unit_type, uuid):

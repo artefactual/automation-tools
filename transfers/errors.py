@@ -11,7 +11,7 @@ error_codes = {
     ERR_PARSE_JSON: "Could not parse JSON resposne, check amclient log",
     ERR_SERVER_CONN: "Error connecting to the server, check amclient log",
     ERR_CLIENT_UNKNOWN: "Unknown return from amclient, check logs",
-    ERR_INVALID_URL: "Invalid URL passed to AM Client"
+    ERR_INVALID_URL: "Invalid URL passed to AM Client",
 }
 
 

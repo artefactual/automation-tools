@@ -26,9 +26,7 @@ from transfers import transfer
 from transfers.loggingconfig import set_log_level
 from transfers.models import Unit
 from transfers.transferargs import get_parser
-from transfers.transfer import (
-    LOGGER, get_next_transfer, get_accession_id, main
-)
+from transfers.transfer import LOGGER, get_next_transfer, get_accession_id, main
 from transfers.utils import fsencode
 
 
@@ -36,33 +34,49 @@ class DashboardAPIError(Exception):
     """Dashboard API error."""
 
 
-def _api_create_package(am_url, am_user, am_api_key,
-                        name, package_type, accession,
-                        ts_location_uuid, ts_path):
-    url = am_url + '/api/v2beta/package/'
-    headers = {
-        'Authorization': 'ApiKey {}:{}'.format(am_user, am_api_key)
-    }
+def _api_create_package(
+    am_url,
+    am_user,
+    am_api_key,
+    name,
+    package_type,
+    accession,
+    ts_location_uuid,
+    ts_path,
+):
+    url = am_url + "/api/v2beta/package/"
+    headers = {"Authorization": "ApiKey {}:{}".format(am_user, am_api_key)}
     data = {
-        'name': name,
-        'type': package_type,
-        'accession': accession,
-        'path': base64.b64encode(fsencode(ts_location_uuid) + b':' + ts_path),
+        "name": name,
+        "type": package_type,
+        "accession": accession,
+        "path": base64.b64encode(fsencode(ts_location_uuid) + b":" + ts_path),
     }
-    LOGGER.debug('URL: %s; Headers: %s, Data: %s', url, headers, data)
+    LOGGER.debug("URL: %s; Headers: %s, Data: %s", url, headers, data)
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
-    LOGGER.debug('Response: %s', response)
+    LOGGER.debug("Response: %s", response)
     resp_json = response.json()
-    error = resp_json.get('error')
+    error = resp_json.get("error")
     if error:
         raise DashboardAPIError(error)
     return resp_json
 
 
-def _start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
-                    depth, am_url, am_user, am_api_key, transfer_type,
-                    see_files, session):
+def _start_transfer(
+    ss_url,
+    ss_user,
+    ss_api_key,
+    ts_location_uuid,
+    ts_path,
+    depth,
+    am_url,
+    am_user,
+    am_api_key,
+    transfer_type,
+    see_files,
+    session,
+):
     """
     Start a new transfer.
 
@@ -91,12 +105,19 @@ def _start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
     # Start new transfer
     completed = {x[0] for x in session.query(Unit.path).all()}
     target = get_next_transfer(
-        ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path, depth,
-        completed, see_files)
+        ss_url,
+        ss_user,
+        ss_api_key,
+        ts_location_uuid,
+        ts_path,
+        depth,
+        completed,
+        see_files,
+    )
     if not target:
         LOGGER.warning(
-            "All potential transfers in %s have been created. Exiting",
-            ts_path)
+            "All potential transfers in %s have been created. Exiting", ts_path
+        )
         return None
     LOGGER.info("Starting with %s", target)
     # Get accession ID
@@ -105,46 +126,54 @@ def _start_transfer(ss_url, ss_user, ss_api_key, ts_location_uuid, ts_path,
 
     try:
         result = _api_create_package(
-            am_url, am_user, am_api_key,
-            os.path.basename(target), transfer_type, accession,
-            ts_location_uuid, target,
+            am_url,
+            am_user,
+            am_api_key,
+            os.path.basename(target),
+            transfer_type,
+            accession,
+            ts_location_uuid,
+            target,
         )
-    except (requests.exceptions.HTTPError,
-            ValueError, DashboardAPIError) as err:
-        LOGGER.error('Unable to start transfer: %s', err)
+    except (requests.exceptions.HTTPError, ValueError, DashboardAPIError) as err:
+        LOGGER.error("Unable to start transfer: %s", err)
         new_transfer = Unit(
-            path=target, unit_type='transfer', status='FAILED', current=False)
+            path=target, unit_type="transfer", status="FAILED", current=False
+        )
         session.add(new_transfer)
         return None
 
-    LOGGER.info('Package created: %s', result['id'])
+    LOGGER.info("Package created: %s", result["id"])
     new_transfer = Unit(
-        uuid=result['id'], path=target, unit_type='transfer', current=True)
-    LOGGER.info('New transfer: %s', new_transfer)
+        uuid=result["id"], path=target, unit_type="transfer", current=True
+    )
+    LOGGER.info("New transfer: %s", new_transfer)
     session.add(new_transfer)
 
     return new_transfer
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = get_parser(__doc__)
     args = parser.parse_args()
 
     # Override ``start_transfer`` function.
     transfer.start_transfer = _start_transfer
 
-    sys.exit(main(
-        am_user=args.user,
-        am_api_key=args.api_key,
-        ss_user=args.ss_user,
-        ss_api_key=args.ss_api_key,
-        ts_uuid=args.transfer_source,
-        ts_path=args.transfer_path,
-        depth=args.depth,
-        am_url=args.am_url,
-        ss_url=args.ss_url,
-        transfer_type=args.transfer_type,
-        see_files=args.files,
-        hide_on_complete=args.hide,
-        log_level=set_log_level(args.log_level, args.quiet, args.verbose),
-    ))
+    sys.exit(
+        main(
+            am_user=args.user,
+            am_api_key=args.api_key,
+            ss_user=args.ss_user,
+            ss_api_key=args.ss_api_key,
+            ts_uuid=args.transfer_source,
+            ts_path=args.transfer_path,
+            depth=args.depth,
+            am_url=args.am_url,
+            ss_url=args.ss_url,
+            transfer_type=args.transfer_type,
+            see_files=args.files,
+            hide_on_complete=args.hide,
+            log_level=set_log_level(args.log_level, args.quiet, args.verbose),
+        )
+    )
