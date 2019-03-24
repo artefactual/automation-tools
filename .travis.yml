@@ -1,9 +1,14 @@
 ---
 
 sudo: false
+dist: xenial
 
 language: python
 cache: pip
+
+branches:
+  only:
+    - master
 
 addons:
   apt:
@@ -32,3 +37,8 @@ matrix:
 
     - python: "3.6"
       env: TOXENV=py36-flake8
+
+    # Linters
+
+    - python: "3.7"
+      env: TOXENV=linting
