@@ -32,7 +32,8 @@ class TestAtomUpload(unittest.TestCase):
 
         assert ret is None
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/deposit_fail.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_atom_upload_deposit_fail.yaml')
     def test_deposit_fail(self):
         self.assertRaises(
             Exception,
@@ -44,7 +45,8 @@ class TestAtomUpload(unittest.TestCase):
             DIP_PATH
         )
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/deposit_success.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_atom_upload_deposit_success.yaml')
     def test_deposit_success(self):
         ret = atom_upload.deposit(
             ATOM_URL,

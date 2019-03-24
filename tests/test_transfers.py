@@ -65,7 +65,8 @@ class TestAutomateTransfers(unittest.TestCase):
                    ),
         ]
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_status_transfer.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_transfers_get_status_transfer.yaml')
     def test_get_status_transfer(self):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
         transfer_name = 'test1'
@@ -82,7 +83,7 @@ class TestAutomateTransfers(unittest.TestCase):
                                 'standardTransfer/test1/')
 
     @vcr.use_cassette('fixtures/vcr_cassettes/'
-                      'get_status_transfer_to_ingest.yaml')
+                      'test_transfers_get_status_transfer_to_ingest.yaml')
     def test_get_status_transfer_to_ingest(self):
         # Reference values
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
@@ -107,7 +108,8 @@ class TestAutomateTransfers(unittest.TestCase):
                                 'selectFormatIDToolIngest/'
                                 'test1-f2248e2a-b593-43db-b60c-fa8513021785/')
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_status_ingest.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_transfers_get_status_ingest.yaml')
     def test_get_status_ingest(self):
         sip_uuid = 'f2248e2a-b593-43db-b60c-fa8513021785'
         sip_name = 'test1'
@@ -124,7 +126,8 @@ class TestAutomateTransfers(unittest.TestCase):
                                 'selectFormatIDToolIngest/'
                                 'test1-f2248e2a-b593-43db-b60c-fa8513021785/')
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_status_no_unit.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_transfers_get_status_no_unit.yaml')
     def test_get_status_no_unit(self):
         transfer_uuid = 'deadc0de-c0de-c0de-c0de-deadc0dec0de'
         info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER,
@@ -132,7 +135,8 @@ class TestAutomateTransfers(unittest.TestCase):
         self.assertEqual(info,
                          errors.error_lookup(errors.ERR_INVALID_RESPONSE))
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_status_not_json.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_transfers_get_status_not_json.yaml')
     def test_get_status_not_json(self):
         transfer_uuid = 'dfc8cf5f-b5b1-408c-88b1-34215964e9d6'
         info = transfer.get_status(AM_URL, USER, API_KEY, SS_URL, SS_USER,
@@ -145,7 +149,7 @@ class TestAutomateTransfers(unittest.TestCase):
         self.assertEqual(accession_id, None)
 
     @vcr.use_cassette('fixtures/vcr_cassettes/'
-                      'get_next_transfer_first_run.yaml')
+                      'test_transfers_get_next_transfer_first_run.yaml')
     def test_get_next_transfer_first_run(self):
         # All default values
         # Test
@@ -156,7 +160,7 @@ class TestAutomateTransfers(unittest.TestCase):
         self.assertEqual(path, b'SampleTransfers/BagTransfer')
 
     @vcr.use_cassette('fixtures/vcr_cassettes/'
-                      'get_next_transfer_existing_set.yaml')
+                      'test_transfers_get_next_transfer_existing_set.yaml')
     def test_get_next_transfer_existing_set(self):
         # Set completed set
         completed = {b'SampleTransfers/BagTransfer'}
@@ -167,7 +171,8 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, b'SampleTransfers/CSVmetadata')
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_depth.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_transfers_get_next_transfer_depth.yaml')
     def test_get_next_transfer_depth(self):
         # Set depth
         depth = 2
@@ -179,7 +184,7 @@ class TestAutomateTransfers(unittest.TestCase):
         self.assertEqual(path, b'SampleTransfers/BagTransfer/data')
 
     @vcr.use_cassette('fixtures/vcr_cassettes/'
-                      'get_next_transfer_no_prefix.yaml')
+                      'test_transfers_get_next_transfer_no_prefix.yaml')
     def test_get_next_transfer_no_prefix(self):
         # Set no prefix
         path_prefix = b''
@@ -191,7 +196,7 @@ class TestAutomateTransfers(unittest.TestCase):
         self.assertEqual(path, b'OPF format-corpus')
 
     @vcr.use_cassette('fixtures/vcr_cassettes/'
-                      'get_next_transfer_all_complete.yaml')
+                      'test_transfers_get_next_transfer_all_complete.yaml')
     def test_get_next_transfer_all_complete(self):
         # Set completed set to be all elements
         completed = {b'SampleTransfers/BagTransfer',
@@ -213,7 +218,8 @@ class TestAutomateTransfers(unittest.TestCase):
         self.assertEqual(path, None)
 
     @vcr.use_cassette(
-        'fixtures/vcr_cassettes/get_next_transfer_bad_source.yaml')
+        'fixtures/vcr_cassettes/'
+        'test_transfers_get_next_transfer_bad_source.yaml')
     def test_get_next_transfer_bad_source(self):
         # Set bad TS Location UUID
         ts_location_uuid = 'badd8d39-9cee-495e-b7ee-5e6292549bad'
@@ -224,7 +230,8 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, None)
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/get_next_transfer_files.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_transfers_get_next_transfer_files.yaml')
     def test_get_next_transfer_files(self):
         # See files
         files = True
@@ -237,7 +244,8 @@ class TestAutomateTransfers(unittest.TestCase):
         self.assertEqual(path, b'SampleTransfers/BagTransfer.zip')
 
     @vcr.use_cassette(
-        'fixtures/vcr_cassettes/get_next_transfer_failed_auth.yaml')
+        'fixtures/vcr_cassettes/'
+        'test_transfers_get_next_transfer_failed_auth.yaml')
     def test_get_next_transfer_failed_auth(self):
         # All default values
         ss_user = 'demo'
@@ -250,7 +258,7 @@ class TestAutomateTransfers(unittest.TestCase):
         self.assertEqual(path, None)
 
     @vcr.use_cassette(
-        'fixtures/vcr_cassettes/test_transfer_approve_transfer.yaml')
+        'fixtures/vcr_cassettes/test_transfers_approve_transfer.yaml')
     def test_approve_transfer(self):
         """Test the process of approving transfers and make sure that the
         outcome is as expected.
@@ -274,7 +282,8 @@ class TestAutomateTransfers(unittest.TestCase):
             assert res == test.expected
 
     @vcr.use_cassette(
-        'fixtures/vcr_cassettes/test_call_start_transfer_endpoint.yaml')
+        'fixtures/vcr_cassettes/'
+        'test_transfers_call_start_transfer_endpoint.yaml')
     def test_call_start_transfer_endpoint(self):
         """Archivematica will rename a transfer if it is already trying to
         start one with an identical name. In the tests below, we observe (and
@@ -298,7 +307,8 @@ class TestAutomateTransfers(unittest.TestCase):
         "transfers.transfer.approve_transfer",
         return_value="4bd2006a-1178-4695-9463-5c72eec6257a")
     @vcr.use_cassette(
-        'fixtures/vcr_cassettes/test_call_start_transfer_endpoint.yaml')
+        'fixtures/vcr_cassettes/'
+        'test_transfers_call_start_transfer_endpoint.yaml')
     def test_call_start_transfer(self, mock_approve_transfer):
         """Provide an integration test as best as we can for the
         transfer.start_transfer function where the returned values are crucial

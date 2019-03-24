@@ -23,7 +23,8 @@ OUTPUT_DIR = os.path.join(TMP_DIR, 'output')
 
 
 class TestCreateDip(unittest.TestCase):
-    @vcr.use_cassette('fixtures/vcr_cassettes/download_aip_success.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_create_dip_download_aip_success.yaml')
     def test_extract_aip_success(self):
         """Test that we can download and extract an AIP."""
         with TmpDir(TMP_DIR):
@@ -46,7 +47,8 @@ class TestCreateDip(unittest.TestCase):
         aip_dir = create_dip.extract_aip('bad_path', AIP_UUID, TMP_DIR)
         assert aip_dir is None
 
-    @vcr.use_cassette('fixtures/vcr_cassettes/download_aip_success.yaml')
+    @vcr.use_cassette(
+        'fixtures/vcr_cassettes/test_create_dip_download_aip_success.yaml')
     def test_create_dip_success(self):
         """
         Test full DIP creation:
