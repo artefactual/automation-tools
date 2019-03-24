@@ -19,6 +19,7 @@ import subprocess
 import sys
 import time
 
+from amclient import AMClient
 import requests
 from six.moves import configparser
 from sqlalchemy.orm.exc import NoResultFound
@@ -27,7 +28,6 @@ from sqlalchemy.orm.exc import NoResultFound
 # by ensuring that it can see itself.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from amclient import AMClient
 from transfers import defaults, errors, loggingconfig, models, utils
 from transfers.transferargs import get_parser
 from transfers.utils import fsencode, fsdecode

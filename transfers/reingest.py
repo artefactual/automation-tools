@@ -20,9 +20,8 @@ import os
 import time
 import sys
 
-from six import string_types, text_type
-
 from amclient import AMClient
+from six import string_types, text_type
 
 # Allow execution as an executable and the script to be run at package level
 # by ensuring that it can see itself.
