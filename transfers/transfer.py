@@ -191,7 +191,7 @@ def get_accession_id(dirname):
             stderr=subprocess.PIPE,
         )
     except OSError as err:
-        LOGGER.warning("Error when trying to run %s", script_path)
+        LOGGER.warning("Error: %s when trying to run %s", err, script_path)
         return None
     output, err = p.communicate()
     if p.returncode != 0:

@@ -63,7 +63,7 @@ def test_get_functions(setup_session):
     assert unit_one.uuid == transfer_one_uuid
     assert unit_two.uuid == transfer_two_uuid
     all_processed_paths = models.get_processed_transfer_paths()
-    assert len(all_processed_paths) is 2
+    assert len(all_processed_paths) == 2
 
 
 def test_start_Transfer_unit_state(setup_session):
