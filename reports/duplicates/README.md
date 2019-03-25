@@ -5,6 +5,15 @@ store.
 
 ## Configuration
 
+**Python**
+
+The duplicates module has its own dependencies. To ensure it can run, please 
+install these first: 
+
+* `$ sudo pip install -r requirements.txt`
+
+**Storage Service**
+
 To configure your report, modify [config.json](config.json) with information
 about how to connect to your Storage Service, e.g.
 ```json
