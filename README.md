@@ -64,7 +64,7 @@ Installing automation-tools in Docker
 Run each line below to install automation-tools in a Docker environment:
 
 ```bash
-sudo docker exec -it compose_archivematica-dashboard_1 /bin/bash 
+sudo docker exec -it compose_archivematica-dashboard_1 /bin/bash
 apt-get update
 mkdir /usr/lib/archivematica
 mkdir /usr/lib/archivematica/automation-tools
