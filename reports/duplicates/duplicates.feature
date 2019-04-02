@@ -1,6 +1,6 @@
 Feature: Identify true duplicates in your Archivematica AIP store.
 
-Background: A checksum match might indicate that duplicate objects exist in your Archivematica AIP archival storage but further analysis of the object’s context will determine whether you have identified a “true” duplicate in the archival sense (i.e. the context of creation and use is identical).
+Background: Alma uses checksums and archival context to determine "true" duplicate items in their collection (i.e. the context of creation and use is identical).
 
 Scenario: Detect a true duplicate file
 	Given an AIP has been ingested
