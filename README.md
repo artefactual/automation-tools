@@ -58,6 +58,32 @@ log/database/PID files.
 files there. Files in the `etc/` directory of this repository can be used as an
 example (also see below for more about configuration)
 
+Installing automation-tools in Docker
+-------------------------------------
+
+Run each line below to install automation-tools in a Docker environment:
+
+```bash
+sudo docker exec -it compose_archivematica-dashboard_1 /bin/bash 
+apt-get update
+mkdir /usr/lib/archivematica
+mkdir /usr/lib/archivematica/automation-tools
+cd /usr/lib/archivematica/automation-tools/
+git clone https://github.com/artefactual/automation-tools.git .
+mkdir /usr/share/python/automation-tools
+cd /usr/share/python/automation-tools
+virtualenv .env
+source .env/bin/activate
+pip install -r /usr/lib/archivematica/automation-tools/requirements.txt
+mkdir /var/log/archivematica
+mkdir /var/log/archivematica/automation-tools
+mkdir /var/archivematica/automation-tools
+chown archivematica:archivematica /var/log/archivematica/automation-tools
+chown archivematica:archivematica /var/archivematica/automation-tools
+mkdir /etc/archivematica/automation-tools
+apt-get install p7zip-full
+```
+
 Automated transfers
 -------------------
 
