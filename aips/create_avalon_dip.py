@@ -1,37 +1,34 @@
 #!/usr/bin/env python
 """
-Create DIP from AIP
+Create Avalon DIP
 
-Downloads an AIP from the Storage Service and creates a DIP. Unlike DIPs created
-in Archivematica, the ones created with this script will include only the original
-files from the transfer and they will maintain the directories, filenames and last
-modified date from those files. They will be placed in a single ZIP file under the
-objects directory which will also include a copy of the submissionDocumentation
-folder (if present in the AIP) and the AIP METS file. Another METS file will be
-generated alongside the objects folder containing only a reference to the ZIP file
-(without AMD or DMD sections).
+This script creates a DIP suitable for deposit into an Avalon Media System dropbox.
+1. Downloads an AIP from the Storage Service,
+2. Creates a DIP with only assets included,
+3. Finds and updates root-level CSV with UUID fields,
+4. Moves DIP to folder with transfer name in specified output directory.
 """
 
 import argparse
+import csv
 import logging
 import logging.config  # Has to be imported separately
 import os
 import sys
 import subprocess
 import shutil
-import uuid
 
 import amclient
 import metsrw
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-LOGGER = logging.getLogger("create_dip")
+LOGGER = logging.getLogger("create_avalon_dip")
 
 
 def setup_logger(log_file, log_level="INFO"):
     """Configures the logger to output to console and log file"""
     if not log_file:
-        log_file = os.path.join(THIS_DIR, "create_dip.log")
+        log_file = os.path.join(THIS_DIR, "create_avalon_dip.log")
 
     CONFIG = {
         "version": 1,
@@ -53,7 +50,7 @@ def setup_logger(log_file, log_level="INFO"):
             },
         },
         "loggers": {
-            "create_dip": {"level": log_level, "handlers": ["console", "file"]}
+            "create_avalon_dip": {"level": log_level, "handlers": ["console", "file"]}
         },
     }
 
@@ -105,7 +102,7 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir, output_dir):
         return 5
 
     LOGGER.info("Creating DIP")
-    dip_dir = create_dip(aip_dir, aip_uuid, output_dir)
+    dip_dir = create_avalon_dip(aip_dir, aip_uuid, output_dir)
 
     if not dip_dir:
         LOGGER.error("Unable to create DIP")
@@ -115,6 +112,8 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir, output_dir):
     shutil.rmtree(tmp_dir)
 
     LOGGER.info("DIP created in: %s", dip_dir)
+
+    # Move into Collection folder
 
 
 def extract_aip(aip_file, aip_uuid, tmp_dir):
@@ -156,7 +155,7 @@ def extract_aip(aip_file, aip_uuid, tmp_dir):
     return extract_aip(extracted_entry, aip_uuid, tmp_dir)
 
 
-def create_dip(aip_dir, aip_uuid, output_dir):
+def create_avalon_dip(aip_dir, aip_uuid, output_dir):
     """
     Creates a DIP from an uncompressed AIP.
 
@@ -166,32 +165,17 @@ def create_dip(aip_dir, aip_uuid, output_dir):
     :returns: absolute path to the created DIP folder
     """
     aip_name = os.path.basename(aip_dir)[:-37]
-    dip_dir = os.path.join(output_dir, "{}_{}_DIP".format(aip_name, aip_uuid))
-    objects_dir = os.path.join(dip_dir, "objects")
-    to_zip_dir = os.path.join(objects_dir, aip_name)
+    dip_dir = os.path.join(output_dir, "{}/{}".format(aip_name, aip_uuid))
 
     if os.path.exists(dip_dir):
         LOGGER.warning("DIP folder already exists, overwriting")
         shutil.rmtree(dip_dir)
-    os.makedirs(to_zip_dir)
-
-    LOGGER.info("Moving submissionDocumentation folder")
-    aip_sub_doc = "{}/data/objects/submissionDocumentation".format(aip_dir)
-    if os.path.exists(aip_sub_doc):
-        to_zip_sub_doc = os.path.join(to_zip_dir, "submissionDocumentation")
-        shutil.move(aip_sub_doc, to_zip_sub_doc)
-    else:
-        LOGGER.warning("submissionDocumentation folder not found")
+    os.makedirs(dip_dir)
 
     LOGGER.info("Moving METS file")
     aip_mets_file = "{}/data/METS.{}.xml".format(aip_dir, aip_uuid)
-    if not os.path.exists(aip_mets_file):
-        LOGGER.error("Could not find AIP METS file")
-        return
-    to_zip_mets_file = "{}/METS.{}.xml".format(to_zip_dir, aip_uuid)
-    shutil.move(aip_mets_file, to_zip_mets_file)
 
-    mets = metsrw.METSDocument.fromfile(to_zip_mets_file)
+    mets = metsrw.METSDocument.fromfile(aip_mets_file)
     namespaces = metsrw.utils.NAMESPACES.copy()
     premis_map = metsrw.plugins.premisrw.utils.PREMIS_VERSIONS_MAP
     fsentries = mets.all_files()
@@ -222,6 +206,7 @@ def create_dip(aip_dir, aip_uuid, output_dir):
             continue
 
         premis = techmd.contents.document
+
         # Update PREMIS namespace based on version attribute
         premis_version = premis.get("version", "2.2")
         try:
@@ -231,6 +216,7 @@ def create_dip(aip_dir, aip_uuid, output_dir):
                 "Could not update namespace for PREMIS version: %s" % premis_version
             )
         original_name = premis.findtext("premis:originalName", namespaces=namespaces)
+
         if not original_name:
             LOGGER.warning("premis:originalName could not be found")
             continue
@@ -240,78 +226,44 @@ def create_dip(aip_dir, aip_uuid, output_dir):
             LOGGER.warning("premis:originalName not starting with %s", string_start)
             continue
 
-        # Move original file with original name and create parent folders
-        dip_file_path = os.path.join(to_zip_dir, original_name[27:])
+        # Move original file with original name
+        dip_file_path = os.path.join(dip_dir, original_name[27:])
         dip_dir_path = os.path.dirname(dip_file_path)
         if not os.path.exists(dip_dir_path):
             os.makedirs(dip_dir_path)
 
         shutil.move(aip_file_path, dip_file_path)
 
-        # Obtain and set the fslastmodified date to the moved files
-        fslastmodified = premis.findtext(
-            "premis:objectCharacteristics/premis:objectCharacteristicsExtension/fits:fits/fits:fileinfo/fits:fslastmodified",
-            namespaces=namespaces,
-        )
-        if not fslastmodified:
-            LOGGER.warning("fits/fileinfo/fslastmodified not found")
-            continue
+    # Update Manifest file with UUIDs
+    files = os.listdir(dip_dir)
+    paths = [fn for fn in files if fn.endswith(".csv")]
+    csv_path = ""
+    if len(paths) and not len(paths) > 1:
+        csv_path = dip_dir + "/" + paths[0]
+        tmp_csv_path = dip_dir + "/tmp.csv"
+        with open(csv_path, "r") as csv_input, open((tmp_csv_path), "w") as csv_output:
+            reader = csv.reader(csv_input)
+            writer = csv.writer(csv_output, lineterminator="\n")
 
-        # Convert from miliseconds to seconds
-        timestamp = int(fslastmodified) // 1000
-        os.utime(dip_file_path, (timestamp, timestamp))
+            all = []
+            # Skip row one, Add to row two
+            first_row = next(reader)
+            row = next(reader)
+            row.append("Other Identifier")
+            row.append("Other Identifier Label")
+            all.append(first_row)
+            all.append(row)
 
-    # Modify METS file for DIP
-    objects_entry = None
-    for fsentry in fsentries:
-        # Do not delete AIP entry
-        if (
-            fsentry.label == os.path.basename(aip_dir)
-            and fsentry.type.lower() == "directory"
-        ):
-            continue
+            for row in reader:
+                row.append(aip_uuid)
+                row.append("other")
+                all.append(row)
 
-        # Do not delete objects entry and save it for parenting
-        if fsentry.label == "objects" and fsentry.type.lower() == "directory":
-            objects_entry = fsentry
-            continue
+            writer.writerows(all)
+        os.rename(tmp_csv_path, csv_path)
 
-        # Delete all the others
-        mets.remove_entry(fsentry)
-
-    if not objects_entry:
-        LOGGER.error("Could not find objects entry in METS file")
-        return
-
-    # Create new entry for ZIP file
-    entry = metsrw.FSEntry(
-        label="{}.zip".format(aip_name),
-        path="objects/{}.zip".format(aip_name),
-        file_uuid=str(uuid.uuid4()),
-    )
-
-    # Add new entry to objects directory
-    objects_entry.add_child(entry)
-
-    # Create DIP METS file
-    LOGGER.info("Creating DIP METS file")
-    dip_mets_file = "{}/METS.{}.xml".format(dip_dir, aip_uuid)
-    try:
-        mets.write(dip_mets_file, fully_qualified=True, pretty_print=True)
-    except Exception:
-        LOGGER.error("Could not create DIP METS file")
-        return
-
-    # Compress to_zip_dir inside the DIP objects folder
-    LOGGER.info("Compressing ZIP folder inside objects")
-    command = ["7z", "a", "-tzip", "{0}.zip".format(to_zip_dir), to_zip_dir]
-    try:
-        subprocess.check_output(command, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        LOGGER.error("Could not compress ZIP folder, error: %s", e.output)
-        return
-
-    shutil.rmtree(to_zip_dir)
+    if not csv_path:
+        LOGGER.error("Manifest file could not be found")
 
     return dip_dir
 
@@ -354,7 +306,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output-dir",
         metavar="PATH",
-        help="Absolute path to the directory used to place the final DIP. Default: /tmp",
+        help="Absolute path to the Avalon dropbox directory. Default: /tmp",
         default="/tmp",
     )
 
