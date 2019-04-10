@@ -47,45 +47,51 @@ Requirements
 Installation
 ------------
 
-* Checkout or link the code in this repo to
-`/usr/lib/archivematica/automation-tools`
-* Create virtualenv `/usr/share/python/automation-tools` and pip install
-requirements there
-* Create directories `/var/log/archivematica/automation-tools` and
-`/var/archivematica/automation-tools` owned by user `archivematica`, for
-log/database/PID files.
-* Create directory `/etc/archivematica/automation-tools` and add configuration
-files there. Files in the `etc/` directory of this repository can be used as an
-example (also see below for more about configuration)
+Follow each of the steps below to install automation-tools:
 
-Installing automation-tools in Docker
--------------------------------------
-
-Run each line below to install automation-tools in a Docker environment:
-
+Make the following directories
 ```bash
-sudo docker exec -it compose_archivematica-dashboard_1 /bin/bash
-apt-get update
-mkdir /usr/lib/archivematica
-mkdir /usr/lib/archivematica/automation-tools
-cd /usr/lib/archivematica/automation-tools/
-git clone https://github.com/artefactual/automation-tools.git .
+mkdir -p /usr/lib/archivematica/automation-tools
 mkdir /usr/share/python/automation-tools
-cd /usr/share/python/automation-tools
-virtualenv .env
-source .env/bin/activate
-pip install -r /usr/lib/archivematica/automation-tools/requirements.txt
-mkdir /var/log/archivematica
-mkdir /var/log/archivematica/automation-tools
+mkdir -p /var/log/archivematica/automation-tools
 mkdir /var/archivematica/automation-tools
-chown archivematica:archivematica /var/log/archivematica/automation-tools
-chown archivematica:archivematica /var/archivematica/automation-tools
 mkdir /etc/archivematica/automation-tools
-apt-get install p7zip-full
-apt-get install sudo
 ```
 
-You may also want/need to `apt-get install vim`.
+Change ownership of the directories to be owned by archivematica (group archivematica)
+
+```bash
+chown archivematica:archivematica /var/log/archivematica/automation-tools
+chown archivematica:archivematica /var/archivematica/automation-tools
+```
+
+Clone this automation-tools repository into your `usr/lib`
+
+```bash
+cd /usr/lib/archivematica/automation-tools/
+git clone https://github.com/artefactual/automation-tools.git .
+```
+
+Set up Python's virtual environment
+
+```bash
+cd /usr/share/python/automation-tools
+virtualenv venv
+source venv/bin/activate
+pip install -r /usr/lib/archivematica/automation-tools/requirements.txt
+```
+
+(Optional) Update and retrieve required packages
+
+```bash
+apt-get update
+apt-get install p7zip-full
+```
+
+You may also want/need to `apt-get install sudo && apt-get install vim`.
+
+To use automation-tools, `cp` the scripts you want to use into your
+`/etc/archivematica/automation-tools` directory.
 
 Automated transfers
 -------------------
