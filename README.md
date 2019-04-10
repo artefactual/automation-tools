@@ -82,7 +82,10 @@ chown archivematica:archivematica /var/log/archivematica/automation-tools
 chown archivematica:archivematica /var/archivematica/automation-tools
 mkdir /etc/archivematica/automation-tools
 apt-get install p7zip-full
+apt-get install sudo
 ```
+
+You may also want/need to `apt-get install vim`.
 
 Automated transfers
 -------------------
