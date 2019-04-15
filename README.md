@@ -133,7 +133,7 @@ python -m transfers.transfer \
 
 5. Change permissions setting on the script:
 
-`chmod -x transfer-script.sh`
+`chmod +x transfer-script.sh`
 
 This allows the script to be executible.
 
