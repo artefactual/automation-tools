@@ -44,14 +44,14 @@ automate the processing of transfers in an Archivematica pipeline.
 Requirements
 ------------
 
-* 7z (only for DIP creation script)
+- 7z (only for DIP creation script)
 
 Installation
 ------------
 
 Follow each of the steps below to install automation-tools:
 
-1. Make the following directories
+1. Make the following directories:
 
 ```bash
 mkdir -p /usr/lib/archivematica/automation-tools &&
@@ -61,22 +61,22 @@ mkdir /var/archivematica/automation-tools &&
 mkdir /etc/archivematica/automation-tools
 ```
 
-1. Change ownership of the directories to be owned by archivematica (group
-archivematica)
+2. Change ownership of the directories to be owned by archivematica (group
+   archivematica):
 
 ```bash
 chown archivematica:archivematica /var/log/archivematica/automation-tools &&
 chown archivematica:archivematica /var/archivematica/automation-tools
 ```
 
-1. Clone this automation-tools repository into your `usr/lib`
+3. Clone the automation-tools repository into your `usr/lib` directory:
 
 ```bash
 cd /usr/lib/archivematica/automation-tools/
 git clone https://github.com/artefactual/automation-tools.git .
 ```
 
-1. Set up Python's virtual environment
+4. Set up a Python virtual environment:
 
 ```bash
 cd /usr/share/python/automation-tools
@@ -85,34 +85,33 @@ source venv/bin/activate
 pip install -r /usr/lib/archivematica/automation-tools/requirements.txt
 ```
 
-1. (Optional) Update and retrieve required packages
+5. (Optional) Update and retrieve required packages:
 
 ```bash
 apt-get update
 apt-get install p7zip-full
 ```
 
-You may also want/need to `apt-get install sudo && apt-get install vim`.
-
-To use automation-tools, `cp` the scripts you want to use into your
+To use automation-tools, copy the scripts you want to use into your
 `/etc/archivematica/automation-tools` directory.
 
 Follow the steps below as an example for setting up a script.
 
-1. Copy the configuration file `cp
-   /usr/lib/archivematica/automation-tools/etc/transfers.conf
-   /etc/archivematica/automation-tools/`
+1. Copy the configuration file:
 
-1. Copy the bash script
+`cp /usr/lib/archivematica/automation-tools/etc/transfers.conf
+/etc/archivematica/automation-tools/`
+
+2. Copy the script:
 
 `cp /usr/lib/archivematica/automation-tools/etc/transfer-script.sh
 /etc/archivematica/automation-tools/`
 
-1. Create a transfer source for the automation-tools in the storage service
+3. Create a transfer source for the automation-tools in the storage service:
 
 You can use an existing transfer source, or set up a new one.
 
-1. Your default bash script should be configured along the lines of this:
+4. Your default script should be configured along the lines of this:
 
 `transfer-script.sh`:
 
@@ -132,9 +131,15 @@ python -m transfers.transfer \
  --config-file transfers.conf
 ```
 
-5. Run the shell script!
+5. Change permissions setting on the script:
 
-`$ ./transfer-script.sh` and you should have success!
+`chmod -x transfer-script.sh`
+
+This allows the script to be executible.
+
+6. Run the script:
+
+Run `./transfer-script.sh` and you should have success!
 
 Automated transfers
 -------------------
@@ -145,13 +150,14 @@ Only one transfer is sent to the pipeline at a time, the scripts wait until the
 current transfer is resolved (failed, rejected or stored as an AIP) before
 automatically starting the next available transfer.
 
-### Configuration
+Configuration
+-------------
 
 Suggested deployment is to use cron to run a shell script that runs the automate
 transfer tool. Example shell script (for example in
 `/etc/archivematica/automation-tools/transfer-script.sh`):
 
-```
+```bash
 #!/bin/bash
 cd /usr/lib/archivematica/automation-tools/
 /usr/share/python/automation-tools/bin/python -m transfers.transfer \
@@ -168,14 +174,14 @@ flag, this is required due to the use of relative imports in the code)
 
 The script can be run from a shell window like:
 
-```
+```bash
 user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./transfer-script.sh
 ```
 
 It is suggested to run the script through a crontab entry for user archivematica
 (to avoid the need to repeatedly invoke it manually):
 
-```
+```bash
 */5 * * * * /etc/archivematica/automation-tools/transfer-script.sh
 ```
 
@@ -184,7 +190,7 @@ It contains a record of all the transfers that have been processed. In a testing
 environment, deleting this file will cause the tools to re-process any and all
 folders found in the Transfer Source Location.
 
-#### Parameters
+### Parameters
 
 The `transfers.py` script can be modified to adjust how automated transfers
 work.  The full set of parameters that can be changed are:
