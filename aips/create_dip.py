@@ -192,6 +192,8 @@ def create_dip(aip_dir, aip_uuid, output_dir):
     shutil.move(aip_mets_file, to_zip_mets_file)
 
     mets = metsrw.METSDocument.fromfile(to_zip_mets_file)
+    namespaces = metsrw.utils.NAMESPACES.copy()
+    premis_map = metsrw.plugins.premisrw.utils.PREMIS_VERSIONS_MAP
     fsentries = mets.all_files()
     for fsentry in fsentries:
         if fsentry.use != "original" or not fsentry.path or not fsentry.file_uuid:
@@ -220,9 +222,15 @@ def create_dip(aip_dir, aip_uuid, output_dir):
             continue
 
         premis = techmd.contents.document
-        original_name = premis.findtext(
-            "premis:originalName", namespaces=metsrw.utils.NAMESPACES
-        )
+        # Update PREMIS namespace based on version attribute
+        premis_version = premis.get("version", "2.2")
+        try:
+            namespaces["premis"] = premis_map[premis_version]["namespaces"]["premis"]
+        except KeyError:
+            LOGGER.warning(
+                "Could not update namespace for PREMIS version: %s" % premis_version
+            )
+        original_name = premis.findtext("premis:originalName", namespaces=namespaces)
         if not original_name:
             LOGGER.warning("premis:originalName could not be found")
             continue
@@ -243,7 +251,7 @@ def create_dip(aip_dir, aip_uuid, output_dir):
         # Obtain and set the fslastmodified date to the moved files
         fslastmodified = premis.findtext(
             "premis:objectCharacteristics/premis:objectCharacteristicsExtension/fits:fits/fits:fileinfo/fits:fslastmodified",
-            namespaces=metsrw.utils.NAMESPACES,
+            namespaces=namespaces,
         )
         if not fslastmodified:
             LOGGER.warning("fits/fileinfo/fslastmodified not found")
