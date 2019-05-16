@@ -1,0 +1,52 @@
+interactions:
+- request:
+    body: '{"uuid": "e759c5e6-efd0-4996-863e-0f881d7d0b52", "origin_pipeline": "/api/v2/pipeline/88050c7f-36a3-4900-9294-5a0411d69303/",
+      "origin_location": "/api/v2/location/e6409b38-20e9-4739-bb4a-892f2fb300d3/",
+      "origin_path": "watchedDirectories/uploadDIP/fake_DIP/", "current_location":
+      "/api/v2/location/6bbd3dee-b52f-476f-8136-bb3f0d025096/", "current_path": "fake_DIP",
+      "package_type": "DIP", "aip_subtype": "Archival Information Package", "size":
+      0, "related_package_uuid": "b9cd796c-2231-42e6-9cd1-0236d22958fa", "events":
+      [], "agents": []}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - ApiKey test:test
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '538'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.21.0
+    method: POST
+    uri: http://localhost:62081/api/v2/file/async/
+  response:
+    body:
+      string: ''
+    headers:
+      Connection:
+      - keep-alive
+      Content-Language:
+      - en
+      Content-Type:
+      - text/html; charset=utf-8
+      Date:
+      - Thu, 09 May 2019 22:03:03 GMT
+      Location:
+      - http://localhost:62081/api/v2/async/24/
+      Server:
+      - nginx/1.14.0
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept, Accept-Language, Cookie
+      X-Frame-Options:
+      - SAMEORIGIN
+    status:
+      code: 202
+      message: ACCEPTED
+version: 1

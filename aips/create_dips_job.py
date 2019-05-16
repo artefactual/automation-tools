@@ -3,13 +3,11 @@
 Create DIPs from an SS location
 
 Get all AIPs from an existing SS instance, filtering them by location,
-creating DIPs using the create_dip.py script and keeping track of them
+creating DIPs using the `create_dip` script and keeping track of them
 in an SQLite database.
 
-POSSIBLE ENHANCEMENT: Add status to Aip table in database:
-The create_dip.main() function returns different error values, some of
-them could allow a retry of the DIP creation in following executions.
-More info in comments bellow.
+Optionally, uploads those DIPs to AtoM or the Storage Service using
+the scripts from `dips` and deletes the local copy.
 """
 
 import argparse
@@ -24,19 +22,16 @@ import amclient
 
 from aips import create_dip
 from aips import models
+from dips import atom_upload, storage_service_upload
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-LOGGER = logging.getLogger("create_dip")
-
-# POSSIBLE ENHANCEMENT:
-# Create Aip status constants, better in create_dip.py
-# and use them in its returns and in here.
+LOGGER = logging.getLogger("dip_workflow")
 
 
 def setup_logger(log_file, log_level="INFO"):
     """Configures the logger to output to console and log file"""
     if not log_file:
-        log_file = os.path.join(THIS_DIR, "create_dip.log")
+        log_file = os.path.join(THIS_DIR, "dip_workflow.log")
 
     CONFIG = {
         "version": 1,
@@ -58,7 +53,7 @@ def setup_logger(log_file, log_level="INFO"):
             },
         },
         "loggers": {
-            "create_dip": {"level": log_level, "handlers": ["console", "file"]}
+            "dip_workflow": {"level": log_level, "handlers": ["console", "file"]}
         },
     }
 
@@ -66,7 +61,24 @@ def setup_logger(log_file, log_level="INFO"):
 
 
 def main(
-    ss_url, ss_user, ss_api_key, location_uuid, tmp_dir, output_dir, database_file
+    ss_url,
+    ss_user,
+    ss_api_key,
+    location_uuid,
+    tmp_dir,
+    output_dir,
+    database_file,
+    delete_local_copy,
+    upload_type,
+    pipeline_uuid,
+    cp_location_uuid,
+    ds_location_uuid,
+    shared_directory,
+    atom_url,
+    atom_email,
+    atom_password,
+    atom_slug,
+    rsync_target,
 ):
     LOGGER.info("Processing AIPs in SS location: %s", location_uuid)
 
@@ -104,22 +116,51 @@ def main(
             session.commit()
         except exc.IntegrityError:
             session.rollback()
-            # POSSIBLE ENHANCEMENT:
-            # Check Aip status and allow retry in some of them
             LOGGER.debug("Skipping AIP (already processed/processing): %s", uuid)
             continue
 
-        create_dip.main(
+        mets_type = "atom"
+        if upload_type == "ss-upload":
+            mets_type = "storage-service"
+
+        dip_path = create_dip.main(
             ss_url=ss_url,
             ss_user=ss_user,
             ss_api_key=ss_api_key,
             aip_uuid=uuid,
             tmp_dir=tmp_dir,
             output_dir=output_dir,
+            mets_type=mets_type,
         )
 
-        # POSSIBLE ENHANCEMENT:
-        # Save return value from create_dip.main() and update Aip status
+        # Do not try upload on creation error
+        if type(dip_path) == int:
+            LOGGER.error("Could not create DIP from AIP: %s", uuid)
+            continue
+
+        if upload_type == "ss-upload":
+            storage_service_upload.main(
+                ss_url=ss_url,
+                ss_user=ss_user,
+                ss_api_key=ss_api_key,
+                pipeline_uuid=pipeline_uuid,
+                cp_location_uuid=cp_location_uuid,
+                ds_location_uuid=ds_location_uuid,
+                shared_directory=shared_directory,
+                dip_path=dip_path,
+                aip_uuid=uuid,
+                delete_local_copy=delete_local_copy,
+            )
+        elif upload_type == "atom-upload":
+            atom_upload.main(
+                atom_url=atom_url,
+                atom_email=atom_email,
+                atom_password=atom_password,
+                atom_slug=atom_slug,
+                rsync_target=rsync_target,
+                dip_path=dip_path,
+                delete_local_copy=delete_local_copy,
+            )
 
     LOGGER.info("All AIPs have been processed")
 
@@ -219,6 +260,83 @@ if __name__ == "__main__":
         help="Set the debugging output level. This will override -q and -v",
     )
 
+    # Delete argument can't be set in the two subparsers bellow with the same name
+    parser.add_argument(
+        "--delete-local-copy",
+        action="store_true",
+        help="Deletes the local DIPs after upload if any of the upload arguments is used.",
+    )
+
+    # Create optional upload type subparsers
+    subparsers = parser.add_subparsers(
+        dest="upload_type",
+        title="Upload options",
+        description="The following arguments allow to upload the DIP after creation:",
+        help="Leave empty to keep the DIP in the output path.",
+    )
+
+    # Storage Service upload subparser with extra SS required arguments
+    parser_ss = subparsers.add_parser(
+        "ss-upload",
+        help="Storage Service upload. Check 'create_dips_job ss-upload -h'.",
+    )
+    parser_ss.add_argument(
+        "--pipeline-uuid",
+        metavar="UUID",
+        required=True,
+        help="UUID of the Archivemativa pipeline in the Storage Service",
+    )
+    parser_ss.add_argument(
+        "--cp-location-uuid",
+        metavar="UUID",
+        required=True,
+        help="UUID of the pipeline's Currently Processing location in the Storage Service",
+    )
+    parser_ss.add_argument(
+        "--ds-location-uuid",
+        metavar="UUID",
+        required=True,
+        help="UUID of the pipeline's DIP storage location in the Storage Service",
+    )
+    parser_ss.add_argument(
+        "--shared-directory",
+        metavar="PATH",
+        help="Absolute path to the pipeline's shared directory.",
+        default="/var/archivematica/sharedDirectory/",
+    )
+
+    # AtoM upload subparser with AtoM required arguments
+    parser_atom = subparsers.add_parser(
+        "atom-upload", help="AtoM upload. Check 'create_dips_job atom-upload -h'."
+    )
+    parser_atom.add_argument(
+        "--atom-url", metavar="URL", required=True, help="AtoM instance URL."
+    )
+    parser_atom.add_argument(
+        "--atom-email",
+        metavar="EMAIL",
+        required=True,
+        help="Email of the AtoM user to authenticate as.",
+    )
+    parser_atom.add_argument(
+        "--atom-password",
+        metavar="PASSWORD",
+        required=True,
+        help="Password of the AtoM user.",
+    )
+    parser_atom.add_argument(
+        "--atom-slug",
+        metavar="SLUG",
+        required=True,
+        help="AtoM archival description slug to target the upload.",
+    )
+    parser_atom.add_argument(
+        "--rsync-target",
+        metavar="HOST:PATH",
+        required=True,
+        help="Destination value passed to Rsync.",
+    )
+
     args = parser.parse_args()
 
     log_levels = {2: "ERROR", 1: "WARNING", 0: "INFO", -1: "DEBUG"}
@@ -232,14 +350,29 @@ if __name__ == "__main__":
 
     setup_logger(args.log_file, log_level)
 
+    # Transform args Namespace to dict to be able to use get()
+    # as some of the args defined in subsets may be missing.
+    args_dict = vars(args)
+
     sys.exit(
         main(
-            ss_url=args.ss_url,
-            ss_user=args.ss_user,
-            ss_api_key=args.ss_api_key,
-            location_uuid=args.location_uuid,
-            tmp_dir=args.tmp_dir,
-            output_dir=args.output_dir,
-            database_file=args.database_file,
+            ss_url=args_dict.get("ss_url"),
+            ss_user=args_dict.get("ss_user"),
+            ss_api_key=args_dict.get("ss_api_key"),
+            location_uuid=args_dict.get("location_uuid"),
+            tmp_dir=args_dict.get("tmp_dir"),
+            output_dir=args_dict.get("output_dir"),
+            database_file=args_dict.get("database_file"),
+            delete_local_copy=args_dict.get("delete_local_copy"),
+            upload_type=args_dict.get("upload_type"),
+            pipeline_uuid=args_dict.get("pipeline_uuid"),
+            cp_location_uuid=args_dict.get("cp_location_uuid"),
+            ds_location_uuid=args_dict.get("ds_location_uuid"),
+            shared_directory=args_dict.get("shared_directory"),
+            atom_url=args_dict.get("atom_url"),
+            atom_email=args_dict.get("atom_email"),
+            atom_password=args_dict.get("atom_password"),
+            atom_slug=args_dict.get("atom_slug"),
+            rsync_target=args_dict.get("rsync_target"),
         )
     )

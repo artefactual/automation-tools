@@ -74,8 +74,8 @@ class TestCreateDip(unittest.TestCase):
             # Extract it
             aip_dir = create_dip.extract_aip(aip_path, AIP_UUID, TMP_DIR)
             # Test DIP creation
-            dip_dir = create_dip.create_dip(aip_dir, AIP_UUID, OUTPUT_DIR)
-            assert dip_dir == "{}/{}_{}_DIP".format(OUTPUT_DIR, TRANSFER_NAME, AIP_UUID)
+            dip_dir = create_dip.create_dip(aip_dir, AIP_UUID, OUTPUT_DIR, "atom")
+            assert dip_dir == "{}/{}-{}".format(OUTPUT_DIR, TRANSFER_NAME, AIP_UUID)
             assert os.path.isdir(dip_dir)
             # Check a METS file exists
             dip_mets = "{}/METS.{}.xml".format(dip_dir, AIP_UUID)
@@ -128,5 +128,5 @@ class TestCreateDip(unittest.TestCase):
 
     def test_create_dip_fail_no_aip_dir(self):
         """Test that a DIP creation fails with a bad path."""
-        dip_dir = create_dip.create_dip("bad_path", AIP_UUID, OUTPUT_DIR)
+        dip_dir = create_dip.create_dip("bad_path", AIP_UUID, OUTPUT_DIR, "atom")
         assert dip_dir is None
