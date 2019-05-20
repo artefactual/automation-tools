@@ -21,3 +21,5 @@
 *.db
 *.lck
 
+/.idea/
+*.iml
