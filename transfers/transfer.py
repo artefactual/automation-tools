@@ -118,7 +118,6 @@ def get_status(
         and unit_info.get("sip_uuid") is not None
         and unit_info.get("sip_uuid") != "BACKLOG"
     ):
-
         LOGGER.info(
             "%s is a complete transfer, fetching SIP %s status.",
             unit_uuid,
