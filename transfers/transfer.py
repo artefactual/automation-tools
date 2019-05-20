@@ -117,6 +117,11 @@ def get_status(
         and unit_info.get("status") == "COMPLETE"
         and unit_info.get("sip_uuid") != "BACKLOG"
     ):
+
+        # Waiting for SIP UUID
+        while unit_info.get("sip_uuid") is None:
+            time.sleep(2)
+
         LOGGER.info(
             "%s is a complete transfer, fetching SIP %s status.",
             unit_uuid,
