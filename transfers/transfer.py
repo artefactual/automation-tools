@@ -104,7 +104,7 @@ def get_status(
         if errors.error_lookup(unit_info) is not None:
             return errors.error_lookup(unit_info)
     # If complete, hide in dashboard
-    if hide_on_complete and unit_info and unit_info.get("status") == "COMPLETE":
+    if hide_on_complete and unit_info and unit_info.get("status") == "COMPLETE" and unit_info.get("sip_uuid") is not None:
         LOGGER.info("Hiding %s %s in dashboard", unit_type, unit_uuid)
         url = "{}/api/{}/{}/delete/".format(am_url, unit_type, unit_uuid)
         LOGGER.debug("Method: DELETE; URL: %s; params: %s;", url, params)
@@ -115,12 +115,9 @@ def get_status(
         unit_info
         and unit_type == "transfer"
         and unit_info.get("status") == "COMPLETE"
+        and unit_info.get("sip_uuid") is not None
         and unit_info.get("sip_uuid") != "BACKLOG"
     ):
-
-        # Waiting for SIP UUID
-        while unit_info.get("sip_uuid") is None:
-            time.sleep(2)
 
         LOGGER.info(
             "%s is a complete transfer, fetching SIP %s status.",
