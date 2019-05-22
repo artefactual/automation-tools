@@ -15,8 +15,8 @@ automate the processing of transfers in an Archivematica pipeline.
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Automated transfers](#automated-transfers)
-  - [Configuration](#configuration)
-    - [Parameters](#parameters)
+- [Configuration](#configuration)
+  - [Parameters](#parameters)
     - [Setting processing rules](#setting-processing-rules)
     - [Getting the transfer source UUID](#getting-the-transfer-source-uuid)
     - [Getting API keys](#getting-api-keys)
@@ -25,17 +25,17 @@ automate the processing of transfers in an Archivematica pipeline.
     - [pre-transfer hooks](#pre-transfer-hooks)
     - [user-input](#user-input)
   - [Logs](#logs)
-  - [Multiple automated transfer
-    instances](#multiple-automated-transfer-instances)
+  - [Multiple automated transfer instances](#multiple-automated-transfer-instances)
   - [`transfer_async.py`](#transfer_asyncpy)
   - [Tips for ingesting DSpace exports](#tips-for-ingesting-dspace-exports)
-- [DIP creation](#dip-creation)
+- [DIP creation and upload](#dip-creation-and-upload)
   - [Configuration](#configuration-1)
-    - [Parameters](#parameters-1)
+  - [Parameters](#parameters-1)
+    - [`aips/create_dip.py`:](#aipscreate_dippy)
+    - [`dips/atom_upload.py`:](#dipsatom_uploadpy)
+    - [`dips/storage_service_upload.py`:](#dipsstorage_service_uploadpy)
+    - [`aips/create_dips_job.py`:](#aipscreate_dips_jobpy)
     - [Getting Storage Service API key](#getting-storage-service-api-key)
-- [DIP upload to AtoM](#dip-upload-to-atom)
-  - [Configuration](#configuration-2)
-    - [Parameters](#parameters-2)
 - [Reingest](#reingest)
 - [Related Projects](#related-projects)
 
@@ -477,8 +477,8 @@ cd /usr/lib/archivematica/automation-tools/
   --config-file <config_file>
 ```
 
-DIP creation
-------------
+DIP creation and upload
+-----------------------
 
 `aips/create_dip.py` and `aips/create_dips_job.py` can be used to make DIPs from
 AIPs available in a Storage Service instance. Unlike DIPs created in
@@ -486,57 +486,78 @@ Archivematica, the ones created with this script will include only the original
 files from the transfer and they will maintain the directories, filenames and
 last modified date from those files. They will be placed with a copy of the
 submissionDocumentation folder (if present in the AIP) and the AIP METS file in
-a single ZIP file under the objects directory. Another METS file will be
-generated alongside the objects folder containing only a reference to the ZIP
-file (without AMD or DMD sections).
+a single ZIP file under the objects directory. Based on the `--mets-type`
+argument, another METS file will be generated alongside the objects folder
+containing only a reference to the ZIP file (without AMD or DMD sections), used
+to upload the DIP to an AtoM instance; or the same AIP METS file will be placed
+alongside the objects folder, used for uploads to the Storage Service.
 
 While `aips/create_dip.py` only processes one AIP per execution,
 `aips/create_dips_job.py` will process all AIPs in a given Storage Service
-location, keeping track of them in an SQLite database. Both scripts require 7z
-installed and available to extract the AIPs downloaded from the Storage Service.
+location, keeping track of them in an SQLite database. The latter also accepts
+different subsets of parameters to automatically upload the created DIPs to the
+Storage Service or to an AtoM instance. Both scripts require 7z to be installed
+and available to extract the AIPs downloaded from the Storage Service.
+
+As mentioned, these DIPs can be uploaded to AtoM or the Storage Service using
+`dips.storage_service_upload` and `dips.atom_upload` or as part of the
+`aips/create_dips_job.py` execution.
+
+The AtoM upload requires a passwordless SSH connection to the AtoM host for the
+user running the script. The AtoM host must be added to list of known hosts.
+[More info][Send DIPS].
+
+The Storage Service upload requires access to the Archivematica pipeline's
+currently processing location path (the shared path) in order to copy the DIP
+folder in before sending a requests to the Storage Service to process that DIP.
 
 ### Configuration
 
 Suggested use of these scripts is by using the example shell scripts in the
 `etc` directory:
 
-* [create_dip_script.sh][]
-* [create_dips_job_script.sh][]
+* [create_dip_script.sh](etc/create_dip_script.sh)
+* [atom_upload_script.sh](etc/atom_upload_script.sh)
+* [storage_service_upload_script.sh](etc/storage_service_upload_script.sh)
+* [create_dips_job_script.sh](etc/create_dips_job_script.sh)
+* [create_dips_job_atom_upload_script.sh](etc/create_dips_job_atom_upload_script.sh)
+* [create_dips_job_ss_upload_script.sh](etc/create_dips_job_ss_upload_script.sh)
 
-(Note that the scripts call the DIP creation scripts as modules using Python's
-`-m` flag; this is required due to the use of relative imports in the code)
+Note that the scripts call the DIP creation and upload scripts as modules using
+Python's `-m` flag; this is required due to the use of relative imports in the
+code.
 
-The scripts can be run from a shell window like:
+The scripts can be run from a shell window, for example:
 
 ```
 user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./create_dip_script.sh
-
-user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./create_dips_job_script.sh
 ```
 
-For `aips/create_dips_job.py`, it is suggested to run the script through a
-crontab entry for user archivematica, to avoid the need to repeatedly invoke it
-manually to keep processing the same location:
+For the scripts using `aips/create_dips_job.py`, it is suggested to run them
+through a crontab entry for the archivematica user, to avoid the need to
+repeatedly invoke it manually to keep processing the same location. E.g.:
 
 ```
 */5 * * * * /etc/archivematica/automation-tools/create_dips_job_script.sh
 ```
 
-To process multiple Storage Service locations, `create_dips_job_script.sh` could
-be duplicated with a different set of parameters to call
+To process multiple Storage Service locations, `create_dips_job_script.sh` and
+similar scripts could be duplicated with a different set of parameters to call
 `aips/create_dips_job.py` and be executed in the same manner.
 
-#### Parameters
+### Parameters
 
-Both scripts have the following parameters in common:
+#### `aips/create_dip.py`:
 
-* `--ss-url URL, -s URL`: Storage Service URL. Default: http://127.0.0.1:8000
+* `--ss-url URL`: Storage Service URL. Default: http://127.0.0.1:8000
 * `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
   authenticate as. Storage Service 0.8 and up requires this; earlier versions
   will ignore any value provided.
 * `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
   Service 0.8 and up requires this; earlier versions will ignore any value
   provided.
+* `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to create the
+  DIP from.
 * `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be
   downloaded and extracted. Default: "/tmp"
 * `--output-dir PATH`: Absolute path to a directory where the DIP(s) will be
@@ -550,74 +571,18 @@ Both scripts have the following parameters in common:
 * `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
   'INFO', 'DEBUG'. This will override `-q` and `-v`
 
-`aips/create_dip.py` requires the following extra parameter:
+#### `dips/atom_upload.py`:
 
-* `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to create the
-  DIP from.
-
-`aips/create_dips_job.py` requires the following extra parameters:
-
-* `--location-uuid UUID` [REQUIRED]: Storage Service location UUID to be
-  processed.
-* `--database-file PATH` [REQUIRED]: Absolute path to an SQLite database file to
-  keep track of the processed AIPs.
-
-#### Getting Storage Service API key
-
-See [Getting API keys](#getting-api-keys)
-
-DIP upload to AtoM
-------------------
-
-`dips/atom_upload.py` is available to upload a DIP folder from the local
-filesystem to an external AtoM instance. It requires a passwordless SSH
-connection to the AtoM host for the user running the script and the AtoM host
-has to be already added to list of known hosts. [More info][Send DIPS]
-
-Although this script is part of the automation-tools it's not completely
-automated yet, so it needs to be executed once per DIP and it requires the DIP
-path and the AtoM target description slug.
-
-### Configuration
-
-Suggested use of this script is by using the example shell script in the `etc`
-directory (`/etc/archivematica/automation-tools/atom_upload_script.sh`):
-
-```
-#!/bin/bash
-cd /usr/lib/archivematica/automation-tools/
-/usr/share/python/automation-tools/bin/python -m dips.atom_upload \
-  --atom-url <url> \
-  --atom-email <email> \
-  --atom-password <password> \
-  --atom-slug <slug> \
-  --rsync-target <host:path> \
-  --dip-path <path> \
-  --log-file <path>
-```
-
-(Note that the script calls the upload to AtoM script as a module using Python's
-`-m` flag, this is required due to the use of relative imports in the code)
-
-The script can be run from a shell window like:
-
-```
-user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./atom_upload_script.sh
-```
-
-#### Parameters
-
-The `dips/atom_upload.py` accepts the following parameters:
-
-* `--atom-url URL`: AtoM URL. Default: http://192.168.168.193
+* `--atom-url URL` [REQUIRED]: AtoM URL.
 * `--atom-email EMAIL` [REQUIRED]: Email of the AtoM user to authenticate as.
 * `--atom-password PASSWORD` [REQUIRED]: Password of the AtoM user to
   authenticate as.
 * `--atom-slug SLUG` [REQUIRED]: Slug of the AtoM archival description to target
   in the upload.
-* `--rsync-target HOST:PATH`: Host and path to place the DIP folder with
-  `rsync`. Default: 192.168.168.193:/tmp
+* `--rsync-target HOST:PATH` [REQUIRED]: Host and path to place the DIP folder
+  with `rsync`.
 * `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to upload.
+* `--delete-local-copy`: Remove the local DIP after it has been uploaded.
 * `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
   will be created in the script directory.
 * `-v, --verbose`: Increase the debugging output. Can be specified multiple
@@ -626,6 +591,94 @@ The `dips/atom_upload.py` accepts the following parameters:
   e.g. `-qq`
 * `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
   'INFO', 'DEBUG'. This will override `-q` and `-v`
+
+#### `dips/storage_service_upload.py`:
+
+* `--ss-url URL`: Storage Service URL. Default: http://127.0.0.1:8000
+* `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
+  authenticate as. Storage Service 0.8 and up requires this; earlier versions
+  will ignore any value provided.
+* `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
+  Service 0.8 and up requires this; earlier versions will ignore any value
+  provided.
+* `--pipeline-uuid UUID` [REQUIRED]: UUID of the Archivemativa pipeline in the
+  Storage Service.
+* `--cp-location-uuid UUID` [REQUIRED]: UUID of the pipeline's Currently
+  Processing location in the Storage Service.
+* `--ds-location-uuid UUID` [REQUIRED]: UUID of a pipeline's DIP storage
+  location where the DIP will be placed in the Storage Service.
+* `--shared-directory PATH`: Absolute path to the pipeline's shared directory.
+  Default: `/var/archivematica/sharedDirectory/`.
+* `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to upload.
+* `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to relate the
+  DIP.
+* `--delete-local-copy`: Remove the local DIP after it has been uploaded.
+* `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
+  will be created in the script directory.
+* `-v, --verbose`: Increase the debugging output. Can be specified multiple
+  times, e.g. `-vv`
+* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
+  e.g. `-qq`
+* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
+  'INFO', 'DEBUG'. This will override `-q` and `-v`
+
+#### `aips/create_dips_job.py`:
+
+* `--ss-url URL`: Storage Service URL. Default: http://127.0.0.1:8000
+* `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
+  authenticate as. Storage Service 0.8 and up requires this; earlier versions
+  will ignore any value provided.
+* `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
+  Service 0.8 and up requires this; earlier versions will ignore any value
+  provided.
+* `--location-uuid UUID` [REQUIRED]: Storage Service location UUID to be
+  processed.
+* `--database-file PATH` [REQUIRED]: Absolute path to an SQLite database file to
+  keep track of the processed AIPs.
+* `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be
+  downloaded and extracted. Default: "/tmp"
+* `--output-dir PATH`: Absolute path to a directory where the DIP(s) will be
+  created. Default: "/tmp"
+* `--delete-local-copy`: To use alongside the upload arguments explained bellow
+  and remove the local DIP after it has been uploaded.
+* `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
+  will be created in the script directory.
+* `-v, --verbose`: Increase the debugging output. Can be specified multiple
+  times, e.g. `-vv`
+* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
+  e.g. `-qq`
+* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
+  'INFO', 'DEBUG'. This will override `-q` and `-v`
+
+To automatically upload the DIPs to an AtoM description, add the following
+subset of arguments:
+
+* `atom-upload`:
+  * `--atom-url URL` [REQUIRED]: AtoM URL.
+  * `--atom-email EMAIL` [REQUIRED]: Email of the AtoM user to authenticate as.
+  * `--atom-password PASSWORD` [REQUIRED]: Password of the AtoM user to
+    authenticate as.
+  * `--atom-slug SLUG` [REQUIRED]: Slug of the AtoM archival description to
+    target in the upload.
+  * `--rsync-target HOST:PATH` [REQUIRED]: Host and path to place the DIP folder
+    with `rsync`.
+
+To automatically upload the DIPs to a Storage Service location, use the
+following subset of arguments:
+
+* `ss-upload`:
+  * `--pipeline-uuid UUID` [REQUIRED]: UUID of the Archivemativa pipeline in the
+    Storage Service.
+  * `--cp-location-uuid UUID` [REQUIRED]: UUID of the pipeline's Currently
+    Processing location in the Storage Service.
+  * `--ds-location-uuid UUID` [REQUIRED]: UUID of a pipeline's DIP storage
+    location where the DIP will be placed in the Storage Service.
+  * `--shared-directory PATH`: Absolute path to the pipeline's shared directory.
+    Default: `/var/archivematica/sharedDirectory/`.
+
+#### Getting Storage Service API key
+
+See [Getting API keys](#getting-api-keys)
 
 Reingest
 --------
