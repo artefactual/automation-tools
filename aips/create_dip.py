@@ -268,7 +268,7 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type):
 
 
 def create_dip_mets(aip_dir, aip_name, fsentries, mets, dip_mets_file):
-    '''Creates DIP METS file for AtoM upload.'''
+    """Creates DIP METS file for AtoM upload."""
 
     LOGGER.info("Creating DIP METS file for AtoM upload.")
     objects_entry = None
@@ -311,7 +311,7 @@ def create_dip_mets(aip_dir, aip_name, fsentries, mets, dip_mets_file):
 
 
 def copy_aip_mets(to_zip_mets_file, dip_mets_file):
-    '''Copies AIP's METS file.'''
+    """Copies AIP's METS file."""
 
     LOGGER.info("Copying AIP's METS file.")
     try:
@@ -322,7 +322,7 @@ def copy_aip_mets(to_zip_mets_file, dip_mets_file):
 
 
 def compress_zip_folder(to_zip_dir):
-    '''Compresses to_zip_dir inside the DIP objects folder'''
+    """Compresses to_zip_dir inside the DIP objects folder"""
 
     LOGGER.info("Compressing ZIP folder inside objects")
     command = ["7z", "a", "-tzip", "{0}.zip".format(to_zip_dir), to_zip_dir]
@@ -334,7 +334,7 @@ def compress_zip_folder(to_zip_dir):
 
 
 def move_sub_doc(aip_dir, to_zip_dir):
-    '''Moves submissionDocumentation folder'''
+    """Moves submissionDocumentation folder"""
 
     LOGGER.info("Moving submissionDocumentation folder")
     aip_sub_doc = "{}/data/objects/submissionDocumentation".format(aip_dir)
@@ -346,7 +346,7 @@ def move_sub_doc(aip_dir, to_zip_dir):
 
 
 def set_fslastmodified(premis, namespaces, dip_file_path):
-    '''Obtain and set the fslastmodified date to the moved files'''
+    """Obtain and set the fslastmodified date to the moved files"""
 
     fslastmodified = premis.findtext(
         "premis:objectCharacteristics/premis:objectCharacteristicsExtension/fits:fits/fits:fileinfo/fits:fslastmodified",
@@ -361,7 +361,7 @@ def set_fslastmodified(premis, namespaces, dip_file_path):
 
 
 def update_avalon_manifest(dip_dir, aip_uuid):
-    '''Update Avalon Manifest CSV with AIP UUID'''
+    """Update Avalon Manifest CSV with AIP UUID"""
 
     files = os.listdir(dip_dir)
     paths = [fn for fn in files if fn.endswith(".csv")]
