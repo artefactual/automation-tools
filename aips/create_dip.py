@@ -69,7 +69,7 @@ def main(
     tmp_dir,
     output_dir,
     mets_type="atom",
-    dip_type="storage-service",
+    dip_type="zipped-objects",
 ):
     LOGGER.info("Starting DIP creation from AIP: %s", aip_uuid)
 
@@ -183,7 +183,7 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
     aip_name = aip_dir_name[:-37]
 
     if dip_type == "avalon":
-        dip_dir = os.path.join(output_dir, "{}/{}".format(aip_name, aip_uuid))
+        dip_dir = os.path.join(output_dir, aip_name, aip_uuid)
         to_zip_dir = dip_dir
     else:
         dip_dir = os.path.join(output_dir, aip_dir_name)
@@ -374,8 +374,8 @@ def update_avalon_manifest(dip_dir, aip_uuid):
     paths = [fn for fn in files if fn.endswith(".csv")]
     csv_path = ""
     if len(paths) == 1:
-        csv_path = dip_dir + "/" + paths[0]
-        tmp_csv_path = dip_dir + "/tmp.csv"
+        csv_path = os.path.join(dip_dir, paths[0])
+        tmp_csv_path = os.path.join(dip_dir, "/tmp.csv")
         with open(csv_path, "r") as csv_input, open((tmp_csv_path), "w") as csv_output:
             reader = csv.reader(csv_input)
             writer = csv.writer(csv_output, lineterminator="\n")

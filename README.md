@@ -567,7 +567,7 @@ similar scripts could be duplicated with a different set of parameters to call
   provided.
 * `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to create the
   DIP from.
-* `--dip-type TYPE`: Type of DIP to create. Default: default."
+* `--dip-type TYPE`: Type of DIP to create. Default: zipped-objects."
 * `--mets-type TYPE`: Type of METS file to generate. Default: atom."
 * `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be
   downloaded and extracted. Default: "/tmp"
