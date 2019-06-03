@@ -486,11 +486,20 @@ Archivematica, the ones created with this script will include only the original
 files from the transfer and they will maintain the directories, filenames and
 last modified date from those files. They will be placed with a copy of the
 submissionDocumentation folder (if present in the AIP) and the AIP METS file in
-a single ZIP file under the objects directory. Based on the `--mets-type`
-argument, another METS file will be generated alongside the objects folder
-containing only a reference to the ZIP file (without AMD or DMD sections), used
-to upload the DIP to an AtoM instance; or the same AIP METS file will be placed
-alongside the objects folder, used for uploads to the Storage Service.
+a single ZIP file under the objects directory.
+
+Based on the `--mets-type` argument, another METS file will be generated
+alongside the objects folder containing only a reference to the ZIP file
+(without AMD or DMD sections), used to upload the DIP to an AtoM instance; or
+the same AIP METS file will be placed alongside the objects folder, used for
+uploads to the Storage Service.
+
+The optional `--dip-type` parameter will create a DIP structured in a specific
+way for different access systems. Presently, the only DIP Type available other
+than the default setting is the "avalon" option. This will create a DIP ready
+for batch ingest into the Avalon Media System, relying on the Transfer name to
+move files into a Collection folder and will append Archivematica-minted UUIDs
+to the root-level Manifest file.
 
 While `aips/create_dip.py` only processes one AIP per execution,
 `aips/create_dips_job.py` will process all AIPs in a given Storage Service
@@ -558,7 +567,8 @@ similar scripts could be duplicated with a different set of parameters to call
   provided.
 * `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to create the
   DIP from.
-  * `--mets-type TYPE`: Type of DIP to create. Default: atom."
+* `--dip-type TYPE`: Type of DIP to create. Default: default."
+* `--mets-type TYPE`: Type of METS file to generate. Default: atom."
 * `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be
   downloaded and extracted. Default: "/tmp"
 * `--output-dir PATH`: Absolute path to a directory where the DIP(s) will be

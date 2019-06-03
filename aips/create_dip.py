@@ -61,7 +61,16 @@ def setup_logger(log_file, log_level="INFO"):
     logging.config.dictConfig(CONFIG)
 
 
-def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir, output_dir, mets_type="atom"):
+def main(
+    ss_url,
+    ss_user,
+    ss_api_key,
+    aip_uuid,
+    tmp_dir,
+    output_dir,
+    mets_type="atom",
+    dip_type="storage-service",
+):
     LOGGER.info("Starting DIP creation from AIP: %s", aip_uuid)
 
     if not os.path.isdir(tmp_dir):
@@ -106,7 +115,7 @@ def main(ss_url, ss_user, ss_api_key, aip_uuid, tmp_dir, output_dir, mets_type="
         return 5
 
     LOGGER.info("Creating DIP")
-    dip_dir = create_dip(aip_dir, aip_uuid, output_dir, mets_type)
+    dip_dir = create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type)
 
     if not dip_dir:
         LOGGER.error("Unable to create DIP")
@@ -159,7 +168,7 @@ def extract_aip(aip_file, aip_uuid, tmp_dir):
     return extract_aip(extracted_entry, aip_uuid, tmp_dir)
 
 
-def create_dip(aip_dir, aip_uuid, output_dir, mets_type):
+def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
     """
     Creates a DIP from an uncompressed AIP.
 
@@ -167,12 +176,13 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type):
     :param str aip_uuid: UUID from the AIP
     :param str output_dir: absolute path to a directory to place the DIP
     :param str mets_type: type of METS to generate within DIP
+    :param str dip_type: type of DIP to generate
     :returns: absolute path to the created DIP folder
     """
     aip_dir_name = os.path.basename(aip_dir)
     aip_name = aip_dir_name[:-37]
 
-    if mets_type == "avalon":
+    if dip_type == "avalon":
         dip_dir = os.path.join(output_dir, "{}/{}".format(aip_name, aip_uuid))
         to_zip_dir = dip_dir
     else:
@@ -186,7 +196,7 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type):
 
     os.makedirs(to_zip_dir)
 
-    if mets_type != "avalon":
+    if dip_type != "avalon":
         move_sub_doc(aip_dir, to_zip_dir)
 
     LOGGER.info("Moving METS file")
@@ -239,7 +249,7 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type):
 
         shutil.move(aip_file_path, dip_file_path)
 
-        if mets_type != "avalon":
+        if dip_type != "avalon":
             try:
                 set_fslastmodified(premis, namespaces, dip_file_path)
             except Exception:
@@ -250,13 +260,10 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type):
 
     if mets_type == "atom":
         create_dip_mets(aip_dir, aip_name, fsentries, mets, dip_mets_file)
-    elif mets_type == "avalon":
-        # Do not make a METS file
-        pass
     else:
         copy_aip_mets(to_zip_mets_file, dip_mets_file)
 
-    if mets_type == "avalon":
+    if dip_type == "avalon":
         # Update Manifest file with UUIDs
         update_avalon_manifest(dip_dir, aip_uuid)
         os.remove(dip_mets_file)
@@ -268,9 +275,9 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type):
 
 
 def create_dip_mets(aip_dir, aip_name, fsentries, mets, dip_mets_file):
-    """Creates DIP METS file for AtoM upload."""
+    """Creates DIP METS file for AtoM/default upload."""
 
-    LOGGER.info("Creating DIP METS file for AtoM upload.")
+    LOGGER.info("Creating DIP METS file for AtoM/default upload.")
     objects_entry = None
     for fsentry in fsentries:
         # Do not delete AIP entry
@@ -391,11 +398,11 @@ def update_avalon_manifest(dip_dir, aip_uuid):
         shutil.move(tmp_csv_path, csv_path)
 
     if not csv_path:
-        LOGGER.error("Manifest file could not be found")
+        LOGGER.error("Manifest file could not be found!")
 
 
 def update_premis_ns(premis, namespaces, premis_map):
-    # Update PREMIS namespace based on version attribute
+    """Update PREMIS namespace based on version attribute"""
     premis_version = premis.get("version", "2.2")
     try:
         namespaces["premis"] = premis_map[premis_version]["namespaces"]["premis"]
@@ -406,6 +413,7 @@ def update_premis_ns(premis, namespaces, premis_map):
 
 
 def get_original_name(premis, namespaces):
+    """Get original filename from PREMIS record"""
     original_name = premis.findtext("premis:originalName", namespaces=namespaces)
     if not original_name:
         LOGGER.warning("premis:originalName could not be found")
@@ -458,11 +466,16 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--mets-type",
-        choices=["atom", "avalon", "storage-service"],
+        choices=["atom", "storage-service"],
         default="atom",
         help="Generate METS file for AtoM upload or use the AIP's METS file for Storage Service upload. Default: atom.",
     )
-
+    parser.add_argument(
+        "--dip-type",
+        choices=["avalon", "storage-service"],
+        default="storage-service",
+        help="Structure DIP for specific systems. Default: storage-service.",
+    )
     # Logging
     parser.add_argument(
         "--log-file", metavar="FILE", help="Location of log file", default=None
@@ -505,6 +518,7 @@ if __name__ == "__main__":
         tmp_dir=args.tmp_dir,
         output_dir=args.output_dir,
         mets_type=args.mets_type,
+        dip_type=args.dip_type,
     )
 
     # The main function returns the DIP's path on success
