@@ -104,25 +104,40 @@ def get_status(
         if errors.error_lookup(unit_info) is not None:
             return errors.error_lookup(unit_info)
     # If complete, hide in dashboard
-    if hide_on_complete and unit_info and unit_info.get("status") == "COMPLETE" and unit_info.get("sip_uuid") is not None:
+    if hide_on_complete and unit_info and unit_info.get("status") == "COMPLETE":
         LOGGER.info("Hiding %s %s in dashboard", unit_type, unit_uuid)
         url = "{}/api/{}/{}/delete/".format(am_url, unit_type, unit_uuid)
         LOGGER.debug("Method: DELETE; URL: %s; params: %s;", url, params)
         response = requests.delete(url, params=params)
         LOGGER.debug("Response: %s", response)
+
     # If Transfer is complete, get the SIP's status
     if (
         unit_info
         and unit_type == "transfer"
         and unit_info.get("status") == "COMPLETE"
-        and unit_info.get("sip_uuid") is not None
         and unit_info.get("sip_uuid") != "BACKLOG"
     ):
+
+        num_tries = 0
+        while unit_info.get("sip_uuid") is None:
+            time.sleep(2)
+            LOGGER.info("Waited 2 seconds before fetching updated SIP status on %s", unit_uuid)
+
+            url = "{}/api/{}/status/{}/".format(am_url, unit_type, unit_uuid)
+            unit_info = utils._call_url_json(url, params)
+            num_tries += 1
+            if num_tries >= 30:
+                LOGGER.error("No SIP UUID for %s returned after 60 seconds.", unit_uuid)
+                return None
+
         LOGGER.info(
-            "%s is a complete transfer, fetching SIP %s status.",
+            "%s is a complete transfer, got SIP UUID: %s after %s retries.",
             unit_uuid,
             unit_info.get("sip_uuid"),
+            num_tries
         )
+
         # Update DB to refer to this one
         unit = models.retrieve_unit_by_type_and_uuid(
             uuid=unit_uuid, unit_type=unit_type
