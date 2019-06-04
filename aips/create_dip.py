@@ -182,7 +182,7 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
     aip_dir_name = os.path.basename(aip_dir)
     aip_name = aip_dir_name[:-37]
 
-    if dip_type == "avalon":
+    if dip_type == "avalon-manifest":
         dip_dir = os.path.join(output_dir, aip_name, aip_uuid)
         to_zip_dir = dip_dir
     else:
@@ -196,7 +196,7 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
 
     os.makedirs(to_zip_dir)
 
-    if dip_type != "avalon":
+    if dip_type != "avalon-manifest":
         move_sub_doc(aip_dir, to_zip_dir)
 
     LOGGER.info("Moving METS file")
@@ -249,7 +249,7 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
 
         shutil.move(aip_file_path, dip_file_path)
 
-        if dip_type != "avalon":
+        if dip_type != "avalon-manifest":
             try:
                 set_fslastmodified(premis, namespaces, dip_file_path)
             except Exception:
@@ -260,13 +260,12 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
 
     if mets_type == "atom":
         create_dip_mets(aip_dir, aip_name, fsentries, mets, dip_mets_file)
-    else:
+    elif mets_type == "storage-service":
         copy_aip_mets(to_zip_mets_file, dip_mets_file)
 
-    if dip_type == "avalon":
+    if dip_type == "avalon-manifest":
         # Update Manifest file with UUIDs
         update_avalon_manifest(dip_dir, aip_uuid)
-        os.remove(dip_mets_file)
     else:
         compress_zip_folder(to_zip_dir)
         shutil.rmtree(to_zip_dir)
@@ -472,9 +471,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--dip-type",
-        choices=["avalon", "storage-service"],
-        default="storage-service",
-        help="Structure DIP for specific systems. Default: storage-service.",
+        choices=["avalon-manifest", "zipped-objects"],
+        default="zipped-objects",
+        help="Structure DIP for specific systems. Default: zipped-objects.",
     )
     # Logging
     parser.add_argument(

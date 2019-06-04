@@ -496,10 +496,10 @@ uploads to the Storage Service.
 
 The optional `--dip-type` parameter will create a DIP structured in a specific
 way for different access systems. Presently, the only DIP Type available other
-than the default setting is the "avalon" option. This will create a DIP ready
-for batch ingest into the Avalon Media System, relying on the Transfer name to
-move files into a Collection folder and will append Archivematica-minted UUIDs
-to the root-level Manifest file.
+than the default setting is the "avalon-manifest" option. This will create a DIP
+ready for batch ingest into the Avalon Media System, relying on the Transfer
+name to move files into a Collection folder and will append Archivematica-minted
+UUIDs to the root-level Manifest file.
 
 While `aips/create_dip.py` only processes one AIP per execution,
 `aips/create_dips_job.py` will process all AIPs in a given Storage Service
