@@ -258,15 +258,14 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
     # Modify or copy METS file for DIP based on mets_type argument
     dip_mets_file = os.path.join(dip_dir, "METS.{}.xml".format(aip_uuid))
 
-    if mets_type == "atom":
-        create_dip_mets(aip_dir, aip_name, fsentries, mets, dip_mets_file)
-    elif mets_type == "storage-service":
-        copy_aip_mets(to_zip_mets_file, dip_mets_file)
-
     if dip_type == "avalon-manifest":
         # Update Manifest file with UUIDs
         update_avalon_manifest(dip_dir, aip_uuid)
     else:
+        if mets_type == "atom":
+            create_dip_mets(aip_dir, aip_name, fsentries, mets, dip_mets_file)
+        elif mets_type == "storage-service":
+            copy_aip_mets(to_zip_mets_file, dip_mets_file)
         compress_zip_folder(to_zip_dir)
         shutil.rmtree(to_zip_dir)
 

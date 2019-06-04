@@ -483,23 +483,24 @@ DIP creation and upload
 `aips/create_dip.py` and `aips/create_dips_job.py` can be used to make DIPs from
 AIPs available in a Storage Service instance. Unlike DIPs created in
 Archivematica, the ones created with this script will include only the original
-files from the transfer and they will maintain the directories, filenames and
-last modified date from those files. They will be placed with a copy of the
-submissionDocumentation folder (if present in the AIP) and the AIP METS file in
-a single ZIP file under the objects directory.
+files from the transfer and they will maintain the directories and filenames.
 
-Based on the `--mets-type` argument, another METS file will be generated
-alongside the objects folder containing only a reference to the ZIP file
-(without AMD or DMD sections), used to upload the DIP to an AtoM instance; or
-the same AIP METS file will be placed alongside the objects folder, used for
-uploads to the Storage Service.
+Based on the `--dip-type` parameter a few differences can be found in the
+resulting DIPs:
 
-The optional `--dip-type` parameter will create a DIP structured in a specific
-way for different access systems. Presently, the only DIP Type available other
-than the default setting is the "avalon-manifest" option. This will create a DIP
-ready for batch ingest into the Avalon Media System, relying on the Transfer
-name to move files into a Collection folder and will append Archivematica-minted
-UUIDs to the root-level Manifest file.
+* When using `zipped-objects`, the files will maintain the original last
+  modified date and they will be placed with a copy of the
+  submissionDocumentation folder and the AIP METS file in a single ZIP file
+  under the objects directory. Based on the `--mets-type` parameter, another
+  METS file will be generated alongside the objects folder containing only a
+  reference to the ZIP file (without AMD or DMD sections), used to upload the
+  DIP to an AtoM instance; or the same AIP METS file will be placed alongside
+  the objects folder, used for uploads to the Storage Service.
+* If `avalon-manifest` is used, the script will create a DIP ready for batch
+  ingest into the Avalon Media System, relying on the Transfer name to move
+  files into a Collection folder and will append Archivematica-minted UUIDs to
+  the root-level Manifest file. **Do not use this type of the DIP in conjunction
+  with the upload options explained below.**
 
 While `aips/create_dip.py` only processes one AIP per execution,
 `aips/create_dips_job.py` will process all AIPs in a given Storage Service
@@ -508,9 +509,9 @@ different subsets of parameters to automatically upload the created DIPs to the
 Storage Service or to an AtoM instance. Both scripts require 7z to be installed
 and available to extract the AIPs downloaded from the Storage Service.
 
-As mentioned, these DIPs can be uploaded to AtoM or the Storage Service using
-`dips.storage_service_upload` and `dips.atom_upload` or as part of the
-`aips/create_dips_job.py` execution.
+As mentioned, the "zipped-objects" DIPs can be uploaded to AtoM or the Storage
+Service using `dips.storage_service_upload` and `dips.atom_upload` or as part of
+the `aips/create_dips_job.py` execution.
 
 The AtoM upload requires a passwordless SSH connection to the AtoM host for the
 user running the script. The AtoM host must be added to list of known hosts.
@@ -567,8 +568,10 @@ similar scripts could be duplicated with a different set of parameters to call
   provided.
 * `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to create the
   DIP from.
-* `--dip-type TYPE`: Type of DIP to create. Default: zipped-objects."
-* `--mets-type TYPE`: Type of METS file to generate. Default: atom."
+* `--dip-type TYPE`: Type of DIP to create. Available options: "zipped-objects",
+  "avalon-manifest". Default: "zipped-objects".
+* `--mets-type TYPE`: Type of METS file to generate. Available options: "atom",
+  "storage-service". Default: "atom".
 * `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be
   downloaded and extracted. Default: "/tmp"
 * `--output-dir PATH`: Absolute path to a directory where the DIP(s) will be
