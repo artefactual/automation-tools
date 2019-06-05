@@ -122,7 +122,9 @@ def get_status(
         num_tries = 0
         while unit_info.get("sip_uuid") is None:
             time.sleep(2)
-            LOGGER.info("Waited 2 seconds before fetching updated SIP status on %s", unit_uuid)
+            LOGGER.info(
+                "Waited 2 seconds before fetching updated SIP status on %s", unit_uuid
+            )
 
             url = "{}/api/{}/status/{}/".format(am_url, unit_type, unit_uuid)
             unit_info = utils._call_url_json(url, params)
@@ -135,7 +137,7 @@ def get_status(
             "%s is a complete transfer, got SIP UUID: %s after %s retries.",
             unit_uuid,
             unit_info.get("sip_uuid"),
-            num_tries
+            num_tries,
         )
 
         # Update DB to refer to this one
