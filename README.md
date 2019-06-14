@@ -14,7 +14,7 @@ automate the processing of transfers in an Archivematica pipeline.
 
 - [Requirements](#requirements)
 - [Installation](#installation)
-- [Automated transfers](#automated-transfers)
+- [Usage](#usage)
 - [Configuration](#configuration)
   - [Parameters](#parameters)
     - [Setting processing rules](#setting-processing-rules)
@@ -53,96 +53,66 @@ Follow each of the steps below to install automation-tools:
 
 1. Make the following directories:
 
-```bash
-mkdir -p /usr/lib/archivematica/automation-tools &&
-mkdir /usr/share/python/automation-tools &&
-mkdir -p /var/log/archivematica/automation-tools &&
-mkdir /var/archivematica/automation-tools &&
-mkdir /etc/archivematica/automation-tools
-```
+    ```
+    sudo mkdir -p /usr/lib/archivematica/automation-tools &&
+    sudo mkdir /usr/share/python/automation-tools &&
+    sudo mkdir -p /var/log/archivematica/automation-tools &&
+    sudo mkdir /var/archivematica/automation-tools &&
+    sudo mkdir /etc/archivematica/automation-tools
+    ```
 
 2. Change ownership of the directories to be owned by archivematica (group
-   archivematica):
+   archivematica) and directories to be owned by the user:
 
-```bash
-chown archivematica:archivematica /var/log/archivematica/automation-tools &&
-chown archivematica:archivematica /var/archivematica/automation-tools
-```
+    ```
+    sudo chown archivematica:archivematica /var/log/archivematica/automation-tools &&
+    sudo chown archivematica:archivematica /var/archivematica/automation-tools &&
+    sudo chown $USER /usr/lib/archivematica/automation-tools &&
+    sudo chown $USER /usr/share/python/automation-tools/ &&
+    sudo chown $USER /etc/archivematica/automation-tools/
+    ```
+
+    In case of using the automation tools with a Docker setup the archivematica 
+    user and group don't exist:
+
+    ```
+    sudo useradd archivematica
+    ```
 
 3. Clone the automation-tools repository into your `usr/lib` directory:
 
-```bash
-cd /usr/lib/archivematica/automation-tools/
-git clone https://github.com/artefactual/automation-tools.git .
-```
+    ```
+    cd /usr/lib/archivematica/automation-tools/
+    git clone https://github.com/artefactual/automation-tools.git .
+    ```
+
+    In case you want to run the automation-tools using [cron](#configuration], the
+    automation tools need to be owned by the archivemtatica user:
+    
+    ```
+    sudo chown archivematica:archivematica /usr/lib/archivematica/automation-tools/
+    ```
 
 4. Set up a Python virtual environment:
 
-```bash
-cd /usr/share/python/automation-tools
-virtualenv venv
-source venv/bin/activate
-pip install -r /usr/lib/archivematica/automation-tools/requirements.txt
-```
+    ```
+    cd /usr/share/python/automation-tools
+    virtualenv venv
+    source venv/bin/activate
+    pip install -r /usr/lib/archivematica/automation-tools/requirements.txt
+    ```
 
 5. (Optional) Update and retrieve required packages:
 
-```bash
-apt-get update
-apt-get install p7zip-full
-```
+    ```
+    apt-get update
+    apt-get install p7zip-full
+    ```
 
+Usage
+-----
 To use automation-tools, copy the scripts you want to use into your
 `/etc/archivematica/automation-tools` directory.
-
-Follow the steps below as an example for setting up a script.
-
-1. Copy the configuration file:
-
-`cp /usr/lib/archivematica/automation-tools/etc/transfers.conf
-/etc/archivematica/automation-tools/`
-
-2. Copy the script:
-
-`cp /usr/lib/archivematica/automation-tools/etc/transfer-script.sh
-/etc/archivematica/automation-tools/`
-
-3. Create a transfer source for the automation-tools in the storage service:
-
-You can use an existing transfer source, or set up a new one.
-
-4. Your default script should be configured along the lines of this:
-
-`transfer-script.sh`:
-
-```bash
-#!/bin/bash
-# docker transfer script example
-# /etc/archivematica/automation-tools/transfer-script.sh
-cd /usr/lib/archivematica/automation-tools/
-python -m transfers.transfer \
- --am-url http://archivematica-dashboard:8000 \
- --ss-url http://archivematica-storage-service:8000 \
- --user test \
- --api-key test  \
- --ss-user test \
- --ss-api-key test \
- --transfer-source <transfer-source-in-storage-service> \
- --config-file transfers.conf
-```
-
-5. Change permissions setting on the script:
-
-`chmod +x transfer-script.sh`
-
-This allows the script to be executible.
-
-6. Run the script:
-
-Run `./transfer-script.sh` and you should have success!
-
-Automated transfers
--------------------
 
 `transfers/transfer.py` is used to prepare transfers, move them into the
 pipelines processing location, and take actions when user input is required.
@@ -150,16 +120,65 @@ Only one transfer is sent to the pipeline at a time, the scripts wait until the
 current transfer is resolved (failed, rejected or stored as an AIP) before
 automatically starting the next available transfer.
 
+Follow the steps below as an example for setting up a script.
+
+1. Copy the configuration file:
+
+    ```
+    `cp /usr/lib/archivematica/automation-tools/etc/transfers.conf
+    /etc/archivematica/automation-tools/`
+    ```
+
+2. Copy the script:
+
+    ```
+    cp /usr/lib/archivematica/automation-tools/etc/transfer-script.sh /etc/archivematica/automation-tools/
+    ```
+
+3. Create a transfer source for the automation-tools in the storage service:
+
+    You can use an existing transfer source, or set up a new one. For Docker 
+    environments the standard transfer source is `$HOME/.am/ss-location-data/`.
+
+4. Your default script should be configured along the lines of this:
+
+    `transfer-script.sh`:
+    ```bash
+    #!/bin/bash
+    # /etc/archivematica/automation-tools/transfer-script.sh
+    cd /usr/lib/archivematica/automation-tools/
+    # Use the Python in the virtual environment.
+    /usr/share/python/automation-tools/venv/bin/python -m transfers.transfer \
+     --am-url http://archivematica-dashboard:8000 \
+     --ss-url http://archivematica-storage-service:8000 \
+     --user test \
+     --api-key test  \
+     --ss-user test \
+     --ss-api-key test \
+     --transfer-source <transfer-source-in-storage-service> \
+     --config-file transfers.conf
+    ```
+
+5. Change permissions setting on the script:
+
+    `chmod +x transfer-script.sh`
+
+    This allows the script to be executible.
+
+6. Run `./transfer-script.sh` and you should have success!
+
+
 Configuration
 -------------
 
-Suggested deployment is to use cron to run a shell script that runs the automate
-transfer tool. Example shell script (for example in
+Suggested deployment is to use cron to run a shell script that runs the 
+automation transfer tool. Example shell script (for example in
 `/etc/archivematica/automation-tools/transfer-script.sh`):
 
 ```bash
 #!/bin/bash
 cd /usr/lib/archivematica/automation-tools/
+# Use the Python in the virtual environment.
 /usr/share/python/automation-tools/bin/python -m transfers.transfer \
   --user <user> \
   --api-key <apikey> \
@@ -514,8 +533,8 @@ Service using `dips.storage_service_upload` and `dips.atom_upload` or as part of
 the `aips/create_dips_job.py` execution.
 
 The AtoM upload requires a passwordless SSH connection to the AtoM host for the
-user running the script. The AtoM host must be added to list of known hosts.
-[More info][Send DIPS].
+user running the script. The AtoM host must be added to list of known hosts
+using this [guide](https://wiki.archivematica.org/Upload_DIP#Send_your_DIPs_using_rsync).
 
 The Storage Service upload requires access to the Archivematica pipeline's
 currently processing location path (the shared path) in order to copy the DIP
@@ -864,11 +883,3 @@ Related Projects
 
 * [automation-audit](https://github.com/finoradin/automation-audit): an
   interface for auditing and managing Archivematica's automation-tools.
-
-[Getting Correct UUIDs and Setting Processing Rules]:
-#getting-correct-uuids-and-setting-processing-rules [create_dip_script.sh]:
-https://github.com/artefactual/automation-tools/blob/master/etc/create_dip_script.sh
-[create_dips_job_script.sh]:
-https://github.com/artefactual/automation-tools/blob/master/etc/create_dips_job_script.sh
-[Send DIPS]:
-https://wiki.archivematica.org/Upload_DIP#Send_your_DIPs_using_rsync
