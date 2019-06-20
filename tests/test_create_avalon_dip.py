@@ -53,17 +53,19 @@ class TestCreateAvalonDip(unittest.TestCase):
                 aip_dir, AVALON_AIP_UUID, OUTPUT_DIR, "atom", "avalon-manifest"
             )
             # Check DIP structure
-            assert avalon_dip_dir == "{}/{}/{}".format(OUTPUT_DIR, TRANSFER_NAME, AVALON_AIP_UUID)
+            assert avalon_dip_dir == "{}/{}/{}".format(
+                OUTPUT_DIR, TRANSFER_NAME, AVALON_AIP_UUID
+            )
             assert os.path.isdir(avalon_dip_dir)
 
             # Check that CSV and folder are present, and METS file is removed
             assert os.listdir(avalon_dip_dir) == ["Demo_Manifest.csv", "assets"]
 
             # Check contents of CSV have been updated
-            csv_path = ("{}/Demo_Manifest.csv".format(avalon_dip_dir))
+            csv_path = "{}/Demo_Manifest.csv".format(avalon_dip_dir)
             is_in_file = False
-            with open(csv_path, 'rt') as c:
-                demo_manifest = csv.reader(c, delimiter=',')
+            with open(csv_path, "rt") as c:
+                demo_manifest = csv.reader(c, delimiter=",")
                 for row in demo_manifest:
                     if AVALON_AIP_UUID in row:
                         is_in_file = True
@@ -81,4 +83,3 @@ class TestCreateAvalonDip(unittest.TestCase):
                 "OrganClip.medium.mp4",
             ]
             assert assets.sort() == avalon_files.sort()
-
