@@ -2,7 +2,7 @@
 # atom_upload script example
 # /etc/archivematica/automation-tools/atom_upload_script.sh
 cd /usr/lib/archivematica/automation-tools/
-/usr/share/python/automation-tools/bin/python -m dips.atom_upload \
+/usr/share/python/automation-tools/venv/bin/python -m dips.atom_upload \
   --atom-url <url> \
   --atom-email <email> \
   --atom-password <password> \

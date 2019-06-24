@@ -2,7 +2,7 @@
 # create_dips_job script example with upload to Storage Service
 # /etc/archivematica/automation-tools/create_dips_job_ss_upload_script.sh
 cd /usr/lib/archivematica/automation-tools/
-/usr/share/python/automation-tools/bin/python -m aips.create_dips_job \
+/usr/share/python/automation-tools/venv/bin/python -m aips.create_dips_job \
   --ss-user <username> \
   --ss-api-key <api_key> \
   --location-uuid <uuid> \

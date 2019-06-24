@@ -2,7 +2,7 @@
 # transfer script example
 # /etc/archivematica/automation-tools/transfer-script.sh
 cd /usr/lib/archivematica/automation-tools/
-/usr/share/python/venv/automation-tools/bin/python -m transfers.transfer 
+/usr/share/python/automation-tools/venv/bin/python -m transfers.transfer
   --user <user> 
   --api-key <apikey>  
   --ss-user <user> 

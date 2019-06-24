@@ -2,7 +2,7 @@
 # storage_service_upload script example
 # /etc/archivematica/automation-tools/storage_service_upload_script.sh
 cd /usr/lib/archivematica/automation-tools/
-/usr/share/python/automation-tools/bin/python -m dips.storage_service_upload \
+/usr/share/python/automation-tools/venv/bin/python -m dips.storage_service_upload \
   --ss-user <username> \
   --ss-api-key <api_key> \
   --pipeline-uuid <uuid> \
