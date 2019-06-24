@@ -86,7 +86,7 @@ Follow each of the steps below to install automation-tools:
     git clone https://github.com/artefactual/automation-tools.git .
     ```
 
-    In case you want to run the automation-tools using [cron](#configuration], the
+    In case you want to run the automation-tools using [cron](#configuration), the
     automation tools need to be owned by the archivemtatica user:
     
     ```
@@ -138,7 +138,11 @@ Follow the steps below as an example for setting up a script.
 3. Create a transfer source for the automation-tools in the storage service:
 
     You can use an existing transfer source, or set up a new one. For Docker 
-    environments the standard transfer source is `$HOME/.am/ss-location-data/`.
+    environments the standard transfer source is `$HOME/.am/ss-location-data/`. 
+    
+    _Note_: If you run Docker as `sudo` the `.am` folder is owned by the root 
+    user. To use this folder you might want to change the folder permissions 
+    of `.am`.
 
 4. Your default script should be configured along the lines of this:
 
@@ -147,7 +151,7 @@ Follow the steps below as an example for setting up a script.
     #!/bin/bash
     # /etc/archivematica/automation-tools/transfer-script.sh
     cd /usr/lib/archivematica/automation-tools/
-    # Use the Python in the virtual environment.
+    # Use Python from the virtual environment.
     /usr/share/python/automation-tools/venv/bin/python -m transfers.transfer \
      --am-url http://archivematica-dashboard:8000 \
      --ss-url http://archivematica-storage-service:8000 \
@@ -179,7 +183,7 @@ automation transfer tool. Example shell script (for example in
 #!/bin/bash
 cd /usr/lib/archivematica/automation-tools/
 # Use the Python in the virtual environment.
-/usr/share/python/automation-tools/bin/python -m transfers.transfer \
+/usr/share/python/automation-tools/venv/bin/python -m transfers.transfer \
   --user <user> \
   --api-key <apikey> \
   --ss-user <user> \
@@ -188,7 +192,7 @@ cd /usr/lib/archivematica/automation-tools/
   --config-file <config_file>
 ```
 
-(Note that the script calls the transfers script as a module using Python's `-m`
+_Note_: the script calls the transfers script as a module using Python's `-m`
 flag, this is required due to the use of relative imports in the code)
 
 The script can be run from a shell window like:
@@ -418,7 +422,7 @@ Example:
 
 ```
 # first script invokes like this (standard transfer):
-/usr/share/python/automation-tools/bin/python -m transfers.transfer \
+/usr/share/python/automation-tools/venv/bin/python -m transfers.transfer \
   --user <user>  \
   --api-key <apikey> \
   --ss-user <user> \
@@ -427,7 +431,7 @@ Example:
   --config-file <config_file>
 
 # second script invokes like this (unzipped bags):
-/usr/share/python/automation-tools/bin/python -m transfers.transfer \
+/usr/share/python/automation-tools/venv/bin/python -m transfers.transfer \
   --user <user> \
   --api-key <apikey> \
   --ss-user <user> \
@@ -455,7 +459,7 @@ uses the new asynchronous endpoints of Archivematica being developed under the
 
 cd /usr/lib/archivematica/automation-tools/
 
-/usr/share/python/automation-tools/bin/python -m transfers.transfer_async \
+/usr/share/python/automation-tools/venv/bin/python -m transfers.transfer_async \
   --user <user> --api-key <apikey> \
   --ss-user <user> --ss-api-key <apikey> \
   --transfer-source <transfer_source_uuid> \
@@ -486,7 +490,7 @@ cd /usr/lib/archivematica/automation-tools/
 * When invoking the transfers.py script, add the `--transfer-type dspace`
   parameter, for example:
 ```
-/usr/share/python/automation-tools/bin/python -m transfers.transfer \
+/usr/share/python/automation-tools/venv/bin/python -m transfers.transfer \
   --transfer-type dspace \
   --user <user> \
   --api-key <apikey> \
