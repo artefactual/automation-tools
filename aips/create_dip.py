@@ -261,6 +261,7 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
     if dip_type == "avalon-manifest":
         # Update Manifest file with UUIDs
         update_avalon_manifest(dip_dir, aip_uuid)
+        os.remove(to_zip_mets_file)
     else:
         if mets_type == "atom":
             create_dip_mets(aip_dir, aip_name, fsentries, mets, dip_mets_file)
@@ -373,7 +374,7 @@ def update_avalon_manifest(dip_dir, aip_uuid):
     csv_path = ""
     if len(paths) == 1:
         csv_path = os.path.join(dip_dir, paths[0])
-        tmp_csv_path = os.path.join(dip_dir, "/tmp.csv")
+        tmp_csv_path = os.path.join(dip_dir, "tmp.csv")
         with open(csv_path, "r") as csv_input, open((tmp_csv_path), "w") as csv_output:
             reader = csv.reader(csv_input)
             writer = csv.writer(csv_output, lineterminator="\n")
