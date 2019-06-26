@@ -19,6 +19,7 @@ class AppConfig:
         self.storage_service_user = conf.get("storage_service_user")
         self.storage_service_api_key = conf.get("storage_service_api_key")
         self.storage_service_url = conf.get("storage_service_url")
+        self.accruals_transfer_source = conf.get("accruals_transfer_source")
 
     def get_am_client(self):
         """Return an Archivematica API client to the caller."""

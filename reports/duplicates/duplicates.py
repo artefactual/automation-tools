@@ -1,80 +1,38 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Return all duplicates from the Archivematica Storage Service
-
-Example usage:
-
-$:~/git/archivematica/automation-tools$ python -m reports.duplicates.duplicates 2> /dev/null
-
-Duplicate entries, per algorithm found, will be output to stdout, e.g.:
-
-    {
-        "manifest_data": {
-            "078917a9ba3eb290ddb27f97d904cf6e24fec5f62a1986fdf760c07d6d4dd30e": [
-                {
-                    "date_modified": "2018-01-31",
-                    "filepath": "data/objects/sci-fi.jpg",
-                    "package_name": "1-588790bd-b9dd-4460-9705-d14f8700dba3",
-                    "package_uuid": "588790bd-b9dd-4460-9705-d14f8700dba3"
-                },
-                {
-                    "date_modified": "2018-01-31",
-                    "filepath": "data/objects/sci-fi.jpg",
-                    "package_name": "2-ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66",
-                    "package_uuid": "ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66"
-                }
-            ],
-            "233aa737752ffb64942ca18f03dd6d316957c5b7a0c439e07cdae9963794c315": [
-                {
-                    "date_modified": "2018-02-01",
-                    "filepath": "data/objects/garage.jpg",
-                    "package_name": "1-588790bd-b9dd-4460-9705-d14f8700dba3",
-                    "package_uuid": "588790bd-b9dd-4460-9705-d14f8700dba3"
-                },
-                {
-                    "date_modified": "2018-02-01",
-                    "filepath": "data/objects/garage.jpg",
-                    "package_name": "2-ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66",
-                    "package_uuid": "ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66"
-                }
-            ]
-        },
-        "packages": {
-            "588790bd-b9dd-4460-9705-d14f8700dba3": "1-588790bd-b9dd-4460-9705-d14f8700dba3",
-            "ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66": "2-ba01e3f6-eb6b-4eb5-a8a8-c1ae10200b66"
-        }
-    }
+"""Return all duplicates from the Archivematica Storage Service.
 
 The script utilizes the AM Client module. The fulcrum is the extract_file
 endpoint and the bag manifest. An example use, if we call it via the API is:
 
     http -v --pretty=format \
-        GET "http://127.0.0.1:62081/api/v2/file/18c87e78-ea18-4a95-9446-e7100f52ab86/extract_file/?relative_path_to_file=1-18c87e78-ea18-4a95-9446-e7100f52ab86/manifest-sha256.txt" \
+        GET "http://127.0.0.1:62081/api/v2/file/<package_uuid>/extract_file/?relative_path_to_file=<transfer_name>-<package_uuid>/manifest-sha256.txt" \
         Authorization:"ApiKey test:test" | less
 
 """
 from __future__ import print_function, unicode_literals
 
 import logging
-import json
 import os
 import shutil
 import sys
 from tempfile import mkdtemp
 
 try:
+    from .digital_object import DigitalObject
+    from . import hashutils
     from . import loggingconfig
     from .appconfig import AppConfig
     from .parsemets import read_premis_data
-    from .serialize_to_csv import CSVOut
+    from . import utils
 except ValueError:
+    from digital_object import DigitalObject
+    import hashutils
     import loggingconfig
     from appconfig import AppConfig
     from parsemets import read_premis_data
-    from serialize_to_csv import CSVOut
-
-import utils
+    import utils
 
 
 logging_dir = os.path.dirname(os.path.abspath(__file__))
@@ -84,13 +42,11 @@ logger = logging.getLogger("duplicates")
 logger.disabled = False
 
 
+MANIFEST_DATA = "manifest_data"
+
+
 class ExtractError(Exception):
     """Custom exception for handling extract errors."""
-
-
-def json_pretty_print(json_string):
-    """Pretty print a JSON string."""
-    return json.dumps(json_string, sort_keys=True, indent=4)
 
 
 def retrieve_file(am, package_uuid, save_as_loc, relative_path):
@@ -136,15 +92,17 @@ def filter_aip_files(filepath, package_uuid):
 
 
 def augment_data(package_uuid, duplicate_report, date_info):
+    """do something."""
     manifest_data = duplicate_report.get("manifest_data", {})
     for key, value in manifest_data.items():
         for package in value:
-            if package_uuid != package.get("package_uuid", ""):
+            if package_uuid != package.package_uuid:
                 continue
             for dates in date_info:
-                path_ = package.get("filepath", "").strip(os.path.join("data", ""))
+                path_ = package.filepath.replace(os.path.join("data", ""), "")
                 if path_ == dates.get("filepath", ""):
-                    package["date_modified"] = dates.get("date_modified", "")
+                    package.date_modified = dates.get("date_modified", "")
+                    break
 
 
 def read_mets(mets_loc):
@@ -157,7 +115,6 @@ def retrieve_mets(am, duplicate_report, temp_dir):
     information.
     """
     for key, value in duplicate_report.get("packages", {}).items():
-        """do nothing"""
         package_uuid = key
         package_name = value
         mets = "{}/data/METS.{}.xml".format(package_name, package_uuid)
@@ -172,42 +129,28 @@ def retrieve_mets(am, duplicate_report, temp_dir):
                 continue
 
 
-def filter_duplicates(duplicate_report):
+def filter_packages(duplicate_report):
     """Filter our report for packages containing duplicates only."""
-    dupes = dict(duplicate_report.get("manifest_data", {}))
+    logger.info("Filtering duplicates only...")
     packages = {}
-    for key, values in dupes.items():
-        if len(values) > 1:
-            for entry in values:
-                packages[entry.get("package_uuid")] = entry.get("package_name")
-        else:
-            try:
-                duplicate_report.get("manifest_data", {}).pop(key)
-                logger.info("Popped checksum: %s", key)
-            except (AttributeError, KeyError):
-                raise ExtractError("Error filtering report for duplicates")
+    for key, values in duplicate_report.get(MANIFEST_DATA, "").items():
+        for entry in values:
+            packages[entry.package_uuid] = entry.package_name
     duplicate_report["packages"] = packages
     return duplicate_report
 
 
-def output_report(duplicate_report):
-    """Provide mechanisms to output different serializations."""
-    with open("aipstore-duplicates.json", "w") as json_file:
-        json_file.write(json_pretty_print(duplicate_report))
-    print(json_pretty_print(duplicate_report))
-    CSVOut.csv_out(duplicate_report, "aipstore-duplicates.csv")
+def output_report(aip_report):
+    print("Outputting report: We still need to implement this")
 
 
-def main():
+def retrieve_aip_index():
     """Script's primary entry-point."""
     temp_dir = mkdtemp()
-    loggingconfig.setup("INFO", os.path.join(logging_dir, "report.log"))
     am = AppConfig().get_am_client()
     # Maintain state of all values across the aipstore.
     duplicate_report = {}
     manifest_data = {}
-    # Checksum algorithms to test for.
-    checksum_algorithms = ("md5", "sha1", "sha256")
     # Get all AIPS that the storage service knows about.
     aips = am.aips()
     for aip in aips:
@@ -216,18 +159,17 @@ def main():
             # TODO: make this more accurate...
             package_name = package_name.replace(ext, "")
         package_uuid = aip.get("uuid")
-        for algorithm in checksum_algorithms:
+        hashes = hashutils.Hashes()
+        for algorithm in hashes.checksum_algorithms:
             # Store our manifest somewhere.
             relative_path = "{}/manifest-{}.txt".format(package_name, algorithm)
             save_path = "{}-manifest-{}.txt".format(package_name, algorithm)
             save_as_loc = os.path.join(temp_dir, save_path)
-
             try:
                 retrieve_file(am, package_uuid, save_as_loc, relative_path)
             except ExtractError:
                 logger.info("No result for algorithm: %s", algorithm)
                 continue
-
             # Our dictionary keys are checksums and all filename entries with
             # the same checksum are appended to create an array. If the array
             # at the end is greater than one, we have duplicate files.
@@ -239,23 +181,37 @@ def main():
                         # entry.
                         checksum, filepath = line.split(" ", 1)
                         if not filter_aip_files(filepath, package_uuid):
-                            entry = {}
                             filepath = filepath.strip()
-                            entry["package_uuid"] = am.package_uuid.strip()
-                            entry["package_name"] = package_name.strip()
-                            entry["filepath"] = filepath
-                            entry["basename"] = os.path.basename(filepath)
-                            entry["dirname"] = os.path.dirname(filepath)
+                            obj = DigitalObject()
+                            obj.package_uuid = am.package_uuid.strip()
+                            obj.package_name = package_name.strip()
+                            obj.filepath = filepath
+                            obj.set_basename(filepath)
+                            obj.set_dirname(filepath)
+                            obj.hashes = {checksum.strip(): algorithm}
                             manifest_data.setdefault(checksum.strip(), [])
-                            manifest_data[checksum].append(entry)
-            duplicate_report["manifest_data"] = manifest_data
-    duplicate_report = filter_duplicates(duplicate_report)
+                            manifest_data[checksum].append(obj)
+            duplicate_report[MANIFEST_DATA] = manifest_data
+
+    # Add packages to report to make it easier to retrieve METS.
+    filter_packages(duplicate_report)
+
+    # Retrieve METS and augment the data with date_modified information.
     retrieve_mets(am, duplicate_report, temp_dir)
-    # Save to JSON and CSV.
-    output_report(duplicate_report)
+
     # Cleanup our temporary folder.
     shutil.rmtree(temp_dir)
 
+    # Return our complete AIP manifest to the caller
+    return duplicate_report
+
+
+def main():
+    """Script's primary entry-point."""
+    report = retrieve_aip_index()
+    output_report(report)
+
 
 if __name__ == "__main__":
+    loggingconfig.setup("INFO", os.path.join(logging_dir, "report.log"))
     sys.exit(main())

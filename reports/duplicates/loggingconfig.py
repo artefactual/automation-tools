@@ -25,7 +25,8 @@ def setup(log_level, log_file_name):
             },
         },
         "loggers": {
-            "duplicates": {"level": log_level, "handlers": ["console", "file"]}
+            "duplicates": {"level": log_level, "handlers": ["console", "file"]},
+            "accruals": {"level": log_level, "handlers": ["console", "file"]},
         },
     }
 
