@@ -74,6 +74,9 @@ except ValueError:
     from parsemets import read_premis_data
     from serialize_to_csv import CSVOut
 
+import utils
+
+
 logging_dir = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -208,18 +211,23 @@ def main():
     # Get all AIPS that the storage service knows about.
     aips = am.aips()
     for aip in aips:
-        package_name = os.path.basename(aip.get("current_path")).replace(".7z", "")
+        package_name = os.path.basename(aip.get("current_path"))
+        for ext in utils.EXTS:
+            # TODO: make this more accurate...
+            package_name = package_name.replace(ext, "")
         package_uuid = aip.get("uuid")
         for algorithm in checksum_algorithms:
             # Store our manifest somewhere.
             relative_path = "{}/manifest-{}.txt".format(package_name, algorithm)
             save_path = "{}-manifest-{}.txt".format(package_name, algorithm)
             save_as_loc = os.path.join(temp_dir, save_path)
+
             try:
                 retrieve_file(am, package_uuid, save_as_loc, relative_path)
             except ExtractError:
                 logger.info("No result for algorithm: %s", algorithm)
                 continue
+
             # Our dictionary keys are checksums and all filename entries with
             # the same checksum are appended to create an array. If the array
             # at the end is greater than one, we have duplicate files.
