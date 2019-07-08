@@ -129,9 +129,10 @@ def retrieve_mets(am, duplicate_report, temp_dir):
                 continue
 
 
-def filter_packages(duplicate_report):
-    """Filter our report for packages containing duplicates only."""
-    logger.info("Filtering duplicates only...")
+def create_packages_section(duplicate_report):
+    """Create a packages section to our report to make it easier to use the
+    output.
+    """
     packages = {}
     for key, values in duplicate_report.get(MANIFEST_DATA, "").items():
         for entry in values:
@@ -194,7 +195,7 @@ def retrieve_aip_index():
             duplicate_report[MANIFEST_DATA] = manifest_data
 
     # Add packages to report to make it easier to retrieve METS.
-    filter_packages(duplicate_report)
+    create_packages_section(duplicate_report)
 
     # Retrieve METS and augment the data with date_modified information.
     retrieve_mets(am, duplicate_report, temp_dir)
