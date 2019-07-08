@@ -15,6 +15,7 @@ automate the processing of transfers in an Archivematica pipeline.
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Docker installation](#docker-installation)
 - [Configuration](#configuration)
   - [Parameters](#parameters)
     - [Setting processing rules](#setting-processing-rules)
@@ -48,8 +49,10 @@ Requirements
 
 Installation
 ------------
-
-Follow each of the steps below to install automation-tools:
+The automation-tools have to be installed on the Archivematica dashboard. For
+using the automation-tools in a developement setup using docker-compose checkout
+the [docker instructions](#Docker installation).  To install the automation-tools on
+a general Archivematica dashboard follow these steps:
 
 1. Make the following directories:
 
@@ -70,13 +73,6 @@ Follow each of the steps below to install automation-tools:
     sudo chown $USER /usr/lib/archivematica/automation-tools &&
     sudo chown $USER /usr/share/python/automation-tools/ &&
     sudo chown $USER /etc/archivematica/automation-tools/
-    ```
-
-    In case of using the automation tools with a Docker setup the archivematica 
-    user and group don't exist:
-
-    ```
-    sudo useradd archivematica
     ```
 
 3. Clone the automation-tools repository into your `usr/lib` directory:
@@ -125,8 +121,7 @@ Follow the steps below as an example for setting up a script.
 1. Copy the configuration file:
 
     ```
-    `cp /usr/lib/archivematica/automation-tools/etc/transfers.conf
-    /etc/archivematica/automation-tools/`
+    cp /usr/lib/archivematica/automation-tools/etc/transfers.conf /etc/archivematica/automation-tools/
     ```
 
 2. Copy the script:
@@ -171,10 +166,48 @@ Follow the steps below as an example for setting up a script.
 
 6. Run `./transfer-script.sh` and you should have success!
 
+Docker installation
+-------------------
+It is possible to install the automation tools in an existing docker-compose 
+setup. For setting up the initial docker-compose setup please follow these 
+[instructions](https://github.com/artefactual-labs/am/tree/master/compose#installation).
+To install the automation-tools on the compose dashboard follow these steps:
+
+1. Stop the current Archivematica instance:
+
+    ```bash
+    cd projects_folder/am/compose
+    docker-compose down
+    ```
+
+2. Build a new Arhcivematica dashboard with automation tools:
+
+    ```bash
+    cd projects_folder
+    git clone https://github.com/artefactual/automation-tools.git .
+    cd automation-tools
+    docker build --tag=compose_archivematica-dashboard --build-arg transfer_source_uuid=<transfer_source_uuid> .
+    ```
+
+3. Run the new setup including the automation-tools:
+    ```bash
+    cd projects_folder/am/compose
+    docker-compose up -d
+    ```
+    
+Now it is possible to run the automation-tools in a development setup. The 
+standard configuration uses pre-transfer scripts to automate and approve 
+transfers. To change or add pre-transfer scripts or the `get-accession-number` 
+script checkout the [docker setup](docker-setup) folder. To run the 
+automation-tools every minute using cron add the following command to the 
+crontab:
+
+```bash
+*/1 * * * * docker exec --user="archivematica" compose_archivematica-dashboard_1 /etc/archivematica/automation-tools/transfer-script.sh
+```
 
 Configuration
 -------------
-
 Suggested deployment is to use cron to run a shell script that runs the 
 automation transfer tool. Example shell script (for example in
 `/etc/archivematica/automation-tools/transfer-script.sh`):

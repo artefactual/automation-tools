@@ -2,6 +2,8 @@
 *.swp
 *~
 
+docker-setup/
+
 # Eclipse IDE files
 .project
 .pydevproject
