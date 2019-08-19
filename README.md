@@ -543,6 +543,8 @@ using this [guide](https://wiki.archivematica.org/Upload_DIP#Send_your_DIPs_usin
 The Storage Service upload requires access to the Archivematica pipeline's
 currently processing location path (the shared path) in order to copy the DIP
 folder in before sending a requests to the Storage Service to process that DIP.
+The DIP creation request requires to configure the script with the credentials
+from a Storage Service's administrator.
 
 ### Configuration
 
@@ -634,7 +636,7 @@ similar scripts could be duplicated with a different set of parameters to call
 * `--ss-url URL`: Storage Service URL. Default: http://127.0.0.1:8000
 * `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
   authenticate as. Storage Service 0.8 and up requires this; earlier versions
-  will ignore any value provided.
+  will ignore any value provided. Requires an administrator user.
 * `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
   Service 0.8 and up requires this; earlier versions will ignore any value
   provided.
@@ -664,7 +666,8 @@ similar scripts could be duplicated with a different set of parameters to call
 * `--ss-url URL`: Storage Service URL. Default: http://127.0.0.1:8000
 * `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
   authenticate as. Storage Service 0.8 and up requires this; earlier versions
-  will ignore any value provided.
+  will ignore any value provided. Requires an administrator to upload the DIPs
+  to the Storage Service.
 * `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
   Service 0.8 and up requires this; earlier versions will ignore any value
   provided.

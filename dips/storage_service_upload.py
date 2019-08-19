@@ -15,7 +15,6 @@ import logging.config  # Has to be imported separately
 import os
 import shutil
 import sys
-import time
 import uuid
 
 import requests
@@ -110,32 +109,22 @@ def main(
         "events": [],
         "agents": [],
     }
-    # SS 'file/async/' POST request.
     # TODO: Move this to amclient.
-    url = "%s/api/v2/file/async/" % ss_url
+    LOGGER.info("Storing DIP in Storage Service.")
+    url = "%s/api/v2/file/" % ss_url
     headers = {"Authorization": "ApiKey %s:%s" % (ss_user, ss_api_key)}
-    response = requests.post(url, headers=headers, json=dip_data, timeout=5)
+    response = requests.post(url, headers=headers, json=dip_data, timeout=86400)
     result = 0
-    if (
-        response.status_code != requests.codes.accepted
-        or "Location" not in response.headers
-    ):
-        LOGGER.error("Could not store DIP in SS: %s", response.text)
+    if response.status_code != requests.codes.created:
+        LOGGER.error("Could not store DIP in Storage Service: %s", response.text)
         result = 3
     else:
-        LOGGER.info("Storing DIP in SS.")
-        try:
-            ret = check_async(response.headers["Location"], headers=headers)
-            if not ret:
-                LOGGER.warning("Timeout checking the DIP storage result.")
-            else:
-                LOGGER.info("DIP stored.")
-                if "uuid" in ret:
-                    LOGGER.info("SS UUID: %s" % ret["uuid"])
-
-        except requests.exceptions.RequestException as e:
-            LOGGER.error("Could not store DIP in SS: %s", e)
-            result = 4
+        LOGGER.info("DIP stored.")
+        ret = response.json()
+        if "uuid" in ret:
+            LOGGER.info("Storage Service DIP UUID: %s" % ret["uuid"])
+        else:
+            LOGGER.warning("Storage Service didn't return the DIP UUID")
 
     # Finally remove the DIP from the currently processing location
     LOGGER.info("Removing duplicates.")
@@ -153,19 +142,6 @@ def main(
             LOGGER.warning("DIP removal failed: %s", e)
 
     return result
-
-
-def check_async(url, headers={}, tries=60, interval=10):
-    for _ in range(tries):
-        response = requests.get(url, headers=headers, timeout=5)
-        response.raise_for_status()
-        payload = response.json()
-        if not payload["completed"]:
-            time.sleep(interval)
-            continue
-        if payload["was_error"]:
-            raise requests.exceptions.RequestException(payload["error"])
-        return payload["result"]
 
 
 if __name__ == "__main__":
