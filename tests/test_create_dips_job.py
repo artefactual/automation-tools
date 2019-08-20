@@ -101,7 +101,9 @@ class TestCreateDipsJob(unittest.TestCase):
         ret = create_dips_job.main(**self.args)
         assert ret == 1
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/create_dips_job_main_fail_request.yaml")
+    @vcr.use_cassette(
+        "fixtures/vcr_cassettes/test_create_dips_job_main_fail_request.yaml"
+    )
     def test_main_fail_request(self):
         """Test a fail when an SS connection can't be established."""
         with TmpDir(TMP_DIR):
@@ -109,7 +111,7 @@ class TestCreateDipsJob(unittest.TestCase):
             ret = create_dips_job.main(**self.args)
             assert ret == 2
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/create_dips_job_main_success.yaml")
+    @vcr.use_cassette("fixtures/vcr_cassettes/test_create_dips_job_main_success.yaml")
     def test_main_success(self):
         """Test a success where one DIP is created."""
         with TmpDir(TMP_DIR), TmpDir(OUTPUT_DIR):
@@ -120,7 +122,7 @@ class TestCreateDipsJob(unittest.TestCase):
             )
             assert os.path.isdir(dip_path)
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/create_dips_job_main_success.yaml")
+    @vcr.use_cassette("fixtures/vcr_cassettes/test_create_dips_job_main_success.yaml")
     def test_main_success_no_dip_creation(self):
         """Test a success where one AIP was already processed."""
         effect = exc.IntegrityError({}, [], "")
@@ -133,7 +135,7 @@ class TestCreateDipsJob(unittest.TestCase):
             )
             assert not os.path.isdir(dip_path)
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/create_dips_job_main_success.yaml")
+    @vcr.use_cassette("fixtures/vcr_cassettes/test_create_dips_job_main_success.yaml")
     @mock.patch("aips.create_dips_job.atom_upload.main")
     @mock.patch("aips.create_dips_job.create_dip.main", return_value=1)
     def test_main_dip_creation_failed(self, mock_create_dip, mock_atom_upload):
@@ -143,7 +145,7 @@ class TestCreateDipsJob(unittest.TestCase):
             create_dips_job.main(**self.args)
             assert not mock_atom_upload.called
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/create_dips_job_main_success.yaml")
+    @vcr.use_cassette("fixtures/vcr_cassettes/test_create_dips_job_main_success.yaml")
     @mock.patch("aips.create_dips_job.atom_upload.main", return_value=None)
     @mock.patch("aips.create_dips_job.create_dip.main", return_value="fake/path")
     def test_main_success_atom_upload_call(self, mock_create_dip, mock_atom_upload):
@@ -163,7 +165,7 @@ class TestCreateDipsJob(unittest.TestCase):
             create_dips_job.main(**self.args)
             assert mock_atom_upload.called
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/create_dips_job_main_success.yaml")
+    @vcr.use_cassette("fixtures/vcr_cassettes/test_create_dips_job_main_success.yaml")
     @mock.patch("aips.create_dips_job.storage_service_upload.main", return_value=None)
     @mock.patch("aips.create_dips_job.create_dip.main", return_value="fake/path")
     def test_main_success_ss_upload_call(self, mock_create_dip, mock_ss_upload):
