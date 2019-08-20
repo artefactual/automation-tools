@@ -65,6 +65,7 @@ def main(
     ss_user,
     ss_api_key,
     location_uuid,
+    origin_pipeline_uuid,
     tmp_dir,
     output_dir,
     database_file,
@@ -102,8 +103,8 @@ def main(
         LOGGER.error(e)
         return 2
 
-    # Get only AIPs from the specified location
-    aip_uuids = filter_aips(aips, location_uuid)
+    # Get only AIPs from the specified location and origin pipeline
+    aip_uuids = filter_aips(aips, location_uuid, origin_pipeline_uuid)
 
     # Create DIPs for those AIPs
     for uuid in aip_uuids:
@@ -165,12 +166,13 @@ def main(
     LOGGER.info("All AIPs have been processed")
 
 
-def filter_aips(aips, location_uuid):
+def filter_aips(aips, location_uuid, origin_pipeline_uuid):
     """
     Filters a list of AIPs based on a location UUID.
 
     :param list aips: list of AIPs from the results of an SS response
     :param str location_uuid: UUID from the SS location
+    :param str origin_pipeline_uuid: UUID from the origin pipeline
     :returns: list of UUIDs from the AIPs in that location
     """
     location = "/api/v2/location/{}/".format(location_uuid)
@@ -186,6 +188,14 @@ def filter_aips(aips, location_uuid):
         if aip["current_location"] != location:
             LOGGER.debug("Skipping AIP (different location): %s", aip["uuid"])
             continue
+        if origin_pipeline_uuid:
+            pipeline = "/api/v2/pipeline/{}/".format(origin_pipeline_uuid)
+            if "origin_pipeline" not in aip:
+                LOGGER.debug("Skipping AIP (missing pipeline): %s", aip["uuid"])
+                continue
+            if aip["origin_pipeline"] != pipeline:
+                LOGGER.debug("Skipping AIP (different pipeline): %s", aip["uuid"])
+                continue
         filtered_aips.append(aip["uuid"])
 
     return filtered_aips
@@ -219,6 +229,12 @@ if __name__ == "__main__":
         metavar="UUID",
         required=True,
         help="UUID of an AIP Storage location in the Storage Service.",
+    )
+    parser.add_argument(
+        "--origin-pipeline-uuid",
+        metavar="UUID",
+        help="Optionally, filter AIPs by origin pipeline.",
+        default=None,
     )
     parser.add_argument(
         "--database-file",
@@ -360,6 +376,7 @@ if __name__ == "__main__":
             ss_user=args_dict.get("ss_user"),
             ss_api_key=args_dict.get("ss_api_key"),
             location_uuid=args_dict.get("location_uuid"),
+            origin_pipeline_uuid=args_dict.get("origin_pipeline_uuid"),
             tmp_dir=args_dict.get("tmp_dir"),
             output_dir=args_dict.get("output_dir"),
             database_file=args_dict.get("database_file"),

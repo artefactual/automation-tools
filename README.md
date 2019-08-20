@@ -673,6 +673,8 @@ similar scripts could be duplicated with a different set of parameters to call
   provided.
 * `--location-uuid UUID` [REQUIRED]: Storage Service location UUID to be
   processed.
+* `--origin-pipeline-uuid UUID`: Optionally, limit DIP creation to AIPs
+  originated in a specific pipeline.
 * `--database-file PATH` [REQUIRED]: Absolute path to an SQLite database file to
   keep track of the processed AIPs.
 * `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be
