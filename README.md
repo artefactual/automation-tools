@@ -722,6 +722,53 @@ following subset of arguments:
 
 See [Getting API keys](#getting-api-keys)
 
+Exporting to NetX
+-----------------
+
+The *dips/copy_to_netx.py* script is a command line tool that takes a DIP
+directory in the `watchedDirectories/uploadDIP` subdirectory of the
+Archivematica shared directory, parses the contents, and passes the objects,
+and CSV data describing the objects, to NetX.
+
+The component ID recorded in the NetX CSV can be:
+
+1) Specified as a command line option (`--component-id`)
+2) Specified using the Dublin Core identifier
+3) Specified using JSON metadata
+
+If specifiying the component ID using JSON metadata you'll need to put a file
+called `netx.json` in a `metadata` directory in your transfer. The contents of
+this file should be similar to the example JSON shown below:
+
+    [{"component.identifier": "someidentifier"}]
+
+The object ID recorded in the NetX CSV can be:
+
+1) Specified as a command line option (`--object-id`)
+2) Specified using the accession number
+
+#### `dips/copy_to_netx.py`:
+
+* `--shared-directory PATH`: Absolute path to the pipeline's shared directory.
+  Default: `/var/archivematica/sharedDirectory/`.
+* `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to copy from.
+* `--netx-csv-directory PATH` [REQUIRED]: Absolute path to the NetX CSV
+  directory.
+* `--netx-objects-directory PATH` [REQUIRED]: Absolute path to the NetX objects
+  directory.
+* `--object-id ID`: Object ID to specify when adding to the NetX CSV.
+* `--component-id ID`: Component ID to specify when adding to the NetX CSV.
+* `--delete-local-copy`: To use alongside the upload arguments explained bellow
+  and remove the local DIP after it has been uploaded.
+* `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
+  will be created in the script directory.
+* `-v, --verbose`: Increase the debugging output. Can be specified multiple
+  times, e.g. `-vv`
+* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
+  e.g. `-qq`
+* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
+  'INFO', 'DEBUG'. This will override `-q` and `-v`
+
 Reingest
 --------
 
