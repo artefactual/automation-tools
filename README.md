@@ -36,6 +36,7 @@ automate the processing of transfers in an Archivematica pipeline.
     - [`dips/storage_service_upload.py`:](#dipsstorage_service_uploadpy)
     - [`aips/create_dips_job.py`:](#aipscreate_dips_jobpy)
     - [Getting Storage Service API key](#getting-storage-service-api-key)
+- [DIP export to NetX](#dip-export-to-netx)
 - [Reingest](#reingest)
 - [Related Projects](#related-projects)
 
@@ -722,19 +723,19 @@ following subset of arguments:
 
 See [Getting API keys](#getting-api-keys)
 
-Exporting to NetX
------------------
+DIP export to NetX
+------------------
 
 The *dips/copy_to_netx.py* script is a command line tool that takes a DIP
-directory in the `watchedDirectories/uploadDIP` subdirectory of the
-Archivematica shared directory, parses the contents, and passes the objects,
-and CSV data describing the objects, to NetX.
+directory, typically in the `watchedDirectories/uploadDIP` subdirectory of the
+Archivematica shared directory, and exports data to NetX. The script copies
+the objects in the DIP, and writes CSV data describing the objects, to
+directories that NetX imports from.
 
-The component ID recorded in the NetX CSV can be:
+The component ID recorded in the NetX CSV can either be:
 
 1) Specified as a command line option (`--component-id`)
-2) Specified using the Dublin Core identifier
-3) Specified using JSON metadata
+2) Specified using JSON metadata
 
 If specifiying the component ID using JSON metadata you'll need to put a file
 called `netx.json` in a `metadata` directory in your transfer. The contents of
@@ -742,15 +743,13 @@ this file should be similar to the example JSON shown below:
 
     [{"component.identifier": "someidentifier"}]
 
-The object ID recorded in the NetX CSV can be:
+The object ID recorded in the NetX CSV can either be:
 
 1) Specified as a command line option (`--object-id`)
 2) Specified using the accession number
 
 #### `dips/copy_to_netx.py`:
 
-* `--shared-directory PATH`: Absolute path to the pipeline's shared directory.
-  Default: `/var/archivematica/sharedDirectory/`.
 * `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to copy from.
 * `--netx-csv-directory PATH` [REQUIRED]: Absolute path to the NetX CSV
   directory.
@@ -758,6 +757,8 @@ The object ID recorded in the NetX CSV can be:
   directory.
 * `--object-id ID`: Object ID to specify when adding to the NetX CSV.
 * `--component-id ID`: Component ID to specify when adding to the NetX CSV.
+* `--working-directory PATH`: Absolute path in which a temporary working
+  directory will be created. Defaults to system's temp directory.
 * `--delete-local-copy`: To use alongside the upload arguments explained bellow
   and remove the local DIP after it has been uploaded.
 * `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
