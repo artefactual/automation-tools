@@ -93,7 +93,7 @@ def filter_aip_files(filepath, package_uuid):
 
 def augment_data(package_uuid, duplicate_report, date_info):
     """do something."""
-    manifest_data = duplicate_report.get("manifest_data", {})
+    manifest_data = duplicate_report.get(MANIFEST_DATA, {})
     for key, value in manifest_data.items():
         for package in value:
             if package_uuid != package.package_uuid:
@@ -134,7 +134,7 @@ def create_packages_section(duplicate_report):
     output.
     """
     packages = {}
-    for key, values in duplicate_report.get(MANIFEST_DATA, "").items():
+    for key, values in duplicate_report.get(MANIFEST_DATA, {}).items():
         for entry in values:
             packages[entry.package_uuid] = entry.package_name
     duplicate_report["packages"] = packages
@@ -154,6 +154,8 @@ def retrieve_aip_index():
     manifest_data = {}
     # Get all AIPS that the storage service knows about.
     aips = am.aips()
+    if not aips:
+        sys.exit("Nothing to do: There are no AIPs")
     for aip in aips:
         package_name = os.path.basename(aip.get("current_path"))
         for ext in utils.EXTS:
