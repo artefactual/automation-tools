@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Digital object class to help with matching."""
+"""Digital object class to help with matching objects across bags."""
 
 import json
 import os
@@ -28,6 +28,9 @@ class DigitalObject(object):
     package_uuid = None
     package_name = None
 
+    # This string eases our comparison to bag objects.
+    DATA_OBJ_PATH_FOR_COMPARISON = os.path.join("data", "objects")
+
     def __init__(self, path=None, transfer_path=None):
         """Populate the digital object metadata. If we don't supply a path
         we'll just return an empty object to be populated on our own terms.
@@ -41,17 +44,16 @@ class DigitalObject(object):
             self.package_uuid = None
             self.package_name = None
             self.flag = False
-
         if path:
             if not transfer_path:
                 raise DigitalObjectException("Transfer path isn't set")
-            # Construct path as if it is in a Bag object.
-            comparison_path = path.replace(
-                transfer_path, os.path.join("data", "objects")
+            self.filepath = path
+            # Create a comparison path to compare directly to bag objects.
+            self.comparison_path = path.replace(
+                transfer_path, self.DATA_OBJ_PATH_FOR_COMPARISON
             )
-            self.filepath = comparison_path
-            self.set_basename(comparison_path)
-            self.set_dirname(comparison_path)
+            self.set_basename(self.comparison_path)
+            self.set_dirname(self.comparison_path)
             self.hashes = hashutils.hash(path)
             self.date_modified = self.get_timestamp(path)
             self.flag = False
@@ -82,7 +84,9 @@ class DigitalObject(object):
             if key in other.hashes.keys():
                 ret = True
                 break
-        if self.filepath != other.filepath:
+        # TODO: we don't want to break this comparison, now we use a comparison
+        # path and filepath and the semantics may not be clear enough.
+        if self.comparison_path != other.filepath:
             ret = False
         if self.date_modified != other.date_modified:
             ret = False
