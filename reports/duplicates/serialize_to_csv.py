@@ -56,6 +56,7 @@ class CSVOut:
         """
         accrual_comparison_csv = "true_duplicates_comparison.csv"
         cols = [
+            "keep",
             "path",
             "in_transfer_name",
             "hash",
@@ -72,6 +73,7 @@ class CSVOut:
             row_data = transfer.get(list(transfer_name)[0], {})
             for datum in row_data:
                 row = []
+                row.append("")
                 row.append(datum.filepath)
                 row.append(list(transfer_name)[0])
                 hash_ = list(datum.hashes.keys())[0]
@@ -81,7 +83,7 @@ class CSVOut:
                 csv.append(row)
         df = DataFrame(csv, columns=cols)
         df.sort_values(by=["in_transfer_name"])
-        logger.error("Outputting report to: %s", accrual_comparison_csv)
+        logger.info("Outputting report to: %s", accrual_comparison_csv)
         df.to_csv(accrual_comparison_csv, index=None, header=True, encoding="utf8")
 
     @staticmethod
@@ -91,6 +93,7 @@ class CSVOut:
         """
         accrual_comparison_csv = "near_matches_comparison.csv"
         cols = [
+            "keep",
             "path",
             "in_transfer_name",
             "hash",
@@ -104,6 +107,7 @@ class CSVOut:
             for transfer_name, transfer_items in transfer.items():
                 for transfer_item in transfer_items:
                     row = []
+                    row.append("")
                     row.append(transfer_item[0].filepath)
                     row.append(transfer_name)
                     hash_ = list(transfer_item[0].hashes.keys())[0]
@@ -115,19 +119,20 @@ class CSVOut:
                     csv.append(row)
         df = DataFrame(csv, columns=cols)
         df.sort_values(by=["in_transfer_name"])
-        logger.error("Outputting report to: %s", accrual_comparison_csv)
+        logger.info("Outputting report to: %s", accrual_comparison_csv)
         df.to_csv(accrual_comparison_csv, index=None, header=True, encoding="utf8")
 
     @staticmethod
     def no_match_csv_out(no_match_report, filename):
         """Create a report of non-matches."""
         accrual_comparison_csv = "non_matches_list.csv"
-        cols = ["path", "in_transfer_name", "hash", "modified_date", "is_new"]
+        cols = ["keep", "path", "in_transfer_name", "hash", "modified_date", "is_new"]
         csv = []
         for transfer in no_match_report:
             for transfer_name, transfer_items in transfer.items():
                 for transfer_item in transfer_items:
                     row = []
+                    row.append("")
                     row.append(transfer_item.filepath)
                     row.append(transfer_name)
                     hash_ = list(transfer_item.hashes.keys())[0]
@@ -138,5 +143,5 @@ class CSVOut:
 
         df = DataFrame(csv, columns=cols)
         df.sort_values(by=["in_transfer_name"])
-        logger.error("Outputting report to: %s", accrual_comparison_csv)
+        logger.info("Outputting report to: %s", accrual_comparison_csv)
         df.to_csv(accrual_comparison_csv, index=None, header=True, encoding="utf8")
