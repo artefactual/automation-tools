@@ -132,7 +132,7 @@ class CSVOut:
             for transfer_name, transfer_items in transfer.items():
                 for transfer_item in transfer_items:
                     row = []
-                    row.append("")
+                    row.append("yes")
                     row.append(transfer_item.filepath)
                     row.append(transfer_name)
                     hash_ = list(transfer_item.hashes.keys())[0]
