@@ -21,6 +21,13 @@ class AppConfig:
         self.storage_service_url = conf.get("storage_service_url")
         self.accruals_transfer_source = conf.get("accruals_transfer_source")
 
+        # Space to configure a new location in.
+        self.default_space = conf.get("default_storage_space")
+        self.default_path = conf.get("default_path")
+
+        # Information about the candidate transfer.
+        self.candidate_agent = conf.get("candidate_agent")
+
     def get_am_client(self):
         """Return an Archivematica API client to the caller."""
         am = AMClient()

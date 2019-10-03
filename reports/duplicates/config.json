@@ -1,6 +1,9 @@
 {
+	"candidate_agent": "IISH",
 	"storage_service_url": "http://127.0.0.1:62081",
 	"storage_service_user": "test",
 	"storage_service_api_key": "test",
-	"accruals_transfer_source": "accruals"
+	"accruals_transfer_source": "accruals",
+	"default_storage_space": "efba863a-40e3-4c5a-9837-098412ab09d7",
+	"default_path": "/home/ross-spencer/.am/ss-location-data/candidate-transfers"
 }
