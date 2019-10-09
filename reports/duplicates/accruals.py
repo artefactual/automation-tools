@@ -1,6 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""Script to compare a source of new transfer material (accruals) with the
+contents of an AIP store and output CSV files containing information about:
+
+   * True duplicates.
+   * Near duplicates.
+   * Non duplicates.
+
+These files can be used as an input to generate new transfer material to be
+transferred into Archivematica.
+"""
+
 from __future__ import print_function, unicode_literals
 
 import copy
@@ -83,7 +94,7 @@ def create_manifest(aip_index, accrual_objs):
 def create_comparison_obj(transfer_path):
     """Do something."""
     transfer_arr = []
-    for root, dirs, files in os.walk(transfer_path, topdown=True):
+    for root, _, files in os.walk(transfer_path, topdown=True):
         for name in files:
             file_ = os.path.join(root, name)
             if os.path.isfile(file_):
@@ -122,10 +133,8 @@ def stat_transfers(accruals_path, all_transfers):
 
 def main(location=default_location):
     """Primary entry point for this script."""
-
     am = AppConfig().get_am_client()
     sources = am.list_storage_locations()
-
     accruals = False
     for source in sources.get("objects"):
         if (
@@ -137,9 +146,8 @@ def main(location=default_location):
             am.transfer_path = source.get("path")
             accruals = True
     if not accruals:
-        logger.info("Exiting. No transfer source: {}".format(location))
+        logger.info("Exiting. No transfer source: %s", location)
         sys.exit()
-
     # All transfer directories. Assumption is the same as Archivematica that
     # each transfer is organized into a single directory at this level.
     all_transfers = am.transferables().get("directories")
@@ -148,10 +156,10 @@ def main(location=default_location):
 
 if __name__ == "__main__":
     loggingconfig.setup("INFO", os.path.join(logging_dir, "report.log"))
-    source = default_location
+    transfer_source = default_location
     try:
         source = sys.argv[1:][0]
-        logger.error("Attempting to find transfers at: %s", source)
+        logger.error("Attempting to find transfers at: %s", transfer_source)
     except IndexError:
         pass
-    sys.exit(main(source))
+    sys.exit(main(transfer_source))

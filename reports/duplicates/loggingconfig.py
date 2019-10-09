@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
+"""Logging configuration module."""
+
 import logging
-import logging.config  # Has to be imported separately
+import logging.config
 
 
 def setup(log_level, log_file_name):
     """Configure the logging system."""
-    # Log format string for flake8 compliance
     log_fmt = "%(levelname)-8s  %(asctime)s " "%(filename)s:%(lineno)-4s %(message)s"
-
     dict_config = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -30,11 +30,11 @@ def setup(log_level, log_file_name):
             "candidates": {"level": log_level, "handlers": ["console", "file"]},
         },
     }
-
     logging.config.dictConfig(dict_config)
 
 
 def set_log_level(log_level, quiet, verbose):
+    """Enable the caller of this module to configure logging level."""
     log_levels = {2: "ERROR", 1: "WARNING", 0: "INFO", -1: "DEBUG"}
     if log_level is None:
         level = quiet - verbose

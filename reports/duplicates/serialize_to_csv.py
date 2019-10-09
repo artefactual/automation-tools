@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+"""Helper functions to enable CSV output from this series of scripts."""
+
 import logging
 
 from pandas import DataFrame
@@ -24,15 +26,16 @@ class CSVOut:
     def output_reports(
         aip_index, transfers, dupe_reports, near_reports, no_match_reports
     ):
-        CSVOut.stat_manifests(aip_index, transfers)
-        CSVOut.dupe_csv_out(dupe_reports, "")
-        CSVOut.near_csv_out(near_reports, "")
-        CSVOut.no_match_csv_out(no_match_reports, "")
+        """Output the different reports associated with de-duplication."""
+        CSVOut.stat_manifests(aip_index, transfers, "accruals_aip_store_summary.json")
+        CSVOut.dupe_csv_out(dupe_reports, "true_duplicates_comparison.csv")
+        CSVOut.near_csv_out(near_reports, "near_matches_comparison.csv")
+        CSVOut.no_match_csv_out(no_match_reports, "non_matches_list.csv")
 
     @staticmethod
-    def stat_manifests(aip_index, transfers):
+    def stat_manifests(aip_index, transfers, filename):
         """Output some statistics about the transfer."""
-        SUMMARY_FILE = "accruals_aip_store_summary.json"
+        SUMMARY_FILE = filename
         MANIFEST_DATA = "manifest_data"
         PACKAGES = "packages"
         summary = {}
@@ -63,7 +66,7 @@ class CSVOut:
         """Copy of the original csv_out as we understand where this code is
         going.
         """
-        accrual_comparison_csv = "true_duplicates_comparison.csv"
+        accrual_comparison_csv = filename
         if not duplicate_report:
             with open(accrual_comparison_csv, "w") as no_report:
                 no_report.write(
@@ -106,7 +109,7 @@ class CSVOut:
         """Create a report of near duplicates. Non-matches will have their
         own report.
         """
-        accrual_comparison_csv = "near_matches_comparison.csv"
+        accrual_comparison_csv = filename
         if not near_report:
             with open(accrual_comparison_csv, "w") as no_report:
                 no_report.write("No near matches detected between accruals and AIPs\n")
@@ -144,7 +147,7 @@ class CSVOut:
     @staticmethod
     def no_match_csv_out(no_match_report, filename):
         """Create a report of non-matches."""
-        accrual_comparison_csv = "non_matches_list.csv"
+        accrual_comparison_csv = filename
         if not no_match_report:
             with open(accrual_comparison_csv, "w") as no_report:
                 no_report.write("No non-matches between accruals and AIPs\n")

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+"""Class to help bring-together application configuration for the
+de-duplication work.
+"""
+
+
 import json
 import os
 
@@ -7,6 +12,8 @@ from amclient import AMClient
 
 
 class AppConfig:
+    """Application configuration class."""
+
     def __init__(self):
         """Initialize class."""
         config_file = os.path.join(os.path.dirname(__file__), "config.json")

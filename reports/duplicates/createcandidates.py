@@ -1,6 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""Script to create candidate transfers in Archivematica (in a storage
+location titled 'Automated candidate transfers').
+
+Candidate transfers are generated from CSV files that require three fields:
+
+   * "keep",
+   * "path",
+   * "hash",
+   * "in_transfer_name",
+
+Which will be used to determine what to move to a new transfer source (the
+'Automated candidate transfers' folder).
+
+* If keep is populated with any data, it is marked to be kept.
+
+* "in_transfer_name" + "path" are combined to create the path where the data
+  is currently.
+
+* The data is then moved to an objects folder in a new transfer, and optionally
+  a manifest created describing that transfer.
+"""
+
 from __future__ import print_function, unicode_literals
 
 import argparse
@@ -38,11 +60,11 @@ def setup():
     """Capture any setup work this script needs to do."""
     now = datetime.datetime.now()
     now = now.strftime("%Y%m%d%H%M%S")
-    no = len(os.listdir(AppConfig().default_path)) + 1
-    no = "%03d" % no
+    number = len(os.listdir(AppConfig().default_path)) + 1
+    number = "%03d" % number
     agent = AppConfig().candidate_agent
     global transfer_name
-    transfer_name = "{}_{}_{}_candidate_transfer".format(now, agent, no).upper()
+    transfer_name = "{}_{}_{}_candidate_transfer".format(now, agent, number).upper()
 
 
 def create_location(am, pipeline):
@@ -67,7 +89,9 @@ def create_location(am, pipeline):
         am.location_purpose = "TS"
         am.location_description = candidates_location_desc
         am.pipeline_uuids = pipeline
+
         # TODO: If we don't check the space UUID then we end up with errors.
+
         am.space_uuid = AppConfig().default_space
         am.space_relative_path = relative_path
         am.default = False
@@ -83,8 +107,7 @@ def create_location(am, pipeline):
                     err
                 )
             )
-        else:
-            logger.info("Directory exists: %s", err)
+        logger.info("Directory exists: %s", err)
     return relative_path
 
 
@@ -184,7 +207,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", action="append")
     args = parser.parse_args()
-    for csv_file in args.csv:
-        if not os.path.exists(csv_file):
-            sys.exit("CSV {} doesn'exist".format(csv_file))
+    for csv_ in args.csv:
+        if not os.path.exists(csv_):
+            sys.exit("CSV {} doesn'exist".format(csv_))
     sys.exit(main(args.csv))

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""Utilities module for the de-duplication processes."""
+
 import json
 
 # strip /home/ add to docker_home

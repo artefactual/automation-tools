@@ -17,7 +17,11 @@ class DigitalObjectException(Exception):
     """If there's a problem raise this."""
 
 
-class DigitalObject(object):
+class DigitalObject:
+    """Digital object class which allows us to represent files as objects in
+    a way that makes them easy to compare for attributes which determine
+    whether they are duplicates.
+    """
 
     # Object members.
     basename = None
@@ -54,19 +58,22 @@ class DigitalObject(object):
             )
             self.set_basename(self.comparison_path)
             self.set_dirname(self.comparison_path)
-            self.hashes = hashutils.hash(path)
+            self.hashes = hashutils.hash_(path)
             self.date_modified = self.get_timestamp(path)
             self.flag = False
 
     def set_basename(self, path):
-        """do something."""
+        """Setter to enable basename to be updated. Basename is otherwise
+        described as the filename including file extension.
+        """
         self.basename = os.path.basename(path)
 
     def set_dirname(self, path):
-        """do something."""
+        """Setter to enable directory name to be updated."""
         self.dirname = os.path.dirname(path)
 
     def as_dict(self):
+        """Enable return of digital object as a dictionary for consumption."""
         return self.__dict__
 
     def __str__(self):
@@ -129,5 +136,5 @@ class DigitalObject(object):
 
     @staticmethod
     def get_timestamp(path):
-        """do something."""
+        """Retrieve modified time from a file. Format it, and return it."""
         return time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(path)))

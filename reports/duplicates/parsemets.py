@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 
+"""Enable METS to be consumed by the de-duplication application."""
+
 from __future__ import print_function, unicode_literals
-import lxml
 import logging
-import metsrw
 import sys
+
+import lxml
+
+import metsrw
 
 
 def _load_mets(mets_file):
