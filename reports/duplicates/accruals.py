@@ -115,13 +115,9 @@ def stat_transfers(accruals_path, all_transfers):
             near_reports.append({transfer: near_manifest})
         if no_match_manifest:
             no_match_reports.append({transfer: no_match_manifest})
-    CSVOut.stat_manifests(aip_index, transfers)
-    if dupe_reports:
-        CSVOut.dupe_csv_out(dupe_reports, "")
-    if near_reports:
-        CSVOut.near_csv_out(near_reports, "")
-    if no_match_reports:
-        CSVOut.no_match_csv_out(no_match_reports, "")
+    CSVOut.output_reports(
+        aip_index, transfers, dupe_reports, near_reports, no_match_reports
+    )
 
 
 def main(location=default_location):

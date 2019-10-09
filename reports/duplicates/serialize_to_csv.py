@@ -21,6 +21,15 @@ class CSVOut:
     """Conveniently wrap CSV output capability."""
 
     @staticmethod
+    def output_reports(
+        aip_index, transfers, dupe_reports, near_reports, no_match_reports
+    ):
+        CSVOut.stat_manifests(aip_index, transfers)
+        CSVOut.dupe_csv_out(dupe_reports, "")
+        CSVOut.near_csv_out(near_reports, "")
+        CSVOut.no_match_csv_out(no_match_reports, "")
+
+    @staticmethod
     def stat_manifests(aip_index, transfers):
         """Output some statistics about the transfer."""
         SUMMARY_FILE = "accruals_aip_store_summary.json"
@@ -55,6 +64,12 @@ class CSVOut:
         going.
         """
         accrual_comparison_csv = "true_duplicates_comparison.csv"
+        if not duplicate_report:
+            with open(accrual_comparison_csv, "w") as no_report:
+                no_report.write(
+                    "No true duplicates detected between accruals and AIPs\n"
+                )
+            return
         cols = [
             "keep",
             "path",
@@ -92,6 +107,10 @@ class CSVOut:
         own report.
         """
         accrual_comparison_csv = "near_matches_comparison.csv"
+        if not near_report:
+            with open(accrual_comparison_csv, "w") as no_report:
+                no_report.write("No near matches detected between accruals and AIPs\n")
+            return
         cols = [
             "keep",
             "path",
@@ -126,6 +145,10 @@ class CSVOut:
     def no_match_csv_out(no_match_report, filename):
         """Create a report of non-matches."""
         accrual_comparison_csv = "non_matches_list.csv"
+        if not no_match_report:
+            with open(accrual_comparison_csv, "w") as no_report:
+                no_report.write("No non-matches between accruals and AIPs\n")
+            return
         cols = ["keep", "path", "in_transfer_name", "hash", "modified_date", "is_new"]
         csv = []
         for transfer in no_match_report:
@@ -140,7 +163,6 @@ class CSVOut:
                     row.append(transfer_item.date_modified)
                     row.append("True")
                     csv.append(row)
-
         df = DataFrame(csv, columns=cols)
         df.sort_values(by=["in_transfer_name"])
         logger.info("Outputting report to: %s", accrual_comparison_csv)
