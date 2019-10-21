@@ -43,9 +43,8 @@ logger.disabled = False
 location_purpose = "TS"
 default_location = AppConfig().accruals_transfer_source
 
-
-# Do something with this...
-DOCKER = True
+# If Docker we need to work with paths differently...
+DOCKER = AppConfig().docker
 
 # Store our appraisal paths.
 accrual_paths = []

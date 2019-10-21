@@ -1,4 +1,5 @@
 {
+	"docker": "true",
 	"candidate_agent": "IISH",
 	"storage_service_url": "http://127.0.0.1:62081",
 	"storage_service_user": "test",

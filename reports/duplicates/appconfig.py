@@ -23,6 +23,9 @@ class AppConfig:
         """Load our configuration information."""
         with open(config_file) as json_config:
             conf = json.load(json_config)
+
+        self.docker = True if conf.get("docker").lower() == "true" else False
+
         self.storage_service_user = conf.get("storage_service_user")
         self.storage_service_api_key = conf.get("storage_service_api_key")
         self.storage_service_url = conf.get("storage_service_url")
