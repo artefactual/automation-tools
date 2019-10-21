@@ -34,6 +34,7 @@ class AppConfig:
 
         # Information about the candidate transfer.
         self.candidate_agent = conf.get("candidate_agent")
+        self.candidate_location = conf.get("candidate_location")
 
     def get_am_client(self):
         """Return an Archivematica API client to the caller."""

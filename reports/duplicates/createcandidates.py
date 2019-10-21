@@ -67,35 +67,50 @@ def setup():
     transfer_name = "{}_{}_{}_candidate_transfer".format(now, agent, number).upper()
 
 
+def _get_spaces(locations):
+    """TODO: replace with a specific AMClient call to retrieve Spaces in
+    the Storage Service. The call in AMClient doesn't exist yet.
+    """
+    all_spaces = []
+    for location in locations.get("objects"):
+        all_spaces.append(location.get("space"))
+    return list(set(all_spaces))
+
+
 def create_location(am, pipeline):
     """Create a location to move our candidate transfers to. If everything
     works as anticipated here, and the creation is either created, or already
     exists, we return the path we will use as confirmation to the caller.
     """
-    candidates_location_desc = "Automated candidate transfers"
+    candidates_location_desc = AppConfig().candidate_location
     relative_path = AppConfig().default_path
+    space = AppConfig().default_space
     locations = am.list_storage_locations()
     if isinstance(locations, int):
         raise CreateCandidateError("Error returned from AMClient: {}".format(locations))
     for location in locations.get("objects"):
         if (
             location.get("description") == candidates_location_desc
-            and location.get("relative_path") == AppConfig().default_path
+            and location.get("relative_path") == relative_path
         ):
             global location_exists
             location_exists = True
     if not location_exists:
+        space_uri = "/api/v2/space/{}/".format(space)
+        if space_uri not in _get_spaces(locations):
+            raise CreateCandidateError("Space hasn't been created to create location")
         logger.info("Creating location for candidate transfers")
         am.location_purpose = "TS"
         am.location_description = candidates_location_desc
         am.pipeline_uuids = pipeline
-
-        # TODO: If we don't check the space UUID then we end up with errors.
-
         am.space_uuid = AppConfig().default_space
         am.space_relative_path = relative_path
         am.default = False
         location = am.create_location()
+        if isinstance(location, int):
+            raise CreateCandidateError(
+                "Error returned from AMClient: {}".format(location)
+            )
         if "relative_path" not in location:
             raise CreateCandidateError("Problem creating location: {}".format(location))
     try:
