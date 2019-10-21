@@ -122,7 +122,8 @@ class CSVOut:
             "modified_date",
             "has_similar_in_package",
             "package_file_path",
-            "match_basis",
+            "negative_match_basis",
+            "positive_match_basis",
         ]
         csv = []
         for transfer in near_report:
@@ -137,6 +138,7 @@ class CSVOut:
                     row.append(transfer_item[0].date_modified)
                     row.append(transfer_item[1].package_name)
                     row.append(transfer_item[1].filepath)
+                    row.append(transfer_item[0] != transfer_item[1])
                     row.append(transfer_item[0] % transfer_item[1])
                     csv.append(row)
         df = DataFrame(csv, columns=cols)

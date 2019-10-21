@@ -127,6 +127,40 @@ class DigitalObject:
             return "No matching components"
         return ret
 
+    def __ne__(self, other):
+        """Not equals operator to return where two digital objects do not
+        match each other.
+
+        NB. Between modulo (%) and (!=) there isn't a lot of consistency so we
+        might need to select one or the other based on what is most useful,
+        i.e. if modulo is better for difference, choose that. Otherwise,
+        choose something other than an operator for comparison. Not as
+        elegant looking, but it does the trick.
+        """
+        if self.__eq__(other):
+            return 0
+        ret = ""
+        hash_ = False
+        for key in self.hashes.keys():
+            if key in other.hashes.keys():
+                hash_ = True
+                break
+        if not hash_:
+            msg = "checksums do not match"
+            ret = self.__contact_basis__(ret, msg)
+        if self.date_modified != other.date_modified:
+            msg = "modified dates do not match"
+            ret = self.__concat_basis__(ret, msg)
+        if self.basename != other.basename:
+            msg = "filenames do not match"
+            ret = self.__concat_basis__(ret, msg)
+        if self.dirname != other.dirname:
+            msg = "directory names do not match"
+            ret = self.__concat_basis__(ret, msg)
+        if not ret:
+            return "All components match"
+        return ret
+
     @staticmethod
     def __concat_basis__(ret, msg):
         """Helper function to bring basis information together usefully."""
