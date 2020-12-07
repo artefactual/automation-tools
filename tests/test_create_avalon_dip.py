@@ -59,7 +59,9 @@ class TestCreateAvalonDip(unittest.TestCase):
             assert os.path.isdir(avalon_dip_dir)
 
             # Check that CSV and folder are present, and METS file is removed
-            assert os.listdir(avalon_dip_dir) == ["Demo_Manifest.csv", "assets"]
+            assert sorted(os.listdir(avalon_dip_dir)) == sorted(
+                ["Demo_Manifest.csv", "assets"]
+            )
 
             # Check contents of CSV have been updated
             csv_path = "{}/Demo_Manifest.csv".format(avalon_dip_dir)
@@ -76,10 +78,10 @@ class TestCreateAvalonDip(unittest.TestCase):
             assets = [
                 "agz3068a.wav",
                 "lunchroom_manners_512kb.mp4",
-                "lunchroom_manners_512kb.structure.xml",
+                "lunchroom_manners_512kb.mp4.structure.xml",
                 "lunchroom_manners_512kb.mp4.vtt",
                 "OrganClip.high.mp4",
                 "OrganClip.low.mp4",
                 "OrganClip.medium.mp4",
             ]
-            assert assets.sort() == avalon_files.sort()
+            assert sorted(assets) == sorted(avalon_files)
