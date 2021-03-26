@@ -1,5 +1,5 @@
-[![Travis
-CI](https://travis-ci.org/artefactual/automation-tools.svg?branch=master)](https://travis-ci.org/artefactual/automation-tools)
+[![GitHub CI](https://github.com/artefactual/automation-tools/actions/workflows/test.yml/badge.svg)](https://github.com/artefactual/automation-tools/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/artefactual/automation-tools/branch/master/graph/badge.svg?token=QSVCgvvWuw)](https://codecov.io/gh/artefactual/automation-tools)
 
 Automation Tools
 ================

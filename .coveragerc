@@ -1,0 +1,9 @@
+[run]
+
+omit =
+    **/.tox/*
+    **/tests/*
+
+source = .
+
+branch = True
