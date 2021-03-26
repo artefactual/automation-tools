@@ -21,3 +21,4 @@
 *.db
 *.lck
 
+.coverage

@@ -48,7 +48,16 @@ jobs:
         env:
           TOXENV: ${{ matrix.toxenv }}
         run: |
-          tox
+          tox -- --cov --cov-config .coveragerc --cov-report xml:coverage.xml
+      - name: "Upload coverage report"
+        if: github.repository == 'artefactual/automation-tools'
+        uses: "codecov/codecov-action@v1"
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: true
+          verbose: true
+          name: ${{ matrix.toxenv }}
+          flags: ${{ matrix.toxenv }}
   lint:
     name: "Lint"
     runs-on: "ubuntu-18.04"
