@@ -10,9 +10,15 @@
 # Sublime files
 *.sublime-*
 
+# VS Code files
+.vscode
+
 # Log files
 *.log.[0-9]
 *.log
+
+# Python3 venv
+.venv
 
 # Tox files
 .tox/
