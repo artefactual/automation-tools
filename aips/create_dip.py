@@ -239,10 +239,18 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
 
         premis = techmd.contents.document
         update_premis_ns(premis, namespaces, premis_map)
-        original_name = get_original_name(premis, namespaces)
 
-        # Move original file with original name and create parent folders
-        dip_file_path = os.path.join(to_zip_dir, original_name[27:])
+        original_name = get_premis_original_name(premis, namespaces)
+        if not original_name:
+            LOGGER.warning("Could not get original file name from premis:originalName")
+            continue
+
+        original_relpath = get_original_relpath(original_name)
+        if not original_relpath:
+            continue
+
+        # Move original file with original file name and create parent folders
+        dip_file_path = os.path.join(to_zip_dir, original_relpath)
         dip_dir_path = os.path.dirname(dip_file_path)
         if not os.path.exists(dip_dir_path):
             os.makedirs(dip_dir_path)
@@ -411,15 +419,30 @@ def update_premis_ns(premis, namespaces, premis_map):
         )
 
 
-def get_original_name(premis, namespaces):
-    """Get original filename from PREMIS record"""
+def get_premis_original_name(premis, namespaces):
+    """Get the original file name from a premis:originalName"""
+
     original_name = premis.findtext("premis:originalName", namespaces=namespaces)
     if not original_name:
         LOGGER.warning("premis:originalName could not be found")
-    string_start = "%transferDirectory%objects/"
-    if original_name[:27] != string_start:
-        LOGGER.warning("premis:originalName not starting with %s", string_start)
+        return None
+
     return original_name
+
+
+def get_original_relpath(original_name):
+    """Get the relative file path from a premis:originalName"""
+
+    path_prefixes = ["%transferDirectory%objects/", "%transferDirectory%data/"]
+    for prefix in path_prefixes:
+        if original_name.startswith(prefix):
+            return original_name[len(prefix) :]
+
+    LOGGER.warning(
+        '"%s" has an invalid path prefix, it must be one of ("%s")',
+        original_name,
+        '", "'.join(path_prefixes),
+    )
 
 
 if __name__ == "__main__":
