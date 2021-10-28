@@ -239,10 +239,14 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
 
         premis = techmd.contents.document
         update_premis_ns(premis, namespaces, premis_map)
-        original_name = get_original_name(premis, namespaces)
 
-        # Move original file with original name and create parent folders
-        dip_file_path = os.path.join(to_zip_dir, original_name[27:])
+        original_filename = get_original_filename(premis, namespaces)
+        if not original_filename:
+            LOGGER.warning("Could not get original file name from premis:originalName")
+            continue
+
+        # Move original file with original file name and create parent folders
+        dip_file_path = os.path.join(to_zip_dir, original_filename)
         dip_dir_path = os.path.dirname(dip_file_path)
         if not os.path.exists(dip_dir_path):
             os.makedirs(dip_dir_path)
@@ -411,15 +415,15 @@ def update_premis_ns(premis, namespaces, premis_map):
         )
 
 
-def get_original_name(premis, namespaces):
+def get_original_filename(premis, namespaces):
     """Get original filename from PREMIS record"""
     original_name = premis.findtext("premis:originalName", namespaces=namespaces)
     if not original_name:
         LOGGER.warning("premis:originalName could not be found")
-    string_start = "%transferDirectory%objects/"
-    if original_name[:27] != string_start:
-        LOGGER.warning("premis:originalName not starting with %s", string_start)
-    return original_name
+        return None
+
+    # Strip path and return file name with extension
+    return os.path.basename(original_name)
 
 
 if __name__ == "__main__":
