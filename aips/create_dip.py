@@ -417,13 +417,23 @@ def update_premis_ns(premis, namespaces, premis_map):
 
 def get_original_filename(premis, namespaces):
     """Get original filename from PREMIS record"""
+
     original_name = premis.findtext("premis:originalName", namespaces=namespaces)
     if not original_name:
         LOGGER.warning("premis:originalName could not be found")
         return None
 
-    # Strip path and return file name with extension
-    return os.path.basename(original_name)
+    # Strip the path prefix from the file path, and return the remainder
+    path_prefixes = ["%transferDirectory%objects/", "%transferDirectory%data/"]
+    for pp in path_prefixes:
+        if original_name[: len(pp)] == pp:
+            return original_name[len(pp) :]
+
+    LOGGER.warning(
+        'premis:originalName "%s" has an invalid prefix, it must be one of (%s)',
+        original_name,
+        ", ".join(path_prefixes),
+    )
 
 
 if __name__ == "__main__":
