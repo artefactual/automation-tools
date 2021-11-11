@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-import zipfile
+
 import os
 import time
 import unittest
 import vcr
+import zipfile
 
 import amclient
 
@@ -134,3 +135,19 @@ class TestCreateDip(unittest.TestCase):
             "bad_path", AIP_UUID, OUTPUT_DIR, "atom", "zipped-objects"
         )
         assert dip_dir is None
+
+    def test_get_original_relpath_objects_dir(self):
+        path = "%transferDirectory%objects/folder1/file5.txt"
+
+        assert create_dip.get_original_relpath(path) == "folder1/file5.txt"
+
+    def test_get_original_relpath_data_dir(self):
+        path = "%transferDirectory%data/folder1/file5.txt"
+
+        assert create_dip.get_original_relpath(path) == "folder1/file5.txt"
+
+    def test_get_original_relpath_warn_invalid_prefix(self):
+        path = "%transferDirectory%datas/folder1/file5.txt"
+
+        with self.assertLogs(level="WARN"):
+            create_dip.get_original_relpath(path)
