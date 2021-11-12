@@ -149,5 +149,4 @@ class TestCreateDip(unittest.TestCase):
     def test_get_original_relpath_warn_invalid_prefix(self):
         path = "%transferDirectory%datas/folder1/file5.txt"
 
-        with self.assertLogs(level="WARN"):
-            create_dip.get_original_relpath(path)
+        assert create_dip.get_original_relpath(path) is None
