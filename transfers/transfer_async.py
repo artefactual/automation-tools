@@ -24,10 +24,16 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from transfers import transfer
 from transfers.loggingconfig import set_log_level
-from transfers.models import Unit
+from transfers import models
 from transfers.transferargs import get_parser
-from transfers.transfer import LOGGER, get_next_transfer, get_accession_id, main
-from transfers.utils import fsencode
+from transfers.transfer import (
+    LOGGER,
+    get_next_transfer,
+    get_accession_id,
+    get_setting,
+    main,
+)
+from transfers.utils import fsdecode, fsencode
 
 
 class DashboardAPIError(Exception):
@@ -43,14 +49,16 @@ def _api_create_package(
     accession,
     ts_location_uuid,
     ts_path,
+    config_file,
 ):
     url = am_url + "/api/v2beta/package/"
     headers = {"Authorization": "ApiKey {}:{}".format(am_user, am_api_key)}
     data = {
-        "name": name,
+        "name": fsdecode(name),
         "type": package_type,
         "accession": accession,
-        "path": base64.b64encode(fsencode(ts_location_uuid) + b":" + ts_path),
+        "path": fsdecode(base64.b64encode(fsencode(ts_location_uuid) + b":" + ts_path)),
+        "processing_config": get_setting(config_file, "processingconfig", "default"),
     }
     LOGGER.debug("URL: %s; Headers: %s, Data: %s", url, headers, data)
     response = requests.post(url, headers=headers, json=data)
@@ -75,7 +83,7 @@ def _start_transfer(
     am_api_key,
     transfer_type,
     see_files,
-    session,
+    config_file,
 ):
     """
     Start a new transfer.
@@ -96,27 +104,30 @@ def _start_transfer(
     :param am_url: URL of Archivematica pipeline to start transfer on
     :param am_user: User on Archivematica for authentication
     :param am_api_key: API key for user on Archivematica for authentication
+    :param transfer_type: Transfer type to use in Archivematica
     :param bool see_files: If true, start transfers from files as well as
                            directories
-    :param session: SQLAlchemy session with the DB
+    :param config_file: Path to Automation Tools configuration file
     :returns: Tuple of Transfer information about the new transfer or None on
               error.
     """
     # Start new transfer
-    completed = {x[0] for x in session.query(Unit.path).all()}
+    processed = models.get_processed_transfer_paths()
     target = get_next_transfer(
-        ss_url,
-        ss_user,
-        ss_api_key,
-        ts_location_uuid,
-        ts_path,
-        depth,
-        completed,
-        see_files,
+        ss_url=ss_url,
+        ss_user=ss_user,
+        ss_api_key=ss_api_key,
+        ts_location_uuid=ts_location_uuid,
+        path_prefix=ts_path,
+        depth=depth,
+        processed=processed,
+        see_files=see_files,
     )
     if not target:
-        LOGGER.warning(
-            "All potential transfers in %s have been created. Exiting", ts_path
+        # Report the location UUID.
+        LOGGER.info(
+            "All potential transfers in Location ID: %s have been created. Exiting",
+            ts_location_uuid,
         )
         return None
     LOGGER.info("Starting with %s", target)
@@ -134,21 +145,16 @@ def _start_transfer(
             accession,
             ts_location_uuid,
             target,
+            config_file,
         )
     except (requests.exceptions.HTTPError, ValueError, DashboardAPIError) as err:
         LOGGER.error("Unable to start transfer: %s", err)
-        new_transfer = Unit(
-            path=target, unit_type="transfer", status="FAILED", current=False
-        )
-        session.add(new_transfer)
+        models.transfer_failed_to_start(target)
         return None
 
     LOGGER.info("Package created: %s", result["id"])
-    new_transfer = Unit(
-        uuid=result["id"], path=target, unit_type="transfer", current=True
-    )
+    new_transfer = models.add_new_transfer(uuid=result["id"], path=target)
     LOGGER.info("New transfer: %s", new_transfer)
-    session.add(new_transfer)
 
     return new_transfer
 
@@ -175,5 +181,6 @@ if __name__ == "__main__":
             see_files=args.files,
             hide_on_complete=args.hide,
             log_level=set_log_level(args.log_level, args.quiet, args.verbose),
+            config_file=args.config_file,
         )
     )

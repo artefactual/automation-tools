@@ -1,0 +1,186 @@
+interactions:
+- request:
+    body: '{"name": "standard_1", "type": "standard", "accession": "standard_1", "path":
+      "ODEwN2U4ZDEtYzM5MC00ZmUyLThkNTEtMzBmODllZTJlNGQ0OnN0YW5kYXJkXzE=", "processing_config":
+      "default"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - ApiKey test:test
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '177'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.27.1
+    method: POST
+    uri: http://127.0.0.1:62080/api/v2beta/package/
+  response:
+    body:
+      string: '{"id": "06c28572-4506-48ba-904e-07938dabdb7d"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Language:
+      - en
+      Content-Length:
+      - '46'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 09 Jun 2022 20:02:14 GMT
+      Server:
+      - nginx/1.20.2
+      Vary:
+      - Accept-Language, Cookie
+      X-Archivematica-ID:
+      - 6ba850ec-ec7f-4a53-9a8a-f3598aa39b93
+      X-Archivematica-Version:
+      - 1.14.0
+    status:
+      code: 202
+      message: Accepted
+- request:
+    body: '{"name": "standard_1_1", "type": "standard", "accession": "standard_1_1",
+      "path": "ODEwN2U4ZDEtYzM5MC00ZmUyLThkNTEtMzBmODllZTJlNGQ0OnN0YW5kYXJkXzE=",
+      "processing_config": "default"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - ApiKey test:test
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '181'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.27.1
+    method: POST
+    uri: http://127.0.0.1:62080/api/v2beta/package/
+  response:
+    body:
+      string: '{"id": "f8be5d0f-0692-4025-829c-9a029b96087e"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Language:
+      - en
+      Content-Length:
+      - '46'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 09 Jun 2022 20:02:14 GMT
+      Server:
+      - nginx/1.20.2
+      Vary:
+      - Accept-Language, Cookie
+      X-Archivematica-ID:
+      - 6ba850ec-ec7f-4a53-9a8a-f3598aa39b93
+      X-Archivematica-Version:
+      - 1.14.0
+    status:
+      code: 202
+      message: Accepted
+- request:
+    body: '{"name": "dspace_1.zip", "type": "dspace", "accession": "dspace_1.zip",
+      "path": "ODEwN2U4ZDEtYzM5MC00ZmUyLThkNTEtMzBmODllZTJlNGQ0OmRzcGFjZV8xLnppcA==",
+      "processing_config": "default"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - ApiKey test:test
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '183'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.27.1
+    method: POST
+    uri: http://127.0.0.1:62080/api/v2beta/package/
+  response:
+    body:
+      string: '{"id": "fb6adb0f-8e6b-4f08-822f-00ec0311576b"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Language:
+      - en
+      Content-Length:
+      - '46'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 09 Jun 2022 20:02:14 GMT
+      Server:
+      - nginx/1.20.2
+      Vary:
+      - Accept-Language, Cookie
+      X-Archivematica-ID:
+      - 6ba850ec-ec7f-4a53-9a8a-f3598aa39b93
+      X-Archivematica-Version:
+      - 1.14.0
+    status:
+      code: 202
+      message: Accepted
+- request:
+    body: '{"name": "dspace_1_1.zip", "type": "dspace", "accession": "dspace_1_1.zip",
+      "path": "ODEwN2U4ZDEtYzM5MC00ZmUyLThkNTEtMzBmODllZTJlNGQ0OmRzcGFjZV8xLnppcA==",
+      "processing_config": "default"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - ApiKey test:test
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '187'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.27.1
+    method: POST
+    uri: http://127.0.0.1:62080/api/v2beta/package/
+  response:
+    body:
+      string: '{"id": "15c585ca-c28d-4d2d-9ad2-72fe7d49fdd0"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Language:
+      - en
+      Content-Length:
+      - '46'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 09 Jun 2022 20:02:14 GMT
+      Server:
+      - nginx/1.20.2
+      Vary:
+      - Accept-Language, Cookie
+      X-Archivematica-ID:
+      - 6ba850ec-ec7f-4a53-9a8a-f3598aa39b93
+      X-Archivematica-Version:
+      - 1.14.0
+    status:
+      code: 202
+      message: Accepted
+version: 1
