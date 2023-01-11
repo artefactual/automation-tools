@@ -66,11 +66,11 @@ Follow each of the steps below to install automation-tools:
    archivematica) and directories to be owned by the user:
 
     ```
-    sudo chown archivematica:archivematica /var/log/archivematica/automation-tools &&
-    sudo chown archivematica:archivematica /var/archivematica/automation-tools &&
-    sudo chown $USER /usr/lib/archivematica/automation-tools &&
-    sudo chown $USER /usr/share/python/automation-tools/ &&
-    sudo chown $USER /etc/archivematica/automation-tools/
+    sudo chown archivematica:archivematica /var/log/archivematica/automation-tools \
+          /var/archivematica/automation-tools \
+          /usr/lib/archivematica/automation-tools \
+          /usr/share/python/automation-tools \
+           /etc/archivematica/automation-tools
     ```
 
     In case of using the automation tools with a Docker setup the archivematica 
