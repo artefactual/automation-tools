@@ -11,8 +11,7 @@ transfer_session = None
 
 
 class Unit(Base):
-    """Object that represents transfer units in the automation tools database.
-    """
+    """Object that represents transfer units in the automation tools database."""
 
     __tablename__ = "unit"
 
