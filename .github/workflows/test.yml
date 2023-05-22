@@ -8,7 +8,7 @@ on:
 jobs:
   tox:
     name: "Test ${{ matrix.toxenv }}"
-    runs-on: "ubuntu-18.04"
+    runs-on: "ubuntu-20.04"
     strategy:
       matrix:
         include:
@@ -24,17 +24,17 @@ jobs:
             toxenv: "py39"
     steps:
       - name: "Check out repository"
-        uses: "actions/checkout@v2"
+        uses: "actions/checkout@v3"
       - name: "Set up Python ${{ matrix.python-version }}"
-        uses: "actions/setup-python@v2"
+        uses: "actions/setup-python@v4"
         with:
           python-version: "${{ matrix.python-version }}"
       - name: "Get pip cache dir"
         id: "pip-cache"
         run: |
-          echo "::set-output name=dir::$(pip cache dir)"
+          echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
       - name: "Cache pip packages"
-        uses: "actions/cache@v2"
+        uses: "actions/cache@v3"
         with:
           path: "${{ steps.pip-cache.outputs.dir }}"
           key: "${{ runner.os }}-pip-${{ hashFiles('**/base.txt', '**/local.txt', '**/production.txt') }}"
@@ -51,7 +51,7 @@ jobs:
           tox -- --cov --cov-config .coveragerc --cov-report xml:coverage.xml
       - name: "Upload coverage report"
         if: github.repository == 'artefactual/automation-tools'
-        uses: "codecov/codecov-action@v1"
+        uses: "codecov/codecov-action@v3"
         with:
           files: ./coverage.xml
           fail_ci_if_error: true
@@ -60,12 +60,12 @@ jobs:
           flags: ${{ matrix.toxenv }}
   lint:
     name: "Lint"
-    runs-on: "ubuntu-18.04"
+    runs-on: "ubuntu-22.04"
     steps:
       - name: "Check out repository"
-        uses: "actions/checkout@v2"
+        uses: "actions/checkout@v3"
       - name: "Set up Python"
-        uses: "actions/setup-python@v2"
+        uses: "actions/setup-python@v4"
         with:
           python-version: "3.8"
       - name: "Install tox"
