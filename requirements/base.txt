@@ -3,5 +3,5 @@ metsrw==0.3.8
 requests<3.0
 sqlalchemy
 six
-urllib3
+urllib3<2
 enum34
