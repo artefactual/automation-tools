@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """
 Automate Transfers.
 
@@ -9,9 +7,6 @@ Helper script to automate running transfers through Archivematica.
 Similar to ``transfers.transfer`` but using the new `/api/v2beta` API when
 possible.
 """
-
-from __future__ import print_function, unicode_literals
-
 import base64
 import os
 import sys
@@ -33,7 +28,7 @@ from transfers.transfer import (
     get_setting,
     main,
 )
-from transfers.utils import fsdecode, fsencode
+from os import fsdecode, fsencode
 
 
 class DashboardAPIError(Exception):
@@ -52,7 +47,7 @@ def _api_create_package(
     config_file,
 ):
     url = am_url + "/api/v2beta/package/"
-    headers = {"Authorization": "ApiKey {}:{}".format(am_user, am_api_key)}
+    headers = {"Authorization": f"ApiKey {am_user}:{am_api_key}"}
     data = {
         "name": fsdecode(name),
         "type": package_type,

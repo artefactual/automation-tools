@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 import os
 import unittest
-import vcr
+from unittest import mock
 
+import vcr
 from sqlalchemy import exc
 
 from aips import create_dips_job
 from tests.tests_helpers import TmpDir
-
-try:
-    import mock
-except ImportError:
-    from unittest import mock
 
 
 SS_URL = "http://192.168.168.192:8000"

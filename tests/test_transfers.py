@@ -1,17 +1,14 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import collections
 import os
 import unittest
+from unittest import mock
 
 import vcr
 
-from transfers import errors, transfer, models
-
-try:
-    import mock
-except ImportError:
-    from unittest import mock
+from transfers import errors
+from transfers import models
+from transfers import transfer
 
 
 AM_URL = "http://127.0.0.1"
@@ -61,13 +58,13 @@ class TestAutomateTransfers(unittest.TestCase):
                 transfer_type="dspace",
                 target="dspace_1.zip",
                 transfer_name="dspace_1.zip",
-                transfer_abs_path="{}/Dspace/dspace_1.zip".format(transfers_dir),
+                transfer_abs_path=f"{transfers_dir}/Dspace/dspace_1.zip",
             ),
             Result(
                 transfer_type="dspace",
                 target="dspace_1.zip",
                 transfer_name="dspace_1_1.zip",
-                transfer_abs_path="{}/Dspace/dspace_1_1.zip".format(transfers_dir),
+                transfer_abs_path=f"{transfers_dir}/Dspace/dspace_1_1.zip",
             ),
         ]
 

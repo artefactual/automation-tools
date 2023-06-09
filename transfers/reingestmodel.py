@@ -1,19 +1,18 @@
-# -*- coding: utf-8 -*-
-
 """Reingest Model
 
 Enables the configuration and setup of a logging database for monitoring the
 process of reingest using the Archivematica AIP.
 """
-
 import datetime
+import enum
 import logging
 from os.path import isfile
 
-import enum
-
+from sqlalchemy import Column
 from sqlalchemy import create_engine
-from sqlalchemy import Column, String, Enum, DateTime
+from sqlalchemy import DateTime
+from sqlalchemy import Enum
+from sqlalchemy import String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -67,7 +66,7 @@ class ReingestUnit(BASE):
         running reingest.py.
         """
         try:
-            return "{0} seconds".format(
+            return "{} seconds".format(
                 int((self.start_time - self.end_time).total_seconds())
             )
         except TypeError:
@@ -85,7 +84,7 @@ def init(databasefile):
         # We create the database file here.
         with open(databasefile, "a"):
             pass
-    engine = create_engine("sqlite:///{}".format(databasefile), echo=False)
+    engine = create_engine(f"sqlite:///{databasefile}", echo=False)
     global Session
     Session = sessionmaker(bind=engine)
     BASE.metadata.create_all(engine)

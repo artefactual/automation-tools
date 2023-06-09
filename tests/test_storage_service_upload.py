@@ -2,12 +2,9 @@
 import os
 import shutil
 import unittest
-import vcr
+from unittest import mock
 
-try:
-    import mock
-except ImportError:
-    from unittest import mock
+import vcr
 
 from dips import storage_service_upload
 

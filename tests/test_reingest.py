@@ -1,13 +1,13 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import os
+
 import pytest
 
 from transfers import reingest
 from transfers import reingestmodel as reingestunit
 
 
-class TestReingestClass(object):
+class TestReingestClass:
 
     dbpath = "fixtures/reingest_test.db"
 
@@ -22,13 +22,11 @@ class TestReingestClass(object):
         "aip_uuids, expected",
         [
             (
-                set(
-                    [
-                        "54369f6a-aa82-4b29-80c9-834d3625397d",
-                        "b18801dd-30ec-46ba-ac6b-4cb561585ac9",
-                        "b4d37c2c-df30-4a16-8f2f-4cb02a5d53cb",
-                    ]
-                ),
+                {
+                    "54369f6a-aa82-4b29-80c9-834d3625397d",
+                    "b18801dd-30ec-46ba-ac6b-4cb561585ac9",
+                    "b4d37c2c-df30-4a16-8f2f-4cb02a5d53cb",
+                },
                 True,
             ),
             (

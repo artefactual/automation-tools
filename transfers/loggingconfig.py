@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-import logging
 import logging.config  # Has to be imported separately
 
 

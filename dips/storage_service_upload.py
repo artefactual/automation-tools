@@ -8,9 +8,7 @@ shared path), to move the DIP folder in there and send a requests to the
 Storage Service to process that DIP and create a relationship with the
 AIP from where it was created.
 """
-
 import argparse
-import logging
 import logging.config  # Has to be imported separately
 import os
 import shutil
@@ -112,7 +110,7 @@ def main(
     # TODO: Move this to amclient.
     LOGGER.info("Storing DIP in Storage Service.")
     url = "%s/api/v2/file/" % ss_url
-    headers = {"Authorization": "ApiKey %s:%s" % (ss_user, ss_api_key)}
+    headers = {"Authorization": f"ApiKey {ss_user}:{ss_api_key}"}
     response = requests.post(url, headers=headers, json=dip_data, timeout=86400)
     result = 0
     if response.status_code != requests.codes.created:

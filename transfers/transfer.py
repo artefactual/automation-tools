@@ -1,27 +1,24 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """
 Automate Transfers.
 
 Helper script to automate running transfers through Archivematica.
 """
-
-from __future__ import print_function, unicode_literals
-
 import ast
 import atexit
 import base64
+import configparser
 import logging
 import os
 import shutil
 import subprocess
 import sys
 import time
+from os import fsdecode
+from os import fsencode
 
-from amclient import AMClient
 import requests
-from six.moves import configparser
+from amclient import AMClient
 from sqlalchemy.orm.exc import NoResultFound
 
 # Allow execution as an executable and the script to be run at package level
@@ -30,7 +27,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from transfers import defaults, errors, loggingconfig, models, utils
 from transfers.transferargs import get_parser
-from transfers.utils import fsencode, fsdecode
+
 
 # Directory for various processing decisions, below.
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -61,7 +58,7 @@ def create_db_session(config_file):
 
 def get_setting(config_file, setting, default=None):
     """Get an option value from the configuration file."""
-    config = configparser.SafeConfigParser()
+    config = configparser.ConfigParser()
     section = "transfers"
     try:
         config.read(config_file)
@@ -97,7 +94,7 @@ def get_status(
     :returns: Dict with status of the unit from Archivematica or None.
     """
     # Get status
-    url = "{}/api/{}/status/{}/".format(am_url, unit_type, unit_uuid)
+    url = f"{am_url}/api/{unit_type}/status/{unit_uuid}/"
     params = {"username": am_user, "api_key": am_api_key}
     unit_info = utils._call_url_json(url, params)
     if isinstance(unit_info, int):
@@ -106,7 +103,7 @@ def get_status(
     # If complete, hide in dashboard
     if hide_on_complete and unit_info and unit_info.get("status") == "COMPLETE":
         LOGGER.info("Hiding %s %s in dashboard", unit_type, unit_uuid)
-        url = "{}/api/{}/{}/delete/".format(am_url, unit_type, unit_uuid)
+        url = f"{am_url}/api/{unit_type}/{unit_uuid}/delete/"
         LOGGER.debug("Method: DELETE; URL: %s; params: %s;", url, params)
         response = requests.delete(url, params=params)
         LOGGER.debug("Response: %s", response)
@@ -138,7 +135,7 @@ def get_status(
         # If complete, hide in dashboard
         if hide_on_complete and unit_info and unit_info.get("status") == "COMPLETE":
             LOGGER.info("Hiding SIP %s in dashboard", unit.uuid)
-            url = "{}/api/ingest/{}/delete/".format(am_url, unit.uuid)
+            url = f"{am_url}/api/ingest/{unit.uuid}/delete/"
             LOGGER.debug("Method: DELETE; URL: %s; params: %s;", url, params)
             response = requests.delete(url, params=params)
             LOGGER.debug("Response: %s", response)
@@ -364,7 +361,7 @@ def call_start_transfer_endpoint(
     """Make the call to the start_transfer endpoint and return the unapproved
     directory name, and current (absolute path), of the transfer as a tuple.
     """
-    url = "{}/api/transfer/start_transfer/".format(am_url)
+    url = f"{am_url}/api/transfer/start_transfer/"
     params = {"username": am_user, "api_key": am_api_key}
     target_name = os.path.basename(target)
     data = {

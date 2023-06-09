@@ -1,11 +1,7 @@
 #!/usr/bin/env python
-
 # Script to re-package unzipped bags as standard transfers, utilizing checksums from bag manifest.
 # Assumes bags are structured as either bag/data/(content) or bag/data/objects/(content).
 # Enables use of scripts to add metadata to SIP without failing transfer at bag validation.
-
-from __future__ import print_function, unicode_literals
-
 import os
 import shutil
 import sys
@@ -40,7 +36,7 @@ def main(transfer_path):
         os.mkdir(subdoc_dir)
 
     # write manifest checksums to checksum file
-    with open(os.path.join(transfer_path, "manifest-md5.txt"), "r") as old_file:
+    with open(os.path.join(transfer_path, "manifest-md5.txt")) as old_file:
         with open(os.path.join(metadata_dir, "checksum.md5"), "w") as new_file:
             for line in old_file:
                 if "data/objects/" in line:

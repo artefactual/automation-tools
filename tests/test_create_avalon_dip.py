@@ -2,9 +2,9 @@
 import csv
 import os
 import unittest
-import vcr
 
 import amclient
+import vcr
 
 from aips import create_dip
 from tests.tests_helpers import TmpDir
@@ -64,9 +64,9 @@ class TestCreateAvalonDip(unittest.TestCase):
             )
 
             # Check contents of CSV have been updated
-            csv_path = "{}/Demo_Manifest.csv".format(avalon_dip_dir)
+            csv_path = f"{avalon_dip_dir}/Demo_Manifest.csv"
             is_in_file = False
-            with open(csv_path, "rt") as c:
+            with open(csv_path) as c:
                 demo_manifest = csv.reader(c, delimiter=",")
                 for row in demo_manifest:
                     if AVALON_AIP_UUID in row:
@@ -74,7 +74,7 @@ class TestCreateAvalonDip(unittest.TestCase):
             assert is_in_file
 
             # Check that files are present
-            avalon_files = os.listdir("{}/assets".format(avalon_dip_dir))
+            avalon_files = os.listdir(f"{avalon_dip_dir}/assets")
             assets = [
                 "agz3068a.wav",
                 "lunchroom_manners_512kb.mp4",

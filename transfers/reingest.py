@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """
 Reingest AIPs Automatically.
 
@@ -10,18 +8,15 @@ Archivematica ProcessingMCP.xml file.
 A work in progress, with some improvements that can be made to long-running
 processes like this over time.
 """
-from __future__ import print_function
-
 import argparse
 import atexit
 import json
 import logging
 import os
-import time
 import sys
+import time
 
 from amclient import AMClient
-from six import string_types, text_type
 
 # Allow execution as an executable and the script to be run at package level
 # by ensuring that it can see itself.
@@ -231,7 +226,7 @@ def db_has_aips(session):
 
 def load_db(session, aiplist):
     """If we have AIPs to reingest, load the database."""
-    if isinstance(aiplist, (string_types, text_type)):
+    if isinstance(aiplist, ((str,), str)):
         return False
     try:
         for aip in aiplist:
@@ -251,7 +246,7 @@ def loadfromlist(listfile):
             # if a user's array is written using incorrect quotation marks.
             userlist = json.loads(aip_list.read().replace("'", '"'))
             return userlist
-    except IOError as err:
+    except OSError as err:
         LOGGER.error("Check existence of file: %s", err)
         sys.exit(ERR_PROCESSING)
 
@@ -429,7 +424,6 @@ def main():
         "WARNING",
         "ERROR",
     ]:
-
         loggingconfig.setup(logging_default, logging_path)
     else:
         loggingconfig.setup(args.logging, logging_path)

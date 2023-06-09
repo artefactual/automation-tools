@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-
 import os
 import time
 import unittest
-import vcr
 import zipfile
 
 import amclient
+import vcr
 
 from aips import create_dip
 from tests.tests_helpers import TmpDir
@@ -40,7 +39,7 @@ class TestCreateDip(unittest.TestCase):
             ).download_aip()
             # Then test extraction
             aip_dir = create_dip.extract_aip(aip_path, AIP_UUID, TMP_DIR)
-            assert aip_dir == "{}/{}-{}".format(TMP_DIR, TRANSFER_NAME, AIP_UUID)
+            assert aip_dir == f"{TMP_DIR}/{TRANSFER_NAME}-{AIP_UUID}"
             assert os.path.isdir(aip_dir)
 
     def test_extract_aip_fail(self):
@@ -78,16 +77,16 @@ class TestCreateDip(unittest.TestCase):
             dip_dir = create_dip.create_dip(
                 aip_dir, AIP_UUID, OUTPUT_DIR, "atom", "zipped-objects"
             )
-            assert dip_dir == "{}/{}-{}".format(OUTPUT_DIR, TRANSFER_NAME, AIP_UUID)
+            assert dip_dir == f"{OUTPUT_DIR}/{TRANSFER_NAME}-{AIP_UUID}"
             assert os.path.isdir(dip_dir)
             # Check a METS file exists
-            dip_mets = "{}/METS.{}.xml".format(dip_dir, AIP_UUID)
+            dip_mets = f"{dip_dir}/METS.{AIP_UUID}.xml"
             assert os.path.isfile(dip_mets)
             # And an objects directory
-            dip_objects = "{}/objects".format(dip_dir)
+            dip_objects = f"{dip_dir}/objects"
             assert os.path.isdir(dip_objects)
             # With a ZIP file with the transfer name inside
-            dip_objects_zip = "{}/{}.zip".format(dip_objects, TRANSFER_NAME)
+            dip_objects_zip = f"{dip_objects}/{TRANSFER_NAME}.zip"
             assert os.path.isfile(dip_objects_zip)
             # Check that the zipped files have their original filename
             # and the last modified date from the AIP
@@ -107,7 +106,7 @@ class TestCreateDip(unittest.TestCase):
                 # Ignore main folder, METS, submissionDocumentation and directories
                 if (
                     not filename
-                    or filename == "METS.{}.xml".format(AIP_UUID)
+                    or filename == f"METS.{AIP_UUID}.xml"
                     or filename.startswith("submissionDocumentation")
                     or filename.endswith("/")
                 ):

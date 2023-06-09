@@ -1,9 +1,13 @@
-# -*- coding: utf-8 -*-
+from sqlalchemy import Boolean
+from sqlalchemy import Column
 from sqlalchemy import create_engine
+from sqlalchemy import Integer
+from sqlalchemy import LargeBinary
 from sqlalchemy import Sequence
-from sqlalchemy import Column, LargeBinary, Boolean, Integer, String
+from sqlalchemy import String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
 Session = None
@@ -34,7 +38,7 @@ def init_session(databasefile):
     """Initialize the database given a database filename and initiate the
     database session to use throughout our transactions.
     """
-    engine = create_engine("sqlite:///{}".format(databasefile), echo=False)
+    engine = create_engine(f"sqlite:///{databasefile}", echo=False)
     global Session
     Session = scoped_session(sessionmaker())
     Session.configure(bind=engine)

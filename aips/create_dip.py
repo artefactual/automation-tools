@@ -11,15 +11,13 @@ folder (if present in the AIP) and the AIP METS file. Another METS file will be
 generated alongside the objects folder containing only a reference to the ZIP file
 (without AMD or DMD sections).
 """
-
 import argparse
 import csv
-import logging
 import logging.config  # Has to be imported separately
 import os
-import sys
-import subprocess
 import shutil
+import subprocess
+import sys
 import uuid
 
 import amclient
@@ -138,7 +136,7 @@ def extract_aip(aip_file, aip_uuid, tmp_dir):
     :param str tmp_dir: absolute path to a directory to place the extracted AIP
     :returns: absolute path to the extracted AIP folder
     """
-    command = ["7z", "x", "-bd", "-y", "-o{0}".format(tmp_dir), aip_file]
+    command = ["7z", "x", "-bd", "-y", f"-o{tmp_dir}", aip_file]
     try:
         subprocess.check_output(command, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
@@ -200,11 +198,11 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
         move_sub_doc(aip_dir, to_zip_dir)
 
     LOGGER.info("Moving METS file")
-    aip_mets_file = "{}/data/METS.{}.xml".format(aip_dir, aip_uuid)
+    aip_mets_file = f"{aip_dir}/data/METS.{aip_uuid}.xml"
     if not os.path.exists(aip_mets_file):
         LOGGER.error("Could not find AIP METS file")
         return
-    to_zip_mets_file = "{}/METS.{}.xml".format(to_zip_dir, aip_uuid)
+    to_zip_mets_file = f"{to_zip_dir}/METS.{aip_uuid}.xml"
     shutil.move(aip_mets_file, to_zip_mets_file)
 
     mets = metsrw.METSDocument.fromfile(to_zip_mets_file)
@@ -264,7 +262,7 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
                 LOGGER.warning("fits/fileinfo/fslastmodified not found")
 
     # Modify or copy METS file for DIP based on mets_type argument
-    dip_mets_file = os.path.join(dip_dir, "METS.{}.xml".format(aip_uuid))
+    dip_mets_file = os.path.join(dip_dir, f"METS.{aip_uuid}.xml")
 
     if dip_type == "avalon-manifest":
         # Update Manifest file with UUIDs
@@ -308,8 +306,8 @@ def create_dip_mets(aip_dir, aip_name, fsentries, mets, dip_mets_file):
 
     # Create new entry for ZIP file
     entry = metsrw.FSEntry(
-        label="{}.zip".format(aip_name),
-        path="objects/{}.zip".format(aip_name),
+        label=f"{aip_name}.zip",
+        path=f"objects/{aip_name}.zip",
         file_uuid=str(uuid.uuid4()),
     )
 
@@ -339,7 +337,7 @@ def compress_zip_folder(to_zip_dir):
     """Compresses to_zip_dir inside the DIP objects folder"""
 
     LOGGER.info("Compressing ZIP folder inside objects")
-    command = ["7z", "a", "-tzip", "{0}.zip".format(to_zip_dir), to_zip_dir]
+    command = ["7z", "a", "-tzip", f"{to_zip_dir}.zip", to_zip_dir]
     try:
         subprocess.check_output(command, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
@@ -351,7 +349,7 @@ def move_sub_doc(aip_dir, to_zip_dir):
     """Moves submissionDocumentation folder"""
 
     LOGGER.info("Moving submissionDocumentation folder")
-    aip_sub_doc = "{}/data/objects/submissionDocumentation".format(aip_dir)
+    aip_sub_doc = f"{aip_dir}/data/objects/submissionDocumentation"
     if os.path.exists(aip_sub_doc):
         to_zip_sub_doc = os.path.join(to_zip_dir, "submissionDocumentation")
         shutil.move(aip_sub_doc, to_zip_sub_doc)
@@ -383,7 +381,7 @@ def update_avalon_manifest(dip_dir, aip_uuid):
     if len(paths) == 1:
         csv_path = os.path.join(dip_dir, paths[0])
         tmp_csv_path = os.path.join(dip_dir, "tmp.csv")
-        with open(csv_path, "r") as csv_input, open((tmp_csv_path), "w") as csv_output:
+        with open(csv_path) as csv_input, open((tmp_csv_path), "w") as csv_output:
             reader = csv.reader(csv_input)
             writer = csv.writer(csv_output, lineterminator="\n")
 
