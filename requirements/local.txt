@@ -1,7 +1,4 @@
 -r base.txt
-pytest
-pytest-cov
-vcrpy>=1.0.0
-flake8==3.4.1
-flake8-import-order==0.13
-mock
+pytest==7.0.1
+pytest-cov==4.0.0
+vcrpy==4.1.1

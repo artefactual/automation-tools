@@ -1,7 +1,5 @@
-amclient==1.0.0rc2
-metsrw==0.3.8
-requests<3.0
-sqlalchemy
-six
-urllib3<2
-enum34
+amclient==1.2.3
+metsrw==0.3.23
+requests==2.27.1
+sqlalchemy==1.4.48
+urllib3==1.26.15
