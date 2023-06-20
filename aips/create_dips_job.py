@@ -9,20 +9,18 @@ in an SQLite database.
 Optionally, uploads those DIPs to AtoM or the Storage Service using
 the scripts from `dips` and deletes the local copy.
 """
-
 import argparse
-import logging
 import logging.config  # Has to be imported separately
 import os
 import sys
 
-from sqlalchemy import exc
-
 import amclient
+from sqlalchemy import exc
 
 from aips import create_dip
 from aips import models
-from dips import atom_upload, storage_service_upload
+from dips import atom_upload
+from dips import storage_service_upload
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 LOGGER = logging.getLogger("dip_workflow")
@@ -86,7 +84,7 @@ def main(
     # Idempotently create database and Aip table and create session
     try:
         session = models.init(database_file)
-    except IOError:
+    except OSError:
         LOGGER.error("Could not create database in: %s", database_file)
         return 1
 
@@ -175,7 +173,7 @@ def filter_aips(aips, location_uuid, origin_pipeline_uuid):
     :param str origin_pipeline_uuid: UUID from the origin pipeline
     :returns: list of UUIDs from the AIPs in that location
     """
-    location = "/api/v2/location/{}/".format(location_uuid)
+    location = f"/api/v2/location/{location_uuid}/"
     filtered_aips = []
 
     for aip in aips:
@@ -189,7 +187,7 @@ def filter_aips(aips, location_uuid, origin_pipeline_uuid):
             LOGGER.debug("Skipping AIP (different location): %s", aip["uuid"])
             continue
         if origin_pipeline_uuid:
-            pipeline = "/api/v2/pipeline/{}/".format(origin_pipeline_uuid)
+            pipeline = f"/api/v2/pipeline/{origin_pipeline_uuid}/"
             if "origin_pipeline" not in aip:
                 LOGGER.debug("Skipping AIP (missing pipeline): %s", aip["uuid"])
                 continue

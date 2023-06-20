@@ -6,13 +6,11 @@ Sends the DIP to the AtoM host using rsync and executes a deposit request to the
 AtoM instance. A passwordless SSH connection is required to the AtoM host for the
 user running this script and it must be already added to the list of known hosts.
 """
-
 import argparse
-import logging
 import logging.config  # Has to be imported separately
 import os
-import subprocess
 import shutil
+import subprocess
 import sys
 
 import requests
@@ -129,10 +127,10 @@ def deposit(atom_url, atom_email, atom_password, atom_slug, dip_path):
     headers["Content-Type"] = "application/zip"
     headers["X-No-Op"] = "false"
     headers["X-Verbose"] = "false"
-    headers["Content-Location"] = "file:///{}".format(os.path.basename(dip_path))
+    headers["Content-Location"] = f"file:///{os.path.basename(dip_path)}"
 
     # Build URL and auth
-    url = "{}/sword/deposit/{}".format(atom_url, atom_slug)
+    url = f"{atom_url}/sword/deposit/{atom_slug}"
     auth = requests.auth.HTTPBasicAuth(atom_email, atom_password)
 
     # Make request (disable redirects)

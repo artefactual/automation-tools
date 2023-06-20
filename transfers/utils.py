@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """Where you put stuff when you can't think of a good name for a module."""
-
 import logging
-import sys
 
 import requests
 import urllib3
-from six import binary_type, text_type
 
 from transfers import errors
 
@@ -64,36 +59,3 @@ def _call_url_json(url, params=None, method=METHOD_GET, headers=None, assume_jso
             LOGGER.warning("Could not parse JSON from response: %s", response.text)
             return errors.ERR_PARSE_JSON
     return response.text
-
-
-try:
-    from os import fsencode, fsdecode
-except ImportError:
-    # Cribbed & modified from Python3's OS module to support Python2
-    def fsencode(filename):
-        """Encode path-like filename to the filesystem encoding.
-
-        See https://docs.python.org/3/library/os.html#os.fsencode for more
-        details.
-        """
-        encoding = sys.getfilesystemencoding()
-        if isinstance(filename, binary_type):
-            return filename
-        elif isinstance(filename, text_type):
-            return filename.encode(encoding)
-        else:
-            raise TypeError("expect bytes or str, not %s" % type(filename).__name__)
-
-    def fsdecode(filename):
-        """Decode the path-like filename from the filesystem encoding.
-
-        See https://docs.python.org/3/library/os.html#os.fsdecode for more
-        details.
-        """
-        encoding = sys.getfilesystemencoding()
-        if isinstance(filename, text_type):
-            return filename
-        elif isinstance(filename, binary_type):
-            return filename.decode(encoding)
-        else:
-            raise TypeError("expect bytes or str, not %s" % type(filename).__name__)

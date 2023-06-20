@@ -13,8 +13,6 @@ The original location is not modified. Preferably run locally. It's been tested 
 
 Make sure that you have permissions on the locations you are reading or writing!
 """
-from __future__ import print_function, unicode_literals
-
 import argparse
 import csv
 import os
@@ -22,7 +20,7 @@ import subprocess
 import sys
 
 
-class SIPMetadata(object):
+class SIPMetadata:
     def __init__(self, source_sip, csv_delimiter):
         self.csv_file = os.path.join(source_sip, "metadata", "metadata.csv")
         self.csv_delimiter = csv_delimiter
@@ -30,7 +28,7 @@ class SIPMetadata(object):
 
     def index_csv(self):
         self.index = dict()
-        with open(self.csv_file, "rt") as csvf:
+        with open(self.csv_file) as csvf:
             csvr = csv.reader(csvf, delimiter=self.csv_delimiter)
             for i, row in enumerate(csvr):
                 if i == 0:
@@ -44,7 +42,7 @@ class SIPMetadata(object):
 
 
 def rsync(src, dst, verbose=False):
-    print("Copying objects... [src={}] [dst={}]".format(src, dst))
+    print(f"Copying objects... [src={src}] [dst={dst}]")
     subprocess.check_call(["rsync", "-a", src, dst])
 
 
@@ -66,7 +64,7 @@ def main(source_sip, target_dir, csv_delimiter, prefix=None, metadata_only=False
     sdoc_dir_src = os.path.join(source_sip, "metadata", "submissionDocumentation", "")
     sdoc_dir_dst = os.path.join(
         target_dir,
-        "{}submissionDocumentation".format(sdoc_prefix),
+        f"{sdoc_prefix}submissionDocumentation",
         "metadata",
         "submissionDocumentation",
         "",
@@ -84,10 +82,10 @@ def main(source_sip, target_dir, csv_delimiter, prefix=None, metadata_only=False
     # List of directories under objects/
     objects_dirs = os.listdir(objects_dir)
     if len(objects_dirs) < 1:
-        print("Object directory is empty: {}".format(objects_dir))
+        print(f"Object directory is empty: {objects_dir}")
 
     for i, item in enumerate(objects_dirs):
-        print("- {}".format(item))
+        print(f"- {item}")
         src = os.path.join(objects_dir, item, "")
 
         item_dst = item if prefix is None else prefix + item
@@ -102,9 +100,9 @@ def main(source_sip, target_dir, csv_delimiter, prefix=None, metadata_only=False
         # Split metadata
         make_dirs(dst_metadata)
         try:
-            headers, mdata = metadata.get_object_metadata("objects/{}".format(item))
+            headers, mdata = metadata.get_object_metadata(f"objects/{item}")
         except KeyError:
-            print("No metadata for {}".format(item))
+            print(f"No metadata for {item}")
         else:
             print("Writing metadata...")
             csv_file = os.path.join(dst_metadata, "metadata.csv")

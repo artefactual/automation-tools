@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 ERR_INVALID_RESPONSE = 1
 ERR_PARSE_JSON = 2
 ERR_SERVER_CONN = 3

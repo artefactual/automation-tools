@@ -4,16 +4,15 @@ Copies a DIP to NetX.
 
 Copies a local DIP to NetX, providing a CSV list of each object.
 """
-
 import argparse
 import csv
-import logging
 import logging.config  # Has to be imported separately
-import lxml.etree
 import os
 import shutil
-import tempfile
 import sys
+import tempfile
+
+import lxml.etree
 
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))

@@ -1,13 +1,9 @@
 #!/usr/bin/env python
-
 import subprocess
 import unittest
-import vcr
+from unittest import mock
 
-try:
-    import mock
-except ImportError:
-    from unittest import mock
+import vcr
 
 from dips import atom_upload
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from email.mime.text import MIMEText
 import smtplib
 import sys
+from email.mime.text import MIMEText
 
 SERVER = "localhost"
 FROM = "noreply@archivematica.org"
@@ -22,7 +22,7 @@ def main(microservice_name, first_time, unit_path, unit_uuid, unit_name, unit_ty
         return
     content = CONTENTS.format(name=unit_name, type=unit_type.title(), uuid=unit_uuid)
     msg = MIMEText(content)
-    msg["Subject"] = "{} waiting for user approval".format(unit_name)
+    msg["Subject"] = f"{unit_name} waiting for user approval"
     msg["From"] = FROM
     msg["To"] = ", ".join(TO)
     s = smtplib.SMTP(SERVER)

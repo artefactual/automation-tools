@@ -1,9 +1,9 @@
 """Command-line argument parser for automated transfer scripts."""
-
 import argparse
+from os import fsencode
 
-from transfers.defaults import DEF_AM_URL, DEF_SS_URL
-from transfers.utils import fsencode
+from transfers.defaults import DEF_AM_URL
+from transfers.defaults import DEF_SS_URL
 
 
 def get_parser(doc):
