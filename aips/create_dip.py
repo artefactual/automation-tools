@@ -444,7 +444,6 @@ def get_original_relpath(original_name):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -544,7 +543,7 @@ if __name__ == "__main__":
     # The main function returns the DIP's path on success
     # or an int higher than 0 if it fails. The scrip will
     # always exit with an int, 0 on success.
-    if type(ret) != int:
+    if not isinstance(ret, int):
         ret = 0
 
     sys.exit(ret)

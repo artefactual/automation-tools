@@ -61,13 +61,13 @@ def setup_amclient(amclient):
     this block. The `setattr(...)` calls in this block are ordered
     alphabetically.
     """
-    setattr(amclient, "aip_uuid", None)
-    setattr(amclient, "package_uuid", None)
-    setattr(amclient, "pipeline_uuid", None)
-    setattr(amclient, "processing_config", None)
-    setattr(amclient, "sip_uuid", None)
-    setattr(amclient, "transfer_directory", None)
-    setattr(amclient, "transfer_uuid", None)
+    amclient.aip_uuid = None
+    amclient.package_uuid = None
+    amclient.pipeline_uuid = None
+    amclient.processing_config = None
+    amclient.sip_uuid = None
+    amclient.transfer_directory = None
+    amclient.transfer_uuid = None
     return amclient
 
 

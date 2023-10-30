@@ -20,7 +20,7 @@ def setup_session():
     try:
         models.transfer_session.query(models.Unit).one()
     except MultipleResultsFound:
-        assert False
+        raise AssertionError()
     except NoResultFound:
         assert True
 
