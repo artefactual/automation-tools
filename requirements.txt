@@ -1,1 +1,5 @@
--r requirements/production.txt
+amclient==1.2.3
+metsrw==0.4.0
+requests==2.31.0
+sqlalchemy==1.4.49
+urllib3==1.26.18

@@ -27,7 +27,7 @@ class SIPMetadata:
         self.index_csv()
 
     def index_csv(self):
-        self.index = dict()
+        self.index = {}
         with open(self.csv_file) as csvf:
             csvr = csv.reader(csvf, delimiter=self.csv_delimiter)
             for i, row in enumerate(csvr):
@@ -84,7 +84,7 @@ def main(source_sip, target_dir, csv_delimiter, prefix=None, metadata_only=False
     if len(objects_dirs) < 1:
         print(f"Object directory is empty: {objects_dir}")
 
-    for i, item in enumerate(objects_dirs):
+    for item in objects_dirs:
         print(f"- {item}")
         src = os.path.join(objects_dir, item, "")
 

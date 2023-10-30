@@ -133,7 +133,7 @@ def main(
         )
 
         # Do not try upload on creation error
-        if type(dip_path) == int:
+        if isinstance(dip_path, int):
             LOGGER.error("Could not create DIP from AIP: %s", uuid)
             continue
 
@@ -200,7 +200,6 @@ def filter_aips(aips, location_uuid, origin_pipeline_uuid):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )

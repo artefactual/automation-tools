@@ -50,6 +50,7 @@ class TestCreateDip(unittest.TestCase):
     @vcr.use_cassette(
         "fixtures/vcr_cassettes/test_create_dip_download_aip_success.yaml"
     )
+    @unittest.mock.patch.dict(os.environ, {"TZ": "UTC"})
     def test_create_dip_success(self):
         """
         Test full DIP creation:

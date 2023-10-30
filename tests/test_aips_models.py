@@ -20,7 +20,7 @@ class TestAipsModels(unittest.TestCase):
             assert os.path.isfile(DATABASE_FILE)
             assert "aip" in models.Base.metadata.tables
             assert hasattr(session, "add")
-            assert callable(getattr(session, "add"))
+            assert callable(session.add)
 
     def test_init_fail(self):
         """Test that the database can't be created in a wrong path."""

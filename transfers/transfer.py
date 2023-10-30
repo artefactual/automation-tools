@@ -330,7 +330,7 @@ def get_next_transfer(
         LOGGER.debug("New transfer candidates: %s", entries)
         LOGGER.info("Unprocessed entries to choose from: %s", len(entries))
         # Sort, take the first
-        entries = sorted(list(entries))
+        entries = sorted(entries)
         if not entries:
             LOGGER.info("All potential transfers in %s have been created.", path_prefix)
             return None

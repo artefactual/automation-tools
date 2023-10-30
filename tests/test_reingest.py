@@ -8,7 +8,6 @@ from transfers import reingestmodel as reingestunit
 
 
 class TestReingestClass:
-
     dbpath = "fixtures/reingest_test.db"
 
     @pytest.fixture(autouse=True)
