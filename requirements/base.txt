@@ -1,5 +1,0 @@
-amclient==1.2.3
-metsrw==0.3.23
-requests==2.27.1
-sqlalchemy==1.4.48
-urllib3==1.26.17
