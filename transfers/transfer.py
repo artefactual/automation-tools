@@ -82,6 +82,7 @@ def get_status(
     ss_api_key,
     unit_uuid,
     unit_type,
+    transfer_delete_path,
     hide_on_complete=False,
     delete_on_complete=False,
 ):
@@ -155,7 +156,9 @@ def get_status(
                     unit.uuid,
                 )
                 try:
-                    shutil.rmtree(unit.path)
+                    # Use the transfer_delete_path provided by user ex: /transferSource/
+                    deletePath = transfer_delete_path + unit.path.decode("UTF-8")
+                    shutil.rmtree(deletePath)
                     LOGGER.info("Source files deleted for SIP %s deleted", unit.uuid)
                 except OSError as e:
                     LOGGER.warning(
@@ -330,7 +333,7 @@ def get_next_transfer(
         LOGGER.debug("New transfer candidates: %s", entries)
         LOGGER.info("Unprocessed entries to choose from: %s", len(entries))
         # Sort, take the first
-        entries = sorted(entries)
+        entries = sorted(list(entries))
         if not entries:
             LOGGER.info("All potential transfers in %s have been created.", path_prefix)
             return None
@@ -563,6 +566,7 @@ def main(
     ss_url,
     transfer_type,
     see_files,
+    transfer_delete_path,
     hide_on_complete=False,
     delete_on_complete=False,
     config_file=None,
@@ -623,6 +627,7 @@ def main(
             ss_api_key,
             unit_uuid,
             unit_type,
+            transfer_delete_path,
             hide_on_complete,
             delete_on_complete,
         )
@@ -701,6 +706,7 @@ if __name__ == "__main__":
             ss_url=args.ss_url,
             transfer_type=args.transfer_type,
             see_files=args.files,
+            transfer_delete_path=args.transfer_delete_path,
             hide_on_complete=args.hide,
             delete_on_complete=args.delete_on_complete,
             config_file=args.config_file,
