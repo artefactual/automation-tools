@@ -243,6 +243,7 @@ work.  The full set of parameters that can be changed are:
 * `--hide`: If set, hides the Transfer and SIP once completed.
 * `--delete-on-complete`: If set, delete transfer source files from watched
   directory once completed.
+* `--transfer_delete_path`: Text path watched directory if "--delete-on-complete" is set, example /mnt/transferSource/.
 * `-c FILE, --config-file FILE`: config file containing file paths for
   log/database/PID files. Default: log/database/PID files stored in the same
   directory as the script (not recommended for production)
