@@ -1,0 +1,5 @@
+amclient
+metsrw
+requests
+sqlalchemy<2
+urllib3
