@@ -6,10 +6,11 @@ on:
     branches:
       - "master"
 jobs:
-  tox:
+  test:
     name: "Test Python ${{ matrix.python-version }}"
     runs-on: "ubuntu-22.04"
     strategy:
+      fail-fast: false
       matrix:
         python-version: [
           "3.8",
@@ -53,6 +54,10 @@ jobs:
         uses: "actions/setup-python@v4"
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
       - name: "Install tox"
         run: |
           python -m pip install --upgrade pip
