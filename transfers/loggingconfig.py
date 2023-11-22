@@ -4,7 +4,7 @@ import logging.config  # Has to be imported separately
 def setup(log_level, log_file_name):
     """Configure the logging system."""
     # Log format string for flake8 compliance
-    log_fmt = "%(levelname)-8s  %(asctime)s " "%(filename)s:%(lineno)-4s %(message)s"
+    log_fmt = "%(levelname)-8s  %(asctime)s %(filename)s:%(lineno)-4s %(message)s"
 
     dict_config = {
         "version": 1,

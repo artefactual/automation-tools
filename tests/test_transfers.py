@@ -4,7 +4,7 @@ import os
 import unittest
 from unittest import mock
 
-import vcr
+import requests
 
 from transfers import errors
 from transfers import models
@@ -32,10 +32,10 @@ class TestAutomateTransfers(unittest.TestCase):
         # Setup some data to be used for test_call_start_transfer_endpoint(..)
         # and def test_call_start_transfer(..).
         transfers_dir = (
-            "/var/archivematica/sharedDirectory/watchedDirectories/" "activeTransfers"
+            "/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers"
         )
         Result = collections.namedtuple(
-            "Result", "transfer_type target transfer_name " "transfer_abs_path"
+            "Result", "transfer_type target transfer_name transfer_abs_path"
         )
         self.start_tests = [
             Result(
@@ -68,8 +68,31 @@ class TestAutomateTransfers(unittest.TestCase):
             ),
         ]
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_transfers_get_status_transfer.yaml")
-    def test_get_status_transfer(self):
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "status": "USER_INPUT",
+                        "name": "test1",
+                        "microservice": "Approve standard transfer",
+                        "directory": "test1",
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers/standardTransfer/test1/",
+                        "message": "Fetched status for dfc8cf5f-b5b1-408c-88b1-34215964e9d6 successfully.",
+                        "type": "transfer",
+                        "uuid": "dfc8cf5f-b5b1-408c-88b1-34215964e9d6",
+                    },
+                },
+                spec=requests.Response,
+            )
+        ],
+    )
+    def test_get_status_transfer(self, _request):
         transfer_uuid = "dfc8cf5f-b5b1-408c-88b1-34215964e9d6"
         transfer_name = "test1"
         info = transfer.get_status(
@@ -87,10 +110,51 @@ class TestAutomateTransfers(unittest.TestCase):
             "standardTransfer/test1/"
         )
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/" "test_transfers_get_status_transfer_to_ingest.yaml"
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "status": "COMPLETE",
+                        "name": "test1",
+                        "sip_uuid": "f2248e2a-b593-43db-b60c-fa8513021785",
+                        "microservice": "Move to SIP creation directory for completed transfers",
+                        "directory": "test1-dfc8cf5f-b5b1-408c-88b1-34215964e9d6",
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/SIPCreation/completedTransfers/test1-dfc8cf5f-b5b1-408c-88b1-34215964e9d6/",
+                        "message": "Fetched status for dfc8cf5f-b5b1-408c-88b1-34215964e9d6 successfully.",
+                        "type": "transfer",
+                        "uuid": "dfc8cf5f-b5b1-408c-88b1-34215964e9d6",
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "status": "USER_INPUT",
+                        "name": "test1",
+                        "microservice": "Normalize",
+                        "directory": "test1-f2248e2a-b593-43db-b60c-fa8513021785",
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/selectFormatIDToolIngest/test1-f2248e2a-b593-43db-b60c-fa8513021785/",
+                        "message": "Fetched status for f2248e2a-b593-43db-b60c-fa8513021785 successfully.",
+                        "type": "SIP",
+                        "uuid": "f2248e2a-b593-43db-b60c-fa8513021785",
+                    },
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_get_status_transfer_to_ingest(self):
+    def test_get_status_transfer_to_ingest(self, _request):
         # Reference values
         transfer_uuid = "dfc8cf5f-b5b1-408c-88b1-34215964e9d6"
         unit_name = "test1"
@@ -121,8 +185,31 @@ class TestAutomateTransfers(unittest.TestCase):
             "test1-f2248e2a-b593-43db-b60c-fa8513021785/"
         )
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_transfers_get_status_ingest.yaml")
-    def test_get_status_ingest(self):
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "status": "USER_INPUT",
+                        "name": "test1",
+                        "microservice": "Normalize",
+                        "directory": "test1-f2248e2a-b593-43db-b60c-fa8513021785",
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/selectFormatIDToolIngest/test1-f2248e2a-b593-43db-b60c-fa8513021785/",
+                        "message": "Fetched status for f2248e2a-b593-43db-b60c-fa8513021785 successfully.",
+                        "type": "SIP",
+                        "uuid": "f2248e2a-b593-43db-b60c-fa8513021785",
+                    },
+                },
+                spec=requests.Response,
+            ),
+        ],
+    )
+    def test_get_status_ingest(self, _request):
         sip_uuid = "f2248e2a-b593-43db-b60c-fa8513021785"
         sip_name = "test1"
         info = transfer.get_status(
@@ -141,16 +228,46 @@ class TestAutomateTransfers(unittest.TestCase):
             "test1-f2248e2a-b593-43db-b60c-fa8513021785/"
         )
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_transfers_get_status_no_unit.yaml")
-    def test_get_status_no_unit(self):
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 400,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "ok": False,
+                    "reason": "BAD REQUEST",
+                },
+                spec=requests.Response,
+            )
+        ],
+    )
+    def test_get_status_no_unit(self, _request):
         transfer_uuid = "deadc0de-c0de-c0de-c0de-deadc0dec0de"
         info = transfer.get_status(
             AM_URL, USER, API_KEY, SS_URL, SS_USER, SS_KEY, transfer_uuid, "transfer"
         )
         self.assertEqual(info, errors.error_lookup(errors.ERR_INVALID_RESPONSE))
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_transfers_get_status_not_json.yaml")
-    def test_get_status_not_json(self):
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 404,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "text/html; charset=utf-8"}
+                    ),
+                    "ok": False,
+                    "reason": "NOT FOUND",
+                },
+                spec=requests.Response,
+            ),
+        ],
+    )
+    def test_get_status_not_json(self, _request):
         transfer_uuid = "dfc8cf5f-b5b1-408c-88b1-34215964e9d6"
         info = transfer.get_status(
             AM_URL, USER, API_KEY, SS_URL, SS_USER, SS_KEY, transfer_uuid, "transfer"
@@ -161,10 +278,22 @@ class TestAutomateTransfers(unittest.TestCase):
         accession_id = transfer.get_accession_id(os.path.curdir)
         self.assertEqual(accession_id, None)
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/" "test_transfers_get_next_transfer_first_run.yaml"
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {"directories": ["QmFnVHJhbnNmZXI="]},
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_get_next_transfer_first_run(self):
+    def test_get_next_transfer_first_run(self, _request):
         # All default values
         # Test
         path = transfer.get_next_transfer(
@@ -180,10 +309,22 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, b"SampleTransfers/BagTransfer")
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/" "test_transfers_get_next_transfer_existing_set.yaml"
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {"directories": ["Q1NWbWV0YWRhdGE="]},
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_get_next_transfer_existing_set(self):
+    def test_get_next_transfer_existing_set(self, _request):
         # Set completed set
         completed = {b"SampleTransfers/BagTransfer"}
         # Test
@@ -200,10 +341,32 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, b"SampleTransfers/CSVmetadata")
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/test_transfers_get_next_transfer_depth.yaml"
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {"directories": ["QmFnVHJhbnNmZXI="]},
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {"directories": ["ZGF0YQ=="]},
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_get_next_transfer_depth(self):
+    def test_get_next_transfer_depth(self, _request):
         # Set depth
         depth = 2
         # Test
@@ -220,10 +383,22 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, b"SampleTransfers/BagTransfer/data")
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/" "test_transfers_get_next_transfer_no_prefix.yaml"
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {"directories": ["T1BGIGZvcm1hdC1jb3JwdXM="]},
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_get_next_transfer_no_prefix(self):
+    def test_get_next_transfer_no_prefix(self, _request):
         # Set no prefix
         path_prefix = b""
         # Test
@@ -240,10 +415,22 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, b"OPF format-corpus")
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/" "test_transfers_get_next_transfer_all_complete.yaml"
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {"directories": []},
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_get_next_transfer_all_complete(self):
+    def test_get_next_transfer_all_complete(self, _request):
         # Set completed set to be all elements
         completed = {
             b"SampleTransfers/BagTransfer",
@@ -272,10 +459,23 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, None)
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/" "test_transfers_get_next_transfer_bad_source.yaml"
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 404,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "text/html; charset=utf-8"}
+                    ),
+                    "ok": False,
+                    "reason": "NOT FOUND",
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_get_next_transfer_bad_source(self):
+    def test_get_next_transfer_bad_source(self, _request):
         # Set bad TS Location UUID
         ts_location_uuid = "badd8d39-9cee-495e-b7ee-5e6292549bad"
         # Test
@@ -292,10 +492,22 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, None)
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/test_transfers_get_next_transfer_files.yaml"
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {"entries": ["QmFnVHJhbnNmZXIuemlw"]},
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_get_next_transfer_files(self):
+    def test_get_next_transfer_files(self, _request):
         # See files
         files = True
         completed = {b"SampleTransfers/BagTransfer"}
@@ -313,10 +525,23 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify
         self.assertEqual(path, b"SampleTransfers/BagTransfer.zip")
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/" "test_transfers_get_next_transfer_failed_auth.yaml"
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 401,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "text/html; charset=utf-8"}
+                    ),
+                    "ok": False,
+                    "reason": "UNAUTHORIZED",
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_get_next_transfer_failed_auth(self):
+    def test_get_next_transfer_failed_auth(self, _request):
         # All default values
         ss_user = "demo"
         ss_key = "dne"
@@ -334,8 +559,148 @@ class TestAutomateTransfers(unittest.TestCase):
         # Verify.
         self.assertEqual(path, None)
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_transfers_approve_transfer.yaml")
-    def test_approve_transfer(self):
+    @mock.patch("time.sleep")
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "message": "Fetched unapproved transfers successfully.",
+                        "results": [
+                            {
+                                "directory": "unzipped_bag_1",
+                                "type": "unzipped bag",
+                                "uuid": "8779909c-20e8-4471-beb2-c45591b7abb0",
+                            },
+                            {
+                                "directory": "dspace_1",
+                                "type": "dspace",
+                                "uuid": "f25c71e6-1f1e-4e69-bf57-580a64d4e051",
+                            },
+                            {
+                                "directory": "standard_1",
+                                "type": "standard",
+                                "uuid": "0d16e57f-df1b-4a66-a93c-989f0dc9f16f",
+                            },
+                        ],
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "message": "Approval successful.",
+                        "uuid": "8779909c-20e8-4471-beb2-c45591b7abb0",
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "message": "Fetched unapproved transfers successfully.",
+                        "results": [
+                            {
+                                "directory": "dspace_1",
+                                "type": "dspace",
+                                "uuid": "f25c71e6-1f1e-4e69-bf57-580a64d4e051",
+                            },
+                            {
+                                "directory": "standard_1",
+                                "type": "standard",
+                                "uuid": "0d16e57f-df1b-4a66-a93c-989f0dc9f16f",
+                            },
+                        ],
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "message": "Approval successful.",
+                        "uuid": "f25c71e6-1f1e-4e69-bf57-580a64d4e051",
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "message": "Fetched unapproved transfers successfully.",
+                        "results": [
+                            {
+                                "directory": "standard_1",
+                                "type": "standard",
+                                "uuid": "0d16e57f-df1b-4a66-a93c-989f0dc9f16f",
+                            },
+                            {
+                                "directory": "2",
+                                "type": "dspace",
+                                "uuid": "47908337-3134-4871-8f41-a9d7d500c2e0",
+                            },
+                        ],
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "message": "Approval successful.",
+                        "uuid": "0d16e57f-df1b-4a66-a93c-989f0dc9f16f",
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "message": "Fetched unapproved transfers successfully.",
+                        "results": [
+                            {
+                                "directory": "transfer_1",
+                                "type": "dspace",
+                                "uuid": "47908337-3134-4871-8f41-a9d7d500c2e0",
+                            }
+                        ],
+                    },
+                },
+                spec=requests.Response,
+            ),
+        ],
+    )
+    def test_approve_transfer(self, _request, _sleep):
         """Test the process of approving transfers and make sure that the
         outcome is as expected.
         """
@@ -355,10 +720,64 @@ class TestAutomateTransfers(unittest.TestCase):
             res = transfer.approve_transfer(test.dirname, AM_URL, API_KEY, USER)
             assert res == test.expected
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/" "test_transfers_call_start_transfer_endpoint.yaml"
+    @mock.patch(
+        "requests.post",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers/standardTransfer/standard_1/",
+                        "message": "Copy successful.",
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers/standardTransfer/standard_1_1/",
+                        "message": "Copy successful.",
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers/Dspace/dspace_1.zip",
+                        "message": "Copy successful.",
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers/Dspace/dspace_1_1.zip",
+                        "message": "Copy successful.",
+                    },
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_call_start_transfer_endpoint(self):
+    def test_call_start_transfer_endpoint(self, _request):
         """Archivematica will rename a transfer if it is already trying to
         start one with an identical name. In the tests below, we observe (and
         test) this behavior when there is an identical name for a transfer
@@ -384,10 +803,64 @@ class TestAutomateTransfers(unittest.TestCase):
         "transfers.transfer.approve_transfer",
         return_value="4bd2006a-1178-4695-9463-5c72eec6257a",
     )
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/" "test_transfers_call_start_transfer_endpoint.yaml"
+    @mock.patch(
+        "requests.post",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers/standardTransfer/standard_1/",
+                        "message": "Copy successful.",
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers/standardTransfer/standard_1_1/",
+                        "message": "Copy successful.",
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers/Dspace/dspace_1.zip",
+                        "message": "Copy successful.",
+                    },
+                },
+                spec=requests.Response,
+            ),
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": {
+                        "path": "/var/archivematica/sharedDirectory/watchedDirectories/activeTransfers/Dspace/dspace_1_1.zip",
+                        "message": "Copy successful.",
+                    },
+                },
+                spec=requests.Response,
+            ),
+        ],
     )
-    def test_call_start_transfer(self, mock_approve_transfer):
+    def test_call_start_transfer(self, _request, _approve_transfer):
         """Provide an integration test as best as we can for the
         transfer.start_transfer function where the returned values are crucial
         to the automation of Archivematica work-flows. The test reuses the

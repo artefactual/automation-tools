@@ -17,26 +17,26 @@ def get_parser(doc):
         "--user",
         metavar="USERNAME",
         required=True,
-        help="Username of the Archivematica dashboard user " "to authenticate as.",
+        help="Username of the Archivematica dashboard user to authenticate as.",
     )
     parser.add_argument(
         "-k",
         "--api-key",
         metavar="KEY",
         required=True,
-        help="API key of the Archivematica " "dashboard user.",
+        help="API key of the Archivematica dashboard user.",
     )
     parser.add_argument(
         "--ss-user",
         metavar="USERNAME",
         required=True,
-        help="Username of the Storage Service user to " "authenticate as.",
+        help="Username of the Storage Service user to authenticate as.",
     )
     parser.add_argument(
         "--ss-api-key",
         metavar="KEY",
         required=True,
-        help="API key of the Storage Service " "user.",
+        help="API key of the Storage Service user.",
     )
     parser.add_argument(
         "-t",
@@ -91,7 +91,7 @@ def get_parser(doc):
     parser.add_argument(
         "--files",
         action="store_true",
-        help="If set, start transfers from files as well as " "folders.",
+        help="If set, start transfers from files as well as folders.",
     )
     parser.add_argument(
         "--hide",
@@ -128,7 +128,7 @@ def get_parser(doc):
         "--log-level",
         choices=["ERROR", "WARNING", "INFO", "DEBUG"],
         default=None,
-        help="Set the debugging output level. This will " "override -q and -v",
+        help="Set the debugging output level. This will override -q and -v",
     )
 
     return parser

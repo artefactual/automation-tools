@@ -150,6 +150,7 @@ def extract_aip(aip_file, aip_uuid, tmp_dir):
         pass
 
     # Find extracted entry. Assuming it contains the AIP UUID
+    extracted_entry = ""
     for entry in os.listdir(tmp_dir):
         if aip_uuid in entry:
             extracted_entry = os.path.join(tmp_dir, entry)

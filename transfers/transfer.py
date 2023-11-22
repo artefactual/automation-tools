@@ -151,12 +151,12 @@ def get_status(
             response = am.get_package_details()
             if response.get("status") == "UPLOADED":
                 LOGGER.info(
-                    "Deleting source files for SIP %s from watched " "directory",
+                    "Deleting source files for SIP %s from watched directory",
                     unit.uuid,
                 )
                 try:
                     shutil.rmtree(unit.path)
-                    LOGGER.info("Source files deleted for SIP %s " "deleted", unit.uuid)
+                    LOGGER.info("Source files deleted for SIP %s deleted", unit.uuid)
                 except OSError as e:
                     LOGGER.warning(
                         "Error deleting source files: %s. If "
@@ -446,7 +446,7 @@ def start_transfer(
     if not target:
         # Report the location UUID.
         LOGGER.info(
-            "All potential transfers in Location ID: %s have been created. " "Exiting",
+            "All potential transfers in Location ID: %s have been created. Exiting",
             ts_location_uuid,
         )
         return None
@@ -533,7 +533,7 @@ def approve_transfer(dirname, url, am_api_key, am_user):
     )
     if not res:
         LOGGER.warning(
-            "Requested directory %s not found in the waiting " "transfers list", dirname
+            "Requested directory %s not found in the waiting transfers list", dirname
         )
         return None
     LOGGER.info("Found waiting transfer: %s", res[0]["directory"])

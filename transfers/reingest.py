@@ -172,7 +172,7 @@ def reingest_full_and_approve(
         if transfer.get("status") == "USER_INPUT":
             transfer_directory = transfer["directory"]
             LOGGER.info(
-                "Approving reingest automatically. Directory to " "approve %s",
+                "Approving reingest automatically. Directory to approve %s",
                 transfer_directory,
             )
             amclient.transfer_directory = transfer_directory
@@ -387,7 +387,7 @@ def main():
     parser.add_argument(
         "--compareaiplist",
         type=str,
-        help="compare stored compressed aips with an existing" " list",
+        help="compare stored compressed aips with an existing list",
     )
     parser.add_argument(
         "--processfromlist", type=str, help="reingest from a list of UUIDs"
@@ -395,7 +395,7 @@ def main():
     parser.add_argument(
         "--processfromstorage",
         action="store_true",
-        help="reingest compressed AIPs from the " "Storage Service",
+        help="reingest compressed AIPs from the Storage Service",
     )
     parser.add_argument(
         "--dbstatus", action="store_true", help="output log from the database"
@@ -441,7 +441,7 @@ def main():
 
     processing_config = config["reingest"]["processing_config"]
     if not processing_exists(amclient, processing_config):
-        LOGGER.error("Processing config does not exist to reingest with. " "Exiting.")
+        LOGGER.error("Processing config does not exist to reingest with. Exiting.")
         sys.exit(ERR_PROCESSING)
 
     # Throttle  and approval retries are useful pieces of information to
@@ -449,7 +449,7 @@ def main():
     throttle = config["reingest"]["throttle"]
     approval_retries = config["reingest"]["approval_retries"]
     LOGGER.info(
-        "Processing throttle set to %s, " "approval retries set to %s",
+        "Processing throttle set to %s, approval retries set to %s",
         throttle,
         approval_retries,
     )
