@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import os
 import unittest
+from pathlib import Path
 from unittest import mock
 
-import vcr
+import requests
 from sqlalchemy import exc
 
 from aips import create_dips_job
@@ -20,6 +21,32 @@ THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 TMP_DIR = os.path.join(THIS_DIR, ".tmp-create-dips-job")
 OUTPUT_DIR = os.path.join(TMP_DIR, "output")
 DATABASE_FILE = os.path.join(TMP_DIR, "aips.db")
+
+AIP_FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "aip.tar"
+AIP_CONTENT = b""
+with open(AIP_FIXTURE_PATH, "rb") as f:
+    AIP_CONTENT = f.read()
+
+AIPS_JSON = {
+    "meta": {
+        "limit": 20,
+        "next": None,
+        "offset": 0,
+        "previous": None,
+        "total_count": 1,
+    },
+    "objects": [
+        {
+            "current_full_path": "/var/archivematica/sharedDirectory/www/AIPsStore/3ea4/65ac/ea0a/4a9c/a057/507e/794d/e332/test_B-3ea465ac-ea0a-4a9c-a057-507e794de332",
+            "current_location": "/api/v2/location/e9a08ce2-4e8e-4e01-bdea-09d8d8deff8b/",
+            "current_path": "3ea4/65ac/ea0a/4a9c/a057/507e/794d/e332/test_B-3ea465ac-ea0a-4a9c-a057-507e794de332",
+            "origin_pipeline": "/api/v2/pipeline/ad174753-6776-47e2-9a12-ac37837e5128/",
+            "package_type": "AIP",
+            "status": "UPLOADED",
+            "uuid": "3ea465ac-ea0a-4a9c-a057-507e794de332",
+        },
+    ],
+}
 
 
 class TestCreateDipsJob(unittest.TestCase):
@@ -97,20 +124,49 @@ class TestCreateDipsJob(unittest.TestCase):
         ret = create_dips_job.main(**self.args)
         assert ret == 1
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/test_create_dips_job_main_fail_request.yaml"
+    @mock.patch(
+        "requests.request",
+        side_effect=[mock.Mock(status_code=401, headers={}, spec=requests.Response)],
     )
-    def test_main_fail_request(self):
+    def test_main_fail_request(self, _request):
         """Test a fail when an SS connection can't be established."""
         with TmpDir(TMP_DIR):
             self.args["ss_api_key"] = "bad_api_key"
             ret = create_dips_job.main(**self.args)
             assert ret == 2
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_create_dips_job_main_success.yaml")
-    def test_main_success(self):
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": AIPS_JSON,
+                },
+                spec=requests.Response
+            )
+        ],
+    )
+    @mock.patch(
+        "requests.get",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": {},
+                    "iter_content.return_value": iter([AIP_CONTENT]),
+                },
+                spec=requests.Response
+            ),
+        ],
+    )
+    def test_main_success(self, _get, _request):
         """Test a success where one DIP is created."""
         with TmpDir(TMP_DIR), TmpDir(OUTPUT_DIR):
+            # breakpoint()
             ret = create_dips_job.main(**self.args)
             assert ret is None
             dip_path = os.path.join(
@@ -118,8 +174,35 @@ class TestCreateDipsJob(unittest.TestCase):
             )
             assert os.path.isdir(dip_path)
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_create_dips_job_main_success.yaml")
-    def test_main_success_no_dip_creation(self):
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": AIPS_JSON,
+                },
+                spec=requests.Response
+            )
+        ],
+    )
+    @mock.patch(
+        "requests.get",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": {},
+                    "iter_content.return_value": iter([AIP_CONTENT]),
+                },
+                spec=requests.Response
+            ),
+        ],
+    )
+    def test_main_success_no_dip_creation(self, _get, _request):
         """Test a success where one AIP was already processed."""
         effect = exc.IntegrityError({}, [], "")
         session_add_patch = mock.patch("sqlalchemy.orm.Session.add", side_effect=effect)
@@ -131,20 +214,76 @@ class TestCreateDipsJob(unittest.TestCase):
             )
             assert not os.path.isdir(dip_path)
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_create_dips_job_main_success.yaml")
     @mock.patch("aips.create_dips_job.atom_upload.main")
     @mock.patch("aips.create_dips_job.create_dip.main", return_value=1)
-    def test_main_dip_creation_failed(self, mock_create_dip, mock_atom_upload):
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": AIPS_JSON,
+                },
+                spec=requests.Response
+            )
+        ],
+    )
+    @mock.patch(
+        "requests.get",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": {},
+                    "iter_content.return_value": iter([AIP_CONTENT]),
+                },
+                spec=requests.Response
+            ),
+        ],
+    )
+    def test_main_dip_creation_failed(self, _get, _request, create_dip, atom_upload):
         """Test that a fail on DIP creation doesn't trigger an upload."""
         with TmpDir(TMP_DIR), TmpDir(OUTPUT_DIR):
             self.args["upload_type"] = "atom-upload"
             create_dips_job.main(**self.args)
-            assert not mock_atom_upload.called
+            assert not atom_upload.called
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_create_dips_job_main_success.yaml")
     @mock.patch("aips.create_dips_job.atom_upload.main", return_value=None)
     @mock.patch("aips.create_dips_job.create_dip.main", return_value="fake/path")
-    def test_main_success_atom_upload_call(self, mock_create_dip, mock_atom_upload):
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": AIPS_JSON,
+                },
+                spec=requests.Response
+            )
+        ],
+    )
+    @mock.patch(
+        "requests.get",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": {},
+                    "iter_content.return_value": iter([AIP_CONTENT]),
+                },
+                spec=requests.Response
+            ),
+        ],
+    )
+    def test_main_success_atom_upload_call(
+        self, _get, _request, create_dip, atom_upload
+    ):
         """Test that an upload to AtoM is performed."""
         with TmpDir(TMP_DIR), TmpDir(OUTPUT_DIR):
             self.args.update(
@@ -159,12 +298,39 @@ class TestCreateDipsJob(unittest.TestCase):
                 }
             )
             create_dips_job.main(**self.args)
-            assert mock_atom_upload.called
+            assert atom_upload.called
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_create_dips_job_main_success.yaml")
     @mock.patch("aips.create_dips_job.storage_service_upload.main", return_value=None)
     @mock.patch("aips.create_dips_job.create_dip.main", return_value="fake/path")
-    def test_main_success_ss_upload_call(self, mock_create_dip, mock_ss_upload):
+    @mock.patch(
+        "requests.request",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": requests.structures.CaseInsensitiveDict(
+                        {"Content-Type": "application/json"}
+                    ),
+                    "json.return_value": AIPS_JSON,
+                },
+                spec=requests.Response
+            )
+        ],
+    )
+    @mock.patch(
+        "requests.get",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 200,
+                    "headers": {},
+                    "iter_content.return_value": iter([AIP_CONTENT]),
+                },
+                spec=requests.Response
+            ),
+        ],
+    )
+    def test_main_success_ss_upload_call(self, _get, _request, create_dip, ss_upload):
         """Test that an upload to AtoM is performed."""
         with TmpDir(TMP_DIR), TmpDir(OUTPUT_DIR):
             self.args.update(
@@ -178,4 +344,4 @@ class TestCreateDipsJob(unittest.TestCase):
                 }
             )
             create_dips_job.main(**self.args)
-            assert mock_ss_upload.called
+            assert ss_upload.called

@@ -4,7 +4,7 @@ import shutil
 import unittest
 from unittest import mock
 
-import vcr
+import requests
 
 from dips import storage_service_upload
 
@@ -55,12 +55,13 @@ class TestSsUpload(unittest.TestCase):
         )
         assert ret == 2
 
-    @vcr.use_cassette(
-        "fixtures/vcr_cassettes/test_storage_service_upload_request_fail.yaml"
-    )
     @mock.patch("dips.storage_service_upload.shutil.copytree")
     @mock.patch("dips.storage_service_upload.os.makedirs")
-    def test_request_fail(self, mock_makedirs, mock_copytree):
+    @mock.patch(
+        "requests.post",
+        side_effect=[mock.Mock(status_code=401, headers={}, spec=requests.Response)],
+    )
+    def test_request_fail(self, _get, _makedirs, _copytree):
         ret = storage_service_upload.main(
             ss_url=SS_URL,
             ss_user=SS_USER_NAME,
@@ -75,11 +76,23 @@ class TestSsUpload(unittest.TestCase):
         )
         assert ret == 3
 
-    @vcr.use_cassette("fixtures/vcr_cassettes/test_storage_service_upload_success.yaml")
     @mock.patch("dips.atom_upload.shutil.rmtree")
     @mock.patch("dips.storage_service_upload.shutil.copytree")
     @mock.patch("dips.storage_service_upload.os.makedirs")
-    def test_success(self, mock_makedirs, mock_copytree, mock_rmtree):
+    @mock.patch(
+        "requests.post",
+        side_effect=[
+            mock.Mock(
+                **{
+                    "status_code": 201,
+                    "json.return_value": {},
+                    "headers": {},
+                },
+                spec=requests.Response
+            )
+        ],
+    )
+    def test_success(self, _get, _makedirs, _copytree, mock_rmtree):
         ret = storage_service_upload.main(
             ss_url=SS_URL,
             ss_user=SS_USER_NAME,
