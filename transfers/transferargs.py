@@ -105,6 +105,14 @@ def get_parser(doc):
         help="If set, delete transfer source files after "
         "ingest successfully completes.",
     )
+    
+    parser.add_argument(
+        "--transfer_delete_path",
+        metavar="PATH",
+        help="Plain text path to Transfer Source",
+        type=str,
+        default=None,
+    )
     parser.add_argument(
         "-c",
         "--config-file",
