@@ -1,16 +1,16 @@
+# Automation Tools
+
 [![GitHub CI](https://github.com/artefactual/automation-tools/actions/workflows/test.yml/badge.svg)](https://github.com/artefactual/automation-tools/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/artefactual/automation-tools/branch/master/graph/badge.svg?token=QSVCgvvWuw)](https://codecov.io/gh/artefactual/automation-tools)
-
-Automation Tools
-================
 
 The Automation Tools project is a set of Python scripts, that are designed to
 automate the processing of transfers in an Archivematica pipeline.
 
+## Table of contents
+
 <!-- doctoc: https://www.npmjs.com/package/doctoc -->
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
 
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -29,32 +29,31 @@ automate the processing of transfers in an Archivematica pipeline.
   - [`transfer_async.py`](#transfer_asyncpy)
   - [Tips for ingesting DSpace exports](#tips-for-ingesting-dspace-exports)
 - [DIP creation and upload](#dip-creation-and-upload)
-  - [Configuration](#configuration-1)
-  - [Parameters](#parameters-1)
-    - [`aips/create_dip.py`:](#aipscreate_dippy)
-    - [`dips/atom_upload.py`:](#dipsatom_uploadpy)
-    - [`dips/storage_service_upload.py`:](#dipsstorage_service_uploadpy)
-    - [`aips/create_dips_job.py`:](#aipscreate_dips_jobpy)
+  - [DIP Configuration](#dip-configuration)
+  - [DIP Parameters](#dip-parameters)
+    - [`aips/create_dip.py`](#aipscreate_dippy)
+    - [`dips/atom_upload.py`](#dipsatom_uploadpy)
+    - [`dips/storage_service_upload.py`](#dipsstorage_service_uploadpy)
+    - [`aips/create_dips_job.py`](#aipscreate_dips_jobpy)
     - [Getting Storage Service API key](#getting-storage-service-api-key)
 - [DIP export to NetX](#dip-export-to-netx)
+  - [`dips/copy_to_netx.py`](#dipscopy_to_netxpy)
 - [Reingest](#reingest)
 - [Related Projects](#related-projects)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-Requirements
-------------
+## Requirements
 
 - 7z (only for DIP creation script)
 
-Installation
-------------
+## Installation
 
 Follow each of the steps below to install automation-tools:
 
 1. Make the following directories:
 
-    ```
+    ```shell
     sudo mkdir -p /usr/lib/archivematica/automation-tools &&
     sudo mkdir /usr/share/python/automation-tools &&
     sudo mkdir -p /var/log/archivematica/automation-tools &&
@@ -65,7 +64,7 @@ Follow each of the steps below to install automation-tools:
 2. Change ownership of the directories to be owned by archivematica (group
    archivematica) and directories to be owned by the user:
 
-    ```
+    ```shell
     sudo chown archivematica:archivematica /var/log/archivematica/automation-tools \
           /var/archivematica/automation-tools \
           /usr/lib/archivematica/automation-tools \
@@ -73,30 +72,30 @@ Follow each of the steps below to install automation-tools:
            /etc/archivematica/automation-tools
     ```
 
-    In case of using the automation tools with a Docker setup the archivematica 
+    In case of using the automation tools with a Docker setup the archivematica
     user and group don't exist:
 
-    ```
+    ```shell
     sudo useradd archivematica
     ```
 
 3. Clone the automation-tools repository into your `usr/lib` directory:
 
-    ```
+    ```shell
     cd /usr/lib/archivematica/automation-tools/
     git clone https://github.com/artefactual/automation-tools.git .
     ```
 
     In case you want to run the automation-tools using [cron](#configuration), the
     automation tools need to be owned by the archivemtatica user:
-    
-    ```
+
+    ```shell
     sudo chown archivematica:archivematica /usr/lib/archivematica/automation-tools/
     ```
 
 4. Set up a Python virtual environment:
 
-    ```
+    ```shell
     cd /usr/share/python/automation-tools
     virtualenv venv
     source venv/bin/activate
@@ -105,13 +104,13 @@ Follow each of the steps below to install automation-tools:
 
 5. (Optional) Update and retrieve required packages:
 
-    ```
+    ```shell
     apt-get update
     apt-get install p7zip-full
     ```
 
-Usage
------
+## Usage
+
 To use automation-tools, copy the scripts you want to use into your
 `/etc/archivematica/automation-tools` directory.
 
@@ -125,30 +124,31 @@ Follow the steps below as an example for setting up a script.
 
 1. Copy the configuration file:
 
-    ```
+    ```shell
     `cp /usr/lib/archivematica/automation-tools/etc/transfers.conf
     /etc/archivematica/automation-tools/`
     ```
 
 2. Copy the script:
 
-    ```
+    ```shell
     cp /usr/lib/archivematica/automation-tools/etc/transfer-script.sh /etc/archivematica/automation-tools/
     ```
 
 3. Create a transfer source for the automation-tools in the storage service:
 
-    You can use an existing transfer source, or set up a new one. For Docker 
-    environments the standard transfer source is `$HOME/.am/ss-location-data/`. 
-    
-    _Note_: If you run Docker as `sudo` the `.am` folder is owned by the root 
-    user. To use this folder you might want to change the folder permissions 
+    You can use an existing transfer source, or set up a new one. For Docker
+    environments the standard transfer source is `$HOME/.am/ss-location-data/`.
+
+    _Note_: If you run Docker as `sudo` the `.am` folder is owned by the root
+    user. To use this folder you might want to change the folder permissions
     of `.am`.
 
 4. Your default script should be configured along the lines of this:
 
     `transfer-script.sh`:
-    ```bash
+
+    ```shell
     #!/bin/bash
     # /etc/archivematica/automation-tools/transfer-script.sh
     cd /usr/lib/archivematica/automation-tools/
@@ -172,15 +172,13 @@ Follow the steps below as an example for setting up a script.
 
 6. Run `./transfer-script.sh` and you should have success!
 
+## Configuration
 
-Configuration
--------------
-
-Suggested deployment is to use cron to run a shell script that runs the 
+Suggested deployment is to use cron to run a shell script that runs the
 automation transfer tool. Example shell script (for example in
 `/etc/archivematica/automation-tools/transfer-script.sh`):
 
-```bash
+```shell
 #!/bin/bash
 cd /usr/lib/archivematica/automation-tools/
 # Use the Python in the virtual environment.
@@ -198,14 +196,14 @@ flag, this is required due to the use of relative imports in the code)
 
 The script can be run from a shell window like:
 
-```bash
+```shell
 user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./transfer-script.sh
 ```
 
 It is suggested to run the script through a crontab entry for user archivematica
 (to avoid the need to repeatedly invoke it manually):
 
-```bash
+```shell
 */5 * * * * /etc/archivematica/automation-tools/transfer-script.sh
 ```
 
@@ -219,38 +217,38 @@ folders found in the Transfer Source Location.
 The `transfers.py` script can be modified to adjust how automated transfers
 work.  The full set of parameters that can be changed are:
 
-* `-u USERNAME, --user USERNAME` [REQUIRED]: Username of the Archivematica
+- `-u USERNAME, --user USERNAME` [REQUIRED]: Username of the Archivematica
   dashboard user to authenticate as.
-* `-k KEY, --api-key KEY` [REQUIRED]: API key of the Archivematica dashboard
+- `-k KEY, --api-key KEY` [REQUIRED]: API key of the Archivematica dashboard
   user.
-* `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
+- `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
   authenticate as. Storage Service 0.8 and up requires this; earlier versions
   will ignore any value provided.
-* `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
+- `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
   Service 0.8 and up requires this; earlier versions will ignore any value
   provided.
-* `-t UUID, --transfer-source UUID`: [REQUIRED] Transfer Source Location UUID to
+- `-t UUID, --transfer-source UUID`: [REQUIRED] Transfer Source Location UUID to
   fetch transfers from. Check the next section for more details on this field.
-* `--transfer-path PATH`: Relative path within the Transfer Source. Default: ""
-* `--depth DEPTH, -d DEPTH`: Depth to create the transfers from relative to the
+- `--transfer-path PATH`: Relative path within the Transfer Source. Default: ""
+- `--depth DEPTH, -d DEPTH`: Depth to create the transfers from relative to the
   transfer source location and path. Default of 1 creates transfers from the
   children of transfer-path.
-* `--am-url URL, -a URL`:Archivematica URL. Default: http://127.0.0.1
-* `--ss-url URL, -s URL`: Storage Service URL. Default: http://127.0.0.1:8000
-* `--transfer-type TYPE`: Type of transfer to start. One of: 'standard'
+- `--am-url URL, -a URL`:Archivematica URL. Default: <http://127.0.0.1>
+- `--ss-url URL, -s URL`: Storage Service URL. Default: <http://127.0.0.1:8000>
+- `--transfer-type TYPE`: Type of transfer to start. One of: 'standard'
   (default), 'unzipped bag', 'zipped bag', 'dspace'.
-* `--files`: If set, start transfers from files as well as folders.
-* `--hide`: If set, hides the Transfer and SIP once completed.
-* `--delete-on-complete`: If set, delete transfer source files from watched
+- `--files`: If set, start transfers from files as well as folders.
+- `--hide`: If set, hides the Transfer and SIP once completed.
+- `--delete-on-complete`: If set, delete transfer source files from watched
   directory once completed.
-* `-c FILE, --config-file FILE`: config file containing file paths for
+- `-c FILE, --config-file FILE`: config file containing file paths for
   log/database/PID files. Default: log/database/PID files stored in the same
   directory as the script (not recommended for production)
-* `-v, --verbose`: Increase the debugging output. Can be specified multiple
+- `-v, --verbose`: Increase the debugging output. Can be specified multiple
   times, e.g. `-vv`
-* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
+- `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
   e.g. `-qq`
-* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
+- `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
   'INFO', 'DEBUG'. This will override `-q` and `-v`
 
 The `--config-file` specified can also be used to define a list of file
@@ -303,9 +301,9 @@ in Python, we recommend making them source compatible with Python 2 or 3.
 
 There are three places hooks can be used to change the automate tools behaviour.
 
-* `transfers/get-accession-number` (script)
-* `transfers/pre-transfer` (directory)
-* `transfers/user-input` (directory)
+- `transfers/get-accession-number` (script)
+- `transfers/pre-transfer` (directory)
+- `transfers/user-input` (directory)
 
 Any new scripts added to these directories will automatically be run alongside
 the existing scripts.
@@ -320,11 +318,11 @@ request!
 
 #### get-accession-id
 
-* _Name:_ `get-accession-id`
-* _Location:_ Same directory as transfers.py
-* _Parameters:_ [`path`]
-* _Return Code:_ 0
-* _Output:_ Quoted value of the accession number (e.g. `"ID 42"`)
+- _Name:_ `get-accession-id`
+- _Location:_ Same directory as transfers.py
+- _Parameters:_ [`path`]
+- _Return Code:_ 0
+- _Output:_ Quoted value of the accession number (e.g. `"ID 42"`)
 
 `get-accession-number` is run to customize the accession number of the created
 transfer. Its single parameter is the path relative to the transfer source
@@ -336,7 +334,7 @@ created.
 
 #### pre-transfer hooks
 
-* _Parameters:_ [`absolute path`, `transfer type`]
+- _Parameters:_ [`absolute path`, `transfer type`]
 
 All executable files found in `pre-transfer` are executed in alphabetical order
 when a transfer is first copied from the specified Transfer Source Location to
@@ -345,34 +343,34 @@ evaluated.
 
 All scripts are passed the same two parameters:
 
-* `absolute path` is the absolute path on disk of the transfer
-* `transfer type` is transfer type, the same as the parameter passed to the
+- `absolute path` is the absolute path on disk of the transfer
+- `transfer type` is transfer type, the same as the parameter passed to the
   script. One of 'standard', 'unzipped bag', 'zipped bag', 'dspace'.
 
 There are some sample scripts in the pre-transfers directory that may be useful,
 or models for your own scripts.
 
-* `00_unbag.py`: Repackages a bag as a standard transfer, writing md5 hashes
+- `00_unbag.py`: Repackages a bag as a standard transfer, writing md5 hashes
   from bag manifest into metadata/checksum.md5 file. This enables use of scripts
   such as add_metadata.py with bags, which would otherwise cause failure at the
   bag validation job.
-* `add_metadata.py`: Creates a metadata.json file, by parsing data out of the
+- `add_metadata.py`: Creates a metadata.json file, by parsing data out of the
   transfer folder name.  This ends up as Dublin Dore in a dmdSec of the final
   METS file.
-* `add_metadata_dspace.py`: Creates a metadata.csv file, by parsing data out of
+- `add_metadata_dspace.py`: Creates a metadata.csv file, by parsing data out of
   the dspace export name. This ends up as Dublin Dore in a dmdSec of the final
   METS file.
-* `archivesspace_ids.py`: Creates an archivesspaceids.csv by parsing
+- `archivesspace_ids.py`: Creates an archivesspaceids.csv by parsing
   ArchivesSpace reference IDs from filenames.  This will automate the matching
   GUI if a DIP is uploaded to ArchivesSpace.
-* `default_config.py`: Copies the included `defaultProcessingMCP.xml` into the
+- `default_config.py`: Copies the included `defaultProcessingMCP.xml` into the
   transfer directory. This file overrides any configuration set in the
   Archivematica dashboard, so that user choices are guaranteed and avoided as
   desired.
 
 #### user-input
 
-* _Parameters:_ [`microservice name`, `first time at wait point`, `absolute
+- _Parameters:_ [`microservice name`, `first time at wait point`, `absolute
   path` , `unit UUID`, `unit name`, `unit type`]
 
 All executable files in the `user-input folder` are executing in alphabetical
@@ -381,20 +379,20 @@ prompt. The return code and output of these scripts is not evaluated.
 
 All scripts are passed the same set of parameters.
 
-* `microservice name` is the name of the microservice awaiting user input. E.g.
+- `microservice name` is the name of the microservice awaiting user input. E.g.
   Approve Normalization
-* `first time at wait point` is the string "True" if this is the first time the
+- `first time at wait point` is the string "True" if this is the first time the
   script is being run at this wait point, "False" if not. This is useful for
   only notifying the user once.
-* `absolute path` is the absolute path on disk of the transfer
-* `unit UUID` is the SIP or transfer's UUID
-* `unit name` is the name of the SIP or transfer, not including the UUID.
-* `unit type` is either "SIP" or "transfer"
+- `absolute path` is the absolute path on disk of the transfer
+- `unit UUID` is the SIP or transfer's UUID
+- `unit name` is the name of the SIP or transfer, not including the UUID.
+- `unit type` is either "SIP" or "transfer"
 
 There are some sample scripts in the pre-transfers directory that may be useful,
 or models for your own scripts.
 
-* `send_email.py`: Emails the first time a transfer is waiting for input at
+- `send_email.py`: Emails the first time a transfer is waiting for input at
   Approve Normalization.  It can be edited to change the email addresses it
   sends notices to, or to change the notification message.
 
@@ -406,12 +404,14 @@ adjusted, by modifying the transfers/transfer.py file. Find the following
 section and changed `'INFO'` to one of `'INFO'`, `'DEBUG'`, `'WARNING'`,
 `'ERROR'` or `'CRITICAL'`.
 
-    'loggers': {
-        'transfer': {
-            'level': 'INFO',  # One of INFO, DEBUG, WARNING, ERROR, CRITICAL
-            'handlers': ['console', 'file'],
-        },
+```txt
+'loggers': {
+    'transfer': {
+        'level': 'INFO',  # One of INFO, DEBUG, WARNING, ERROR, CRITICAL
+        'handlers': ['console', 'file'],
     },
+},
+```
 
 ### Multiple automated transfer instances
 
@@ -421,7 +421,7 @@ the same for both instances, it could be achieved by setting up different
 scripts, each one invoking the transfers.py script with the required parameters.
 Example:
 
-```
+```shell
 # first script invokes like this (standard transfer):
 /usr/share/python/automation-tools/venv/bin/python -m transfers.transfer \
   --user <user>  \
@@ -455,7 +455,7 @@ This is a new work-in-progress entry point similar to `transfers.transfer` that
 uses the new asynchronous endpoints of Archivematica being developed under the
 `/api/v2beta` API. It takes the same arguments, e.g.:
 
-```
+```shell
 #!/usr/bin/env bash
 
 cd /usr/lib/archivematica/automation-tools/
@@ -469,18 +469,19 @@ cd /usr/lib/archivematica/automation-tools/
 
 ### Tips for ingesting DSpace exports
 
-* At the transfer source location, put the DSpace item to be ingested in a
+- At the transfer source location, put the DSpace item to be ingested in a
   subdirectory (e.g., `ITEM@123-4567/ITEM@123-4567.zip`)  . The scripts
   [here](https://github.com/artefactual-labs/transfer-source-helpers/) can be
   used for this purpose
 
-* Use the add_metadata_dspace.py pre-transfer script (described in [pre-transfer
+- Use the add_metadata_dspace.py pre-transfer script (described in [pre-transfer
   hooks](#pre-transfer-hooks))
 
-* Create a base `defaultProcessingMCP.xml` as described in [Getting Correct
-  UUIDs and Setting Processing Rules][], then append the following preconfigured
-  choice to the xml:
-```
+- Create a base `defaultProcessingMCP.xml` as described in [Getting Correct
+  UUIDs and Setting Processing Rules](#setting-processing-rules), then append
+  the following preconfigured choice to the xml:
+
+```xml
     <!-- DSpace skips quarantine -->
     <preconfiguredChoice>
       <appliesTo>05f99ffd-abf2-4f5a-9ec8-f80a59967b89</appliesTo>
@@ -488,9 +489,10 @@ cd /usr/lib/archivematica/automation-tools/
     </preconfiguredChoice>
 ```
 
-* When invoking the transfers.py script, add the `--transfer-type dspace`
+- When invoking the transfers.py script, add the `--transfer-type dspace`
   parameter, for example:
-```
+
+```shell
 /usr/share/python/automation-tools/venv/bin/python -m transfers.transfer \
   --transfer-type dspace \
   --user <user> \
@@ -501,8 +503,7 @@ cd /usr/lib/archivematica/automation-tools/
   --config-file <config_file>
 ```
 
-DIP creation and upload
------------------------
+## DIP creation and upload
 
 `aips/create_dip.py` and `aips/create_dips_job.py` can be used to make DIPs from
 AIPs available in a Storage Service instance. Unlike DIPs created in
@@ -512,7 +513,7 @@ files from the transfer and they will maintain the directories and filenames.
 Based on the `--dip-type` parameter a few differences can be found in the
 resulting DIPs:
 
-* When using `zipped-objects`, the files will maintain the original last
+- When using `zipped-objects`, the files will maintain the original last
   modified date and they will be placed with a copy of the
   submissionDocumentation folder and the AIP METS file in a single ZIP file
   under the objects directory. Based on the `--mets-type` parameter, another
@@ -520,7 +521,7 @@ resulting DIPs:
   reference to the ZIP file (without AMD or DMD sections), used to upload the
   DIP to an AtoM instance; or the same AIP METS file will be placed alongside
   the objects folder, used for uploads to the Storage Service.
-* If `avalon-manifest` is used, the script will create a DIP ready for batch
+- If `avalon-manifest` is used, the script will create a DIP ready for batch
   ingest into the Avalon Media System, relying on the Transfer name to move
   files into a Collection folder and will append Archivematica-minted UUIDs to
   the root-level Manifest file. **Do not use this type of the DIP in conjunction
@@ -547,17 +548,17 @@ folder in before sending a requests to the Storage Service to process that DIP.
 The DIP creation request requires to configure the script with the credentials
 from a Storage Service's administrator.
 
-### Configuration
+### DIP Configuration
 
 Suggested use of these scripts is by using the example shell scripts in the
 `etc` directory:
 
-* [create_dip_script.sh](etc/create_dip_script.sh)
-* [atom_upload_script.sh](etc/atom_upload_script.sh)
-* [storage_service_upload_script.sh](etc/storage_service_upload_script.sh)
-* [create_dips_job_script.sh](etc/create_dips_job_script.sh)
-* [create_dips_job_atom_upload_script.sh](etc/create_dips_job_atom_upload_script.sh)
-* [create_dips_job_ss_upload_script.sh](etc/create_dips_job_ss_upload_script.sh)
+- [create_dip_script.sh](etc/create_dip_script.sh)
+- [atom_upload_script.sh](etc/atom_upload_script.sh)
+- [storage_service_upload_script.sh](etc/storage_service_upload_script.sh)
+- [create_dips_job_script.sh](etc/create_dips_job_script.sh)
+- [create_dips_job_atom_upload_script.sh](etc/create_dips_job_atom_upload_script.sh)
+- [create_dips_job_ss_upload_script.sh](etc/create_dips_job_ss_upload_script.sh)
 
 Note that the scripts call the DIP creation and upload scripts as modules using
 Python's `-m` flag; this is required due to the use of relative imports in the
@@ -565,7 +566,7 @@ code.
 
 The scripts can be run from a shell window, for example:
 
-```
+```shell
 user@host:/etc/archivematica/automation-tools$ sudo -u archivematica ./create_dip_script.sh
 ```
 
@@ -573,7 +574,7 @@ For the scripts using `aips/create_dips_job.py`, it is suggested to run them
 through a crontab entry for the archivematica user, to avoid the need to
 repeatedly invoke it manually to keep processing the same location. E.g.:
 
-```
+```text
 */5 * * * * /etc/archivematica/automation-tools/create_dips_job_script.sh
 ```
 
@@ -581,152 +582,151 @@ To process multiple Storage Service locations, `create_dips_job_script.sh` and
 similar scripts could be duplicated with a different set of parameters to call
 `aips/create_dips_job.py` and be executed in the same manner.
 
-### Parameters
+### DIP Parameters
 
-#### `aips/create_dip.py`:
+#### `aips/create_dip.py`
 
-* `--ss-url URL`: Storage Service URL. Default: http://127.0.0.1:8000
-* `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
+- `--ss-url URL`: Storage Service URL. Default: <http://127.0.0.1:8000>
+- `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
   authenticate as. Storage Service 0.8 and up requires this; earlier versions
   will ignore any value provided.
-* `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
+- `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
   Service 0.8 and up requires this; earlier versions will ignore any value
   provided.
-* `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to create the
+- `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to create the
   DIP from.
-* `--dip-type TYPE`: Type of DIP to create. Available options: "zipped-objects",
+- `--dip-type TYPE`: Type of DIP to create. Available options: "zipped-objects",
   "avalon-manifest". Default: "zipped-objects".
-* `--mets-type TYPE`: Type of METS file to generate. Available options: "atom",
+- `--mets-type TYPE`: Type of METS file to generate. Available options: "atom",
   "storage-service". Default: "atom".
-* `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be
+- `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be
   downloaded and extracted. Default: "/tmp"
-* `--output-dir PATH`: Absolute path to a directory where the DIP(s) will be
+- `--output-dir PATH`: Absolute path to a directory where the DIP(s) will be
   created. Default: "/tmp"
-* `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
+- `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
   will be created in the script directory.
-* `-v, --verbose`: Increase the debugging output. Can be specified multiple
+- `-v, --verbose`: Increase the debugging output. Can be specified multiple
   times, e.g. `-vv`
-* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
+- `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
   e.g. `-qq`
-* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
+- `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
   'INFO', 'DEBUG'. This will override `-q` and `-v`
 
-#### `dips/atom_upload.py`:
+#### `dips/atom_upload.py`
 
-* `--atom-url URL` [REQUIRED]: AtoM URL.
-* `--atom-email EMAIL` [REQUIRED]: Email of the AtoM user to authenticate as.
-* `--atom-password PASSWORD` [REQUIRED]: Password of the AtoM user to
+- `--atom-url URL` [REQUIRED]: AtoM URL.
+- `--atom-email EMAIL` [REQUIRED]: Email of the AtoM user to authenticate as.
+- `--atom-password PASSWORD` [REQUIRED]: Password of the AtoM user to
   authenticate as.
-* `--atom-slug SLUG` [REQUIRED]: Slug of the AtoM archival description to target
+- `--atom-slug SLUG` [REQUIRED]: Slug of the AtoM archival description to target
   in the upload.
-* `--rsync-target HOST:PATH` [REQUIRED]: Host and path to place the DIP folder
+- `--rsync-target HOST:PATH` [REQUIRED]: Host and path to place the DIP folder
   with `rsync`.
-* `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to upload.
-* `--delete-local-copy`: Remove the local DIP after it has been uploaded.
-* `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
+- `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to upload.
+- `--delete-local-copy`: Remove the local DIP after it has been uploaded.
+- `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
   will be created in the script directory.
-* `-v, --verbose`: Increase the debugging output. Can be specified multiple
+- `-v, --verbose`: Increase the debugging output. Can be specified multiple
   times, e.g. `-vv`
-* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
+- `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
   e.g. `-qq`
-* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
+- `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
   'INFO', 'DEBUG'. This will override `-q` and `-v`
 
-#### `dips/storage_service_upload.py`:
+#### `dips/storage_service_upload.py`
 
-* `--ss-url URL`: Storage Service URL. Default: http://127.0.0.1:8000
-* `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
+- `--ss-url URL`: Storage Service URL. Default: <http://127.0.0.1:8000>
+- `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
   authenticate as. Storage Service 0.8 and up requires this; earlier versions
   will ignore any value provided. Requires an administrator user.
-* `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
+- `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
   Service 0.8 and up requires this; earlier versions will ignore any value
   provided.
-* `--pipeline-uuid UUID` [REQUIRED]: UUID of the Archivemativa pipeline in the
+- `--pipeline-uuid UUID` [REQUIRED]: UUID of the Archivemativa pipeline in the
   Storage Service.
-* `--cp-location-uuid UUID` [REQUIRED]: UUID of the pipeline's Currently
+- `--cp-location-uuid UUID` [REQUIRED]: UUID of the pipeline's Currently
   Processing location in the Storage Service.
-* `--ds-location-uuid UUID` [REQUIRED]: UUID of a pipeline's DIP storage
+- `--ds-location-uuid UUID` [REQUIRED]: UUID of a pipeline's DIP storage
   location where the DIP will be placed in the Storage Service.
-* `--shared-directory PATH`: Absolute path to the pipeline's shared directory.
+- `--shared-directory PATH`: Absolute path to the pipeline's shared directory.
   Default: `/var/archivematica/sharedDirectory/`.
-* `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to upload.
-* `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to relate the
+- `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to upload.
+- `--aip-uuid UUID` [REQUIRED]: AIP UUID in the Storage Service to relate the
   DIP.
-* `--delete-local-copy`: Remove the local DIP after it has been uploaded.
-* `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
+- `--delete-local-copy`: Remove the local DIP after it has been uploaded.
+- `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
   will be created in the script directory.
-* `-v, --verbose`: Increase the debugging output. Can be specified multiple
+- `-v, --verbose`: Increase the debugging output. Can be specified multiple
   times, e.g. `-vv`
-* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
+- `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
   e.g. `-qq`
-* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
+- `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
   'INFO', 'DEBUG'. This will override `-q` and `-v`
 
-#### `aips/create_dips_job.py`:
+#### `aips/create_dips_job.py`
 
-* `--ss-url URL`: Storage Service URL. Default: http://127.0.0.1:8000
-* `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
+- `--ss-url URL`: Storage Service URL. Default: <http://127.0.0.1:8000>
+- `--ss-user USERNAME` [REQUIRED]: Username of the Storage Service user to
   authenticate as. Storage Service 0.8 and up requires this; earlier versions
   will ignore any value provided. Requires an administrator to upload the DIPs
   to the Storage Service.
-* `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
+- `--ss-api-key KEY` [REQUIRED]: API key of the Storage Service user. Storage
   Service 0.8 and up requires this; earlier versions will ignore any value
   provided.
-* `--location-uuid UUID` [REQUIRED]: Storage Service location UUID to be
+- `--location-uuid UUID` [REQUIRED]: Storage Service location UUID to be
   processed.
-* `--origin-pipeline-uuid UUID`: Optionally, limit DIP creation to AIPs
+- `--origin-pipeline-uuid UUID`: Optionally, limit DIP creation to AIPs
   originated in a specific pipeline.
-* `--database-file PATH` [REQUIRED]: Absolute path to an SQLite database file to
+- `--database-file PATH` [REQUIRED]: Absolute path to an SQLite database file to
   keep track of the processed AIPs.
-* `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be
+- `--tmp-dir PATH`: Absolute path to a directory where the AIP(s) will be
   downloaded and extracted. Default: "/tmp"
-* `--output-dir PATH`: Absolute path to a directory where the DIP(s) will be
+- `--output-dir PATH`: Absolute path to a directory where the DIP(s) will be
   created. Default: "/tmp"
-* `--delete-local-copy`: To use alongside the upload arguments explained bellow
+- `--delete-local-copy`: To use alongside the upload arguments explained bellow
   and remove the local DIP after it has been uploaded.
-* `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
+- `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
   will be created in the script directory.
-* `-v, --verbose`: Increase the debugging output. Can be specified multiple
+- `-v, --verbose`: Increase the debugging output. Can be specified multiple
   times, e.g. `-vv`
-* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
+- `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
   e.g. `-qq`
-* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
+- `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
   'INFO', 'DEBUG'. This will override `-q` and `-v`
 
 To automatically upload the DIPs to an AtoM description, add the following
 subset of arguments:
 
-* `atom-upload`:
-  * `--atom-url URL` [REQUIRED]: AtoM URL.
-  * `--atom-email EMAIL` [REQUIRED]: Email of the AtoM user to authenticate as.
-  * `--atom-password PASSWORD` [REQUIRED]: Password of the AtoM user to
+- `atom-upload`:
+  - `--atom-url URL` [REQUIRED]: AtoM URL.
+  - `--atom-email EMAIL` [REQUIRED]: Email of the AtoM user to authenticate as.
+  - `--atom-password PASSWORD` [REQUIRED]: Password of the AtoM user to
     authenticate as.
-  * `--atom-slug SLUG` [REQUIRED]: Slug of the AtoM archival description to
+  - `--atom-slug SLUG` [REQUIRED]: Slug of the AtoM archival description to
     target in the upload.
-  * `--rsync-target HOST:PATH` [REQUIRED]: Host and path to place the DIP folder
+  - `--rsync-target HOST:PATH` [REQUIRED]: Host and path to place the DIP folder
     with `rsync`.
 
 To automatically upload the DIPs to a Storage Service location, use the
 following subset of arguments:
 
-* `ss-upload`:
-  * `--pipeline-uuid UUID` [REQUIRED]: UUID of the Archivemativa pipeline in the
+- `ss-upload`:
+  - `--pipeline-uuid UUID` [REQUIRED]: UUID of the Archivemativa pipeline in the
     Storage Service.
-  * `--cp-location-uuid UUID` [REQUIRED]: UUID of the pipeline's Currently
+  - `--cp-location-uuid UUID` [REQUIRED]: UUID of the pipeline's Currently
     Processing location in the Storage Service.
-  * `--ds-location-uuid UUID` [REQUIRED]: UUID of a pipeline's DIP storage
+  - `--ds-location-uuid UUID` [REQUIRED]: UUID of a pipeline's DIP storage
     location where the DIP will be placed in the Storage Service.
-  * `--shared-directory PATH`: Absolute path to the pipeline's shared directory.
+  - `--shared-directory PATH`: Absolute path to the pipeline's shared directory.
     Default: `/var/archivematica/sharedDirectory/`.
 
 #### Getting Storage Service API key
 
 See [Getting API keys](#getting-api-keys)
 
-DIP export to NetX
-------------------
+## DIP export to NetX
 
-The *dips/copy_to_netx.py* script is a command line tool that takes a DIP
+The _dips/copy_to_netx.py_ script is a command line tool that takes a DIP
 directory, typically in the `watchedDirectories/uploadDIP` subdirectory of the
 Archivematica shared directory, and exports data to NetX. The script copies
 the objects in the DIP, and writes CSV data describing the objects, to
@@ -741,45 +741,47 @@ If specifiying the component ID using JSON metadata you'll need to put a file
 called `netx.json` in a `metadata` directory in your transfer. The contents of
 this file should be similar to the example JSON shown below:
 
-    [{"component.identifier": "someidentifier"}]
+```text
+[{"component.identifier": "someidentifier"}]
+```
 
 The object ID recorded in the NetX CSV can either be:
 
 1) Specified as a command line option (`--object-id`)
 2) Specified using the accession number
 
-#### `dips/copy_to_netx.py`:
+### `dips/copy_to_netx.py`
 
-* `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to copy from.
-* `--netx-csv-directory PATH` [REQUIRED]: Absolute path to the NetX CSV
+- `--dip-path PATH` [REQUIRED]: Absolute path to a local DIP to copy from.
+- `--netx-csv-directory PATH` [REQUIRED]: Absolute path to the NetX CSV
   directory.
-* `--netx-objects-directory PATH` [REQUIRED]: Absolute path to the NetX objects
+- `--netx-objects-directory PATH` [REQUIRED]: Absolute path to the NetX objects
   directory.
-* `--object-id ID`: Object ID to specify when adding to the NetX CSV.
-* `--component-id ID`: Component ID to specify when adding to the NetX CSV.
-* `--working-directory PATH`: Absolute path in which a temporary working
+- `--object-id ID`: Object ID to specify when adding to the NetX CSV.
+- `--component-id ID`: Component ID to specify when adding to the NetX CSV.
+- `--working-directory PATH`: Absolute path in which a temporary working
   directory will be created. Defaults to system's temp directory.
-* `--delete-local-copy`: To use alongside the upload arguments explained bellow
+- `--delete-local-copy`: To use alongside the upload arguments explained bellow
   and remove the local DIP after it has been uploaded.
-* `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
+- `--log-file PATH`: Absolute path to a file to output the logs. Otherwise it
   will be created in the script directory.
-* `-v, --verbose`: Increase the debugging output. Can be specified multiple
+- `-v, --verbose`: Increase the debugging output. Can be specified multiple
   times, e.g. `-vv`
-* `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
+- `-q, --quiet`: Decrease the debugging output. Can be specified multiple times,
   e.g. `-qq`
-* `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
+- `--log-level`: Set the level for debugging output. One of: 'ERROR', 'WARNING',
   'INFO', 'DEBUG'. This will override `-q` and `-v`
 
-Reingest
---------
+## Reingest
 
-The *transfers/reingest.py* script is a module and CLI (command line interface)
+The _transfers/reingest.py_ script is a module and CLI (command line interface)
 tool that provides functionality for bulk-reingest of compressed AIPs. Given a
 user formatted list of AIP UUIDs it can complete the bulk-reingest of any AIP
 listed.
 
 An example list that could be stored in a text file might be:
-```
+
+```text
    ["54369f6a-aa82-4b29-80c9-834d3625397d",
     "b18801dd-30ec-46ba-ac6b-4cb561585ac9",
     "b4d37c2c-df30-4a16-8f2f-4cb02a5d53cb"]
@@ -791,7 +793,8 @@ initiated that way.
 
 Command line switches can be seen by running the script without any other
 arguments:
-```
+
+```shell
 $ python -m transfers.reingest
 usage: reingest.py [-h] --config CONFIG [--listcompressedaips]
                    [--compareaiplist COMPAREAIPLIST]
@@ -816,14 +819,14 @@ optional arguments:
   --logging [LOGGING]   logging level, INFO, DEBUG, WARNING, ERROR
 ```
 
-Configuration of reingest.py is done via *transfers/reingestconfig.json*. You
+Configuration of reingest.py is done via _transfers/reingestconfig.json_. You
 will need to configure API parameters via `reingestconfig.json`. See notes
 above about finding the Archivematica and Storage Service API keys. An example
 configuration with placeholder parameters is provided in
 [reingestconfig.json](transfers/reingestconfig.json)
 
 *Reingest.py* is best used via the shell script provided in the
-[*transfers/examples/reingest*](transfers/examples/reingest) folder. As it is
+[_transfers/examples/reingest_](transfers/examples/reingest) folder. As it is
 designed for bulk-reingest, it is best used in conjunction with a cronfile, an
 example of which is provided in the same folder.
 
@@ -831,14 +834,15 @@ State is recorded in an sqlite database. When the script is executed over and
 over the state is updated or read. Progress is then stored in a separate log
 file.
 
-The log file *reingest.log* will either be under *transfers/reingest.log* or
-somewhere else specified in your *reingestconfig.json* file.
+The log file _reingest.log_ will either be under _transfers/reingest.log_ or
+somewhere else specified in your _reingestconfig.json_ file.
 
-We can review *reingest.log* to see where in the process the reingest is:
+We can review _reingest.log_ to see where in the process the reingest is:
 
 1. First time the code is run we can see reingest begin and its automatic
    approval in the pipeline:
-```
+
+```shell
 $ ./run-reingest.sh
 
 INFO      2018-10-25 23:59:19 reingest.py:422  Processing throttle set to 1, approval retries set to 2
@@ -853,9 +857,10 @@ INFO      2018-10-25 23:59:21 reingestmodel.py:119  setting status StatusEnum.ST
 INFO      2018-10-25 23:59:21 reingest.py:194  Removing PID for current process.
 ```
 
-2. While the reingest progresses we can see that there isn't an ingest to
+1. While the reingest progresses we can see that there isn't an ingest to
    monitor, and the status doesn't need updating.
-```
+
+```shell
 $ ./run-reingest.sh
 
 INFO      2018-10-25 23:59:39 reingest.py:422  Processing throttle set to 1, approval retries set to 2
@@ -865,8 +870,9 @@ INFO      2018-10-25 23:59:39 reingest.py:304  Pool is less than one, exiting, u
 INFO      2018-10-25 23:59:39 reingest.py:194  Removing PID for current process.
 ```
 
-3. Once the ingest stage of the workflow has started, the state is updated.
-```
+1. Once the ingest stage of the workflow has started, the state is updated.
+
+```shell
 $ ./run-reingest.sh
 
 INFO      2018-10-26 00:00:03 reingest.py:422  Processing throttle set to 1, approval retries set to 2
@@ -876,9 +882,10 @@ INFO      2018-10-26 00:00:03 reingest.py:304  Pool is less than one, exiting, u
 INFO      2018-10-26 00:00:03 reingest.py:194  Removing PID for current process.
 ```
 
-4. Following completion of the first reingest, a second is started and we can
+1. Following completion of the first reingest, a second is started and we can
    see similar log entries to those in *1.*
-```
+
+```shell
 $ ./run-reingest.sh
 
 INFO      2018-10-26 00:00:26 reingest.py:422  Processing throttle set to 1, approval retries set to 2
@@ -895,13 +902,14 @@ INFO      2018-10-26 00:00:28 reingestmodel.py:119  setting status StatusEnum.ST
 INFO      2018-10-26 00:00:28 reingest.py:194  Removing PID for current process.
 ```
 
-The database file *reingest.db* will either be under *transfers/reingest.db* or
-somewhere else specified in your *reingestconfig.json* file.
+The database file _reingest.db_ will either be under _transfers/reingest.db_ or
+somewhere else specified in your _reingestconfig.json_ file.
 
 The database can be read using tools capable of reading an sqlite database,
 e.g. [sqlite3](https://packages.ubuntu.com/bionic/sqlite3). A snippet of the
 database might look as follows:
-```
+
+```console
 aip_uuid                              transfer_uuid                         status           message     start_time                  end_time
 ------------------------------------  ------------------------------------  ---------------  ----------  --------------------------  --------------------------
 1dd914ad-520d-447f-8207-c49aaad5612d  7b0bef8e-ad64-4f74-967e-258299f38272  STATUS_COMPLETE              2018-10-25 21:59:21.304078  2018-10-25 22:00:26.772603
@@ -927,16 +935,15 @@ information could be found by looking up the status of the microservices:
 
 Via the user interface:
 
-* *http://{archivematica-url}}/transfer/{UUID}/*
-* *http://{archivematica-url}}/ingest/{UUID}/*
+- *http://{archivematica-url}}/transfer/{UUID}/*
+- *http://{archivematica-url}}/ingest/{UUID}/*
 
 Via the API (users will need to filter on package UUID):
 
-* *http://{archivematica-url}}/transfer/status/*
-* *http://{archivematica-url}}/ingest/status/*
+- *http://{archivematica-url}}/transfer/status/*
+- *http://{archivematica-url}}/ingest/status/*
 
-Related Projects
-----------------
+## Related Projects
 
-* [automation-audit](https://github.com/finoradin/automation-audit): an
+- [automation-audit](https://github.com/finoradin/automation-audit): an
   interface for auditing and managing Archivematica's automation-tools.
