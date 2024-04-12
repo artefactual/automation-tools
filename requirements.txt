@@ -12,7 +12,7 @@ charset-normalizer==3.3.2
     # via requests
 greenlet==3.0.1
     # via sqlalchemy
-idna==3.4
+idna==3.7
     # via requests
 lxml==4.9.3
     # via metsrw

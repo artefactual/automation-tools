@@ -22,7 +22,7 @@ greenlet==3.0.1
     # via
     #   -r requirements.txt
     #   sqlalchemy
-idna==3.4
+idna==3.7
     # via
     #   -r requirements.txt
     #   requests
