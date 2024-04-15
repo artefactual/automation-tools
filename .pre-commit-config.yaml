@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.15.0
+  rev: v3.15.2
   hooks:
   - id: pyupgrade
     args: [--py38-plus]
@@ -10,19 +10,19 @@ repos:
   - id: reorder-python-imports
     args: [--py38-plus]
 - repo: https://github.com/psf/black
-  rev: "23.11.0"
+  rev: "23.12.1"
   hooks:
   - id: black
     args: [--safe, --quiet]
 - repo: https://github.com/pycqa/flake8
-  rev: "6.1.0"
+  rev: "7.0.0"
   hooks:
   - id: flake8
     additional_dependencies:
-    - flake8-bugbear==23.9.16
+    - flake8-bugbear==24.2.6
     - flake8-comprehensions==3.14.0
 - repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.37.0
+  rev: v0.39.0
   hooks:
   - id: markdownlint
     exclude: |
