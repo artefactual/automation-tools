@@ -18,7 +18,7 @@ lxml==5.2.1
     # via metsrw
 metsrw==0.5.1
     # via -r requirements.in
-requests==2.31.0
+requests==2.32.0
     # via
     #   -r requirements.in
     #   amclient
