@@ -14,11 +14,11 @@ greenlet==3.0.3
     # via sqlalchemy
 idna==3.7
     # via requests
-lxml==5.2.1
+lxml==5.2.2
     # via metsrw
 metsrw==0.5.1
     # via -r requirements.in
-requests==2.31.0
+requests==2.32.1
     # via
     #   -r requirements.in
     #   amclient
