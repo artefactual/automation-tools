@@ -24,7 +24,7 @@ requests==2.32.1
     #   amclient
 sqlalchemy==1.4.52
     # via -r requirements.in
-urllib3==2.2.1
+urllib3==2.2.2
     # via
     #   -r requirements.in
     #   amclient
