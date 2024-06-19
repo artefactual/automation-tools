@@ -286,7 +286,7 @@ corner, then select 'Your profile'. The API key will be displayed at the bottom
 of the page.
 
 To get the Storage Service API key, log in to the Storage Service as the user
-you wish to authenticate as. From the dashboard, go to *Administration > Users*
+you wish to authenticate as. From the dashboard, go to _Administration > Users_
 and select 'Edit' for the user you want the key for. The API key will be
 displayed at the bottom of the page. Storage Service versions earlier than
 `0.8.x` do not require an API key, and will not provide one. In that case, fill
@@ -825,7 +825,7 @@ above about finding the Archivematica and Storage Service API keys. An example
 configuration with placeholder parameters is provided in
 [reingestconfig.json](transfers/reingestconfig.json)
 
-*Reingest.py* is best used via the shell script provided in the
+_Reingest.py_ is best used via the shell script provided in the
 [_transfers/examples/reingest_](transfers/examples/reingest) folder. As it is
 designed for bulk-reingest, it is best used in conjunction with a cronfile, an
 example of which is provided in the same folder.
@@ -883,7 +883,7 @@ INFO      2018-10-26 00:00:03 reingest.py:194  Removing PID for current process.
 ```
 
 1. Following completion of the first reingest, a second is started and we can
-   see similar log entries to those in *1.*
+   see similar log entries to those in _1._
 
 ```shell
 $ ./run-reingest.sh
@@ -935,13 +935,13 @@ information could be found by looking up the status of the microservices:
 
 Via the user interface:
 
-- *http://{archivematica-url}}/transfer/{UUID}/*
-- *http://{archivematica-url}}/ingest/{UUID}/*
+- _http://{archivematica-url}}/transfer/{UUID}/_
+- _http://{archivematica-url}}/ingest/{UUID}/_
 
 Via the API (users will need to filter on package UUID):
 
-- *http://{archivematica-url}}/transfer/status/*
-- *http://{archivematica-url}}/ingest/status/*
+- _http://{archivematica-url}}/transfer/status/_
+- _http://{archivematica-url}}/ingest/status/_
 
 ## Related Projects
 
