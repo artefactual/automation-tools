@@ -1,0 +1,19 @@
+[lint]
+# Rule reference: https://docs.astral.sh/ruff/rules/
+select = [
+  "B",
+  "C4",
+  "E",
+  "F",
+  "I",
+  "UP",
+  "W",
+]
+ignore = [
+  "B904",
+  "E501",
+  "UP031",
+]
+
+[lint.isort]
+force-single-line = true
