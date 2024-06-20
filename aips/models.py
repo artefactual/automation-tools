@@ -1,10 +1,10 @@
 from os.path import isfile
 
 from sqlalchemy import Column
-from sqlalchemy import create_engine
 from sqlalchemy import Integer
 from sqlalchemy import Sequence
 from sqlalchemy import String
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 

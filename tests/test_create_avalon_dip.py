@@ -9,7 +9,6 @@ import requests
 
 from aips import create_dip
 
-
 SS_URL = "http://127.0.0.1:62081"
 SS_USER_NAME = "test"
 SS_API_KEY = "test"
@@ -68,8 +67,8 @@ def test_create_avalon_dip_success(_get, tmp_path):
         aip_dir, AVALON_AIP_UUID, output_dir.as_posix(), "atom", "avalon-manifest"
     )
     # Check DIP structure
-    assert avalon_dip_dir == "{}/{}/{}".format(
-        output_dir.as_posix(), TRANSFER_NAME, AVALON_AIP_UUID
+    assert (
+        avalon_dip_dir == f"{output_dir.as_posix()}/{TRANSFER_NAME}/{AVALON_AIP_UUID}"
     )
     assert os.path.isdir(avalon_dip_dir)
 

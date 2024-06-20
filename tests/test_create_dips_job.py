@@ -9,7 +9,6 @@ from sqlalchemy import exc
 
 from aips import create_dips_job
 
-
 SS_URL = "http://192.168.168.192:8000"
 SS_USER_NAME = "test"
 SS_API_KEY = "12883879c823f6e533738c12266bfe9f7316a672"
@@ -149,7 +148,7 @@ def test_main_fail_request(_request, args):
                 ),
                 "json.return_value": AIPS_JSON,
             },
-            spec=requests.Response
+            spec=requests.Response,
         )
     ],
 )
@@ -162,7 +161,7 @@ def test_main_fail_request(_request, args):
                 "headers": {},
                 "iter_content.return_value": iter([AIP_CONTENT]),
             },
-            spec=requests.Response
+            spec=requests.Response,
         ),
     ],
 )
@@ -187,7 +186,7 @@ def test_main_success(_get, _request, args):
                 ),
                 "json.return_value": AIPS_JSON,
             },
-            spec=requests.Response
+            spec=requests.Response,
         )
     ],
 )
@@ -200,7 +199,7 @@ def test_main_success(_get, _request, args):
                 "headers": {},
                 "iter_content.return_value": iter([AIP_CONTENT]),
             },
-            spec=requests.Response
+            spec=requests.Response,
         ),
     ],
 )
@@ -230,7 +229,7 @@ def test_main_success_no_dip_creation(_get, _request, args):
                 ),
                 "json.return_value": AIPS_JSON,
             },
-            spec=requests.Response
+            spec=requests.Response,
         )
     ],
 )
@@ -243,7 +242,7 @@ def test_main_success_no_dip_creation(_get, _request, args):
                 "headers": {},
                 "iter_content.return_value": iter([AIP_CONTENT]),
             },
-            spec=requests.Response
+            spec=requests.Response,
         ),
     ],
 )
@@ -267,7 +266,7 @@ def test_main_dip_creation_failed(_get, _request, create_dip, atom_upload, args)
                 ),
                 "json.return_value": AIPS_JSON,
             },
-            spec=requests.Response
+            spec=requests.Response,
         )
     ],
 )
@@ -280,7 +279,7 @@ def test_main_dip_creation_failed(_get, _request, create_dip, atom_upload, args)
                 "headers": {},
                 "iter_content.return_value": iter([AIP_CONTENT]),
             },
-            spec=requests.Response
+            spec=requests.Response,
         ),
     ],
 )
@@ -314,7 +313,7 @@ def test_main_success_atom_upload_call(_get, _request, create_dip, atom_upload, 
                 ),
                 "json.return_value": AIPS_JSON,
             },
-            spec=requests.Response
+            spec=requests.Response,
         )
     ],
 )
@@ -327,7 +326,7 @@ def test_main_success_atom_upload_call(_get, _request, create_dip, atom_upload, 
                 "headers": {},
                 "iter_content.return_value": iter([AIP_CONTENT]),
             },
-            spec=requests.Response
+            spec=requests.Response,
         ),
     ],
 )

@@ -8,6 +8,7 @@ Archivematica ProcessingMCP.xml file.
 A work in progress, with some improvements that can be made to long-running
 processes like this over time.
 """
+
 import argparse
 import atexit
 import json
@@ -22,7 +23,8 @@ from amclient import AMClient
 # by ensuring that it can see itself.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from transfers import errors, loggingconfig
+from transfers import errors
+from transfers import loggingconfig
 from transfers import reingestmodel as reingestunit
 
 LOGGER = logging.getLogger("transfers")

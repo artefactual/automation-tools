@@ -48,6 +48,8 @@ requests==2.32.3
     # via
     #   -r requirements.txt
     #   amclient
+ruff==0.4.9
+    # via -r requirements-dev.in
 sqlalchemy==1.4.52
     # via -r requirements.txt
 tomli==2.0.1

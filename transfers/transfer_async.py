@@ -7,6 +7,7 @@ Helper script to automate running transfers through Archivematica.
 Similar to ``transfers.transfer`` but using the new `/api/v2beta` API when
 possible.
 """
+
 import base64
 import os
 import sys
@@ -17,18 +18,18 @@ import requests
 # by ensuring that it can see itself.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from os import fsdecode
+from os import fsencode
+
+from transfers import models
 from transfers import transfer
 from transfers.loggingconfig import set_log_level
-from transfers import models
+from transfers.transfer import LOGGER
+from transfers.transfer import get_accession_id
+from transfers.transfer import get_next_transfer
+from transfers.transfer import get_setting
+from transfers.transfer import main
 from transfers.transferargs import get_parser
-from transfers.transfer import (
-    LOGGER,
-    get_next_transfer,
-    get_accession_id,
-    get_setting,
-    main,
-)
-from os import fsdecode, fsencode
 
 
 class DashboardAPIError(Exception):

@@ -3,16 +3,17 @@
 Enables the configuration and setup of a logging database for monitoring the
 process of reingest using the Archivematica AIP.
 """
+
 import datetime
 import enum
 import logging
 from os.path import isfile
 
 from sqlalchemy import Column
-from sqlalchemy import create_engine
 from sqlalchemy import DateTime
 from sqlalchemy import Enum
 from sqlalchemy import String
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -51,9 +52,9 @@ class ReingestUnit(BASE):
 
     def __repr__(self):
         return (
-            "uuid={s.aip_uuid}, transfer_uuid={s.transfer_uuid}, "
-            "status={s.status}, message={s.message}, "
-            "processing_time={s.processing_time}".format(s=self)
+            f"uuid={self.aip_uuid}, transfer_uuid={self.transfer_uuid}, "
+            f"status={self.status}, message={self.message}, "
+            f"processing_time={self.processing_time}"
         )
 
     @property
@@ -66,9 +67,7 @@ class ReingestUnit(BASE):
         running reingest.py.
         """
         try:
-            return "{} seconds".format(
-                int((self.start_time - self.end_time).total_seconds())
-            )
+            return f"{int((self.start_time - self.end_time).total_seconds())} seconds"
         except TypeError:
             LOGGER.error(
                 "Date format error getting difference between start "
