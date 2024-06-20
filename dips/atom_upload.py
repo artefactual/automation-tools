@@ -6,6 +6,7 @@ Sends the DIP to the AtoM host using rsync and executes a deposit request to the
 AtoM instance. A passwordless SSH connection is required to the AtoM host for the
 user running this script and it must be already added to the list of known hosts.
 """
+
 import argparse
 import logging.config  # Has to be imported separately
 import os
@@ -14,7 +15,6 @@ import subprocess
 import sys
 
 import requests
-
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 LOGGER = logging.getLogger("dip_workflow")

@@ -4,6 +4,7 @@ Automate Transfers.
 
 Helper script to automate running transfers through Archivematica.
 """
+
 import ast
 import atexit
 import base64
@@ -25,9 +26,12 @@ from sqlalchemy.orm.exc import NoResultFound
 # by ensuring that it can see itself.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from transfers import defaults, errors, loggingconfig, models, utils
+from transfers import defaults
+from transfers import errors
+from transfers import loggingconfig
+from transfers import models
+from transfers import utils
 from transfers.transferargs import get_parser
-
 
 # Directory for various processing decisions, below.
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))

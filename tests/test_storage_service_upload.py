@@ -88,7 +88,7 @@ class TestSsUpload(unittest.TestCase):
                     "json.return_value": {},
                     "headers": {},
                 },
-                spec=requests.Response
+                spec=requests.Response,
             )
         ],
     )

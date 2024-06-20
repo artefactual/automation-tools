@@ -1,10 +1,10 @@
 from sqlalchemy import Boolean
 from sqlalchemy import Column
-from sqlalchemy import create_engine
 from sqlalchemy import Integer
 from sqlalchemy import LargeBinary
 from sqlalchemy import Sequence
 from sqlalchemy import String
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
@@ -29,8 +29,8 @@ class Unit(Base):
 
     def __repr__(self):
         return (
-            "<Unit(id={s.id}, uuid={s.uuid}, unit_type={s.unit_type}, "
-            "path={s.path}, status={s.status}, current={s.current})>".format(s=self)
+            f"<Unit(id={self.id}, uuid={self.uuid}, unit_type={self.unit_type}, "
+            f"path={self.path}, status={self.status}, current={self.current})>"
         )
 
 

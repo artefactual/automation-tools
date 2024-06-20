@@ -1,11 +1,11 @@
 """Where you put stuff when you can't think of a good name for a module."""
+
 import logging
 
 import requests
 import urllib3
 
 from transfers import errors
-
 
 LOGGER = logging.getLogger("transfers")
 

@@ -8,6 +8,7 @@ shared path), to move the DIP folder in there and send a requests to the
 Storage Service to process that DIP and create a relationship with the
 AIP from where it was created.
 """
+
 import argparse
 import logging.config  # Has to be imported separately
 import os
@@ -16,7 +17,6 @@ import sys
 import uuid
 
 import requests
-
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 LOGGER = logging.getLogger("dip_workflow")

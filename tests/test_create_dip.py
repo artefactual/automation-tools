@@ -10,7 +10,6 @@ import requests
 
 from aips import create_dip
 
-
 SS_URL = "http://192.168.168.192:8000"
 SS_USER_NAME = "test"
 SS_API_KEY = "7021334bee4c9155c07e531608dd28a9d8039420"

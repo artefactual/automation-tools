@@ -1,4 +1,5 @@
 """Command-line argument parser for automated transfer scripts."""
+
 import argparse
 from os import fsencode
 
