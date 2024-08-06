@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import sys
 import uuid
+from datetime import datetime
 
 import amclient
 import metsrw
@@ -259,9 +260,9 @@ def create_dip(aip_dir, aip_uuid, output_dir, mets_type, dip_type):
 
         if dip_type != "avalon-manifest":
             try:
-                set_fslastmodified(premis, namespaces, dip_file_path)
+                set_datecreatedbyapplication(premis, namespaces, dip_file_path)
             except Exception:
-                LOGGER.warning("fits/fileinfo/fslastmodified not found")
+                LOGGER.warning("creatingApplication/dateCreatedByApplication not found")
 
     # Modify or copy METS file for DIP based on mets_type argument
     dip_mets_file = os.path.join(dip_dir, f"METS.{aip_uuid}.xml")
@@ -359,18 +360,19 @@ def move_sub_doc(aip_dir, to_zip_dir):
         LOGGER.warning("submissionDocumentation folder not found")
 
 
-def set_fslastmodified(premis, namespaces, dip_file_path):
-    """Obtain and set the fslastmodified date to the moved files"""
-
-    fslastmodified = premis.findtext(
-        "premis:objectCharacteristics/premis:objectCharacteristicsExtension/fits:fits/fits:fileinfo/fits:fslastmodified",
+def set_datecreatedbyapplication(premis, namespaces, dip_file_path):
+    """Obtain and set the datecreatedbyapplication date to the moved files"""
+    datecreatedbyapplication = premis.findtext(
+        "premis:objectCharacteristics/premis:creatingApplication/premis:dateCreatedByApplication",
         namespaces=namespaces,
     )
-    if not fslastmodified:
-        LOGGER.warning("fits/fileinfo/fslastmodified not found")
+    if not datecreatedbyapplication:
+        LOGGER.warning("creatingApplication/dateCreatedByApplication not found")
+        return
 
-    # Convert from miliseconds to seconds
-    timestamp = int(fslastmodified) // 1000
+    timestamp = datetime.strptime(
+        datecreatedbyapplication, "%Y-%m-%dT%H:%M:%SZ"
+    ).timestamp()
     os.utime(dip_file_path, (timestamp, timestamp))
 
 
