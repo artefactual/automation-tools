@@ -9,6 +9,7 @@ in an SQLite database.
 Optionally, uploads those DIPs to AtoM or the Storage Service using
 the scripts from `dips` and deletes the local copy.
 """
+
 import argparse
 import logging.config  # Has to be imported separately
 import os

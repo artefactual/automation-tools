@@ -10,7 +10,6 @@ from transfers import errors
 from transfers import models
 from transfers import transfer
 
-
 AM_URL = "http://127.0.0.1"
 SS_URL = "http://127.0.0.1:8000"
 USER = "demo"
@@ -42,17 +41,13 @@ class TestAutomateTransfers(unittest.TestCase):
                 transfer_type="standard",
                 target="standard_1",
                 transfer_name="standard_1",
-                transfer_abs_path="{}/standardTransfer/standard_1/".format(
-                    transfers_dir
-                ),
+                transfer_abs_path=f"{transfers_dir}/standardTransfer/standard_1/",
             ),
             Result(
                 transfer_type="standard",
                 target="standard_1",
                 transfer_name="standard_1_1",
-                transfer_abs_path="{}/standardTransfer/standard_1_1/".format(
-                    transfers_dir
-                ),
+                transfer_abs_path=f"{transfers_dir}/standardTransfer/standard_1_1/",
             ),
             Result(
                 transfer_type="dspace",

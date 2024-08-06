@@ -11,6 +11,7 @@ folder (if present in the AIP) and the AIP METS file. Another METS file will be
 generated alongside the objects folder containing only a reference to the ZIP file
 (without AMD or DMD sections).
 """
+
 import argparse
 import csv
 import logging.config  # Has to be imported separately

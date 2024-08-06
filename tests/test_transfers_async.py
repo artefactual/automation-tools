@@ -7,7 +7,6 @@ import pytest
 from transfers import models
 from transfers import transfer_async
 
-
 AM_URL = "http://127.0.0.1:62080"
 SS_URL = "http://127.0.0.1:62081"
 USER = "test"
