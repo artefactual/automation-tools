@@ -1,0 +1,11 @@
+{
+	"docker": "true",
+	"candidate_agent": "IISH",
+	"storage_service_url": "http://127.0.0.1:62081",
+	"storage_service_user": "test",
+	"storage_service_api_key": "test",
+	"accruals_transfer_source": "accruals",
+	"default_storage_space": "b57c0e2c-606a-47d4-a612-884444d9dda1",
+	"default_path": "/home/ross-spencer/.am/ss-location-data/candidate-transfers",
+	"candidate_location": "Automated candidate transfers"
+}
