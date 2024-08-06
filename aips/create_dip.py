@@ -368,6 +368,7 @@ def set_datecreatedbyapplication(premis, namespaces, dip_file_path):
     )
     if not datecreatedbyapplication:
         LOGGER.warning("creatingApplication/dateCreatedByApplication not found")
+        return
 
     timestamp = datetime.strptime(
         datecreatedbyapplication, "%Y-%m-%dT%H:%M:%SZ"
