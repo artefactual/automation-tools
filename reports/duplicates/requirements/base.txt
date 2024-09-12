@@ -1,0 +1,4 @@
+git+https://github.com/artefactual-labs/amclient.git@2a3e00eee2966d714d2101199e9ff3cbbd6dc5d8#egg=amclient
+pandas==0.24.2
+metsrw==0.2.0
+ulid-py==0.0.9
