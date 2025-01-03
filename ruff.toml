@@ -1,3 +1,5 @@
+target-version = "py39"
+
 [lint]
 # Rule reference: https://docs.astral.sh/ruff/rules/
 select = [
