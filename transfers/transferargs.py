@@ -51,7 +51,7 @@ def get_parser(doc):
         # command line.
         "--transfer-path",
         metavar="PATH",
-        help="Relative path within the " 'Transfer Source. Default: ""',
+        help='Relative path within the Transfer Source. Default: ""',
         type=fsencode,
         default=b"",
     )
@@ -97,8 +97,7 @@ def get_parser(doc):
     parser.add_argument(
         "--hide",
         action="store_true",
-        help="If set, hide the Transfers and SIPs in the "
-        "dashboard once they complete.",
+        help="If set, hide the Transfers and SIPs in the dashboard once they complete.",
     )
     parser.add_argument(
         "--delete-on-complete",
