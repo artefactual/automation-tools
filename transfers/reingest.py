@@ -167,8 +167,7 @@ def reingest_full_and_approve(
             transfer = amclient.get_transfer_status()
 
         LOGGER.info(
-            "Attempting to approve transfer following the "
-            "initialization of reingest."
+            "Attempting to approve transfer following the initialization of reingest."
         )
 
         if transfer.get("status") == "USER_INPUT":
