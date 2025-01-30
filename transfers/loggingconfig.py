@@ -16,8 +16,8 @@ def setup(log_level, log_file_name):
                 "class": "logging.handlers.RotatingFileHandler",
                 "formatter": "default",
                 "filename": log_file_name,
-                "backupCount": 2,
-                "maxBytes": 10 * 1024,
+                "backupCount": 20,
+                "maxBytes": 10 * 1024 * 1024,
                 "delay": True,  # Ony write to file on first byte emitted.
             },
         },

@@ -486,7 +486,7 @@ def start_transfer(
         return None
     # Approve transfer.
     LOGGER.info("Ready to approve transfer")
-    retry_count = 3
+    retry_count = 30
     for i in range(retry_count):
         result = approve_transfer(transfer_name, am_url, am_api_key, am_user)
         # Mark as started
@@ -514,7 +514,7 @@ def approve_transfer(dirname, url, am_api_key, am_user):
     :returns: UUID of the approved transfer or None.
     """
     LOGGER.info("Approving %s", dirname)
-    time.sleep(6)
+    time.sleep(30)
     am = AMClient(am_url=url, am_user_name=am_user, am_api_key=am_api_key)
     try:
         # Find the waiting transfers available to be approved via the am client
