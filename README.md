@@ -470,9 +470,9 @@ cd /usr/lib/archivematica/automation-tools/
 ### Tips for ingesting DSpace exports
 
 - At the transfer source location, put the DSpace item to be ingested in a
-  subdirectory (e.g., `ITEM@123-4567/ITEM@123-4567.zip`)  . The scripts
-  [here](https://github.com/artefactual-labs/transfer-source-helpers/) can be
-  used for this purpose
+  subdirectory (e.g., `ITEM@123-4567/ITEM@123-4567.zip`). The
+  [transfer-source-helpers](https://github.com/artefactual-labs/transfer-source-helpers/)
+  scripts can be used for this purpose
 
 - Use the add_metadata_dspace.py pre-transfer script (described in [pre-transfer
   hooks](#pre-transfer-hooks))
