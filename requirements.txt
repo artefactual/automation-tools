@@ -6,7 +6,7 @@
 #
 amclient==1.6.0
     # via -r requirements.in
-certifi==2025.11.12
+certifi==2026.1.4
     # via requests
 charset-normalizer==3.4.4
     # via requests
@@ -24,7 +24,7 @@ requests==2.32.5
     #   amclient
 sqlalchemy==1.4.54
     # via -r requirements.in
-urllib3==2.6.0
+urllib3==2.6.3
     # via
     #   -r requirements.in
     #   amclient
