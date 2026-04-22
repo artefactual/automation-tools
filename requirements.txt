@@ -6,15 +6,15 @@
 #
 amclient==1.6.0
     # via -r requirements.in
-certifi==2026.2.25
+certifi==2026.4.22
     # via requests
 charset-normalizer==3.4.7
     # via requests
-greenlet==3.3.2
+greenlet==3.4.0
     # via sqlalchemy
-idna==3.11
+idna==3.13
     # via requests
-lxml==6.0.2
+lxml==6.1.0
     # via metsrw
 metsrw==0.6.1
     # via -r requirements.in
