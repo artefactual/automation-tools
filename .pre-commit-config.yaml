@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.15.9
+  rev: v0.15.11
   hooks:
   - id: ruff
     args: [--fix, --exit-non-zero-on-fix]
@@ -14,7 +14,7 @@ repos:
         ISSUE_TEMPLATE\.md
       )
 - repo: https://github.com/thlorenz/doctoc
-  rev: v2.3.0
+  rev: v2.4.1
   hooks:
   - id: doctoc
     files: |
