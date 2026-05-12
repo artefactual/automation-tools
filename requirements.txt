@@ -10,21 +10,21 @@ certifi==2026.4.22
     # via requests
 charset-normalizer==3.4.7
     # via requests
-greenlet==3.4.0
+greenlet==3.5.0
     # via sqlalchemy
-idna==3.13
+idna==3.14
     # via requests
 lxml==6.1.0
     # via metsrw
 metsrw==0.6.1
     # via -r requirements.in
-requests==2.33.1
+requests==2.34.0
     # via
     #   -r requirements.in
     #   amclient
 sqlalchemy==1.4.54
     # via -r requirements.in
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -r requirements.in
     #   amclient
