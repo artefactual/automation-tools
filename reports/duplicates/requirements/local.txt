@@ -1,0 +1,5 @@
+-r base.txt
+pytest
+vcrpy>=1.0.0
+flake8==3.4.1
+flake8-import-order==0.13
