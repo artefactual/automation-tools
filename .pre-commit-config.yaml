@@ -1,12 +1,12 @@
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.15.13
+  rev: v0.17.2
   hooks:
   - id: ruff
     args: [--fix, --exit-non-zero-on-fix]
   - id: ruff-format
 - repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.48.0
+  rev: v0.50.0
   hooks:
   - id: markdownlint
     exclude: |
@@ -14,7 +14,7 @@ repos:
         ISSUE_TEMPLATE\.md
       )
 - repo: https://github.com/thlorenz/doctoc
-  rev: v2.4.1
+  rev: v2.5.0
   hooks:
   - id: doctoc
     files: |
